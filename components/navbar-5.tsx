@@ -64,12 +64,12 @@ export const Navbar5 = () => {
     <section className="pointer-events-none">
       <div className="fixed left-1/2 top-6 transform -translate-x-1/2 w-[min(1100px,calc(100%-48px))] rounded-2xl bg-white/60 backdrop-blur-md shadow-2xl border border-white/10 z-50 pointer-events-auto">
         <div className="px-6">
-          <nav className="flex items-center justify-between h-20">
+          <nav className="flex items-center justify-between h-16">
           {/* Left: brand */}
           <div className="flex items-center flex-1">
-            <a href="/" className="flex items-center gap-3">
-              <span className="text-lg font-semibold tracking-tighter">
-                Shadcnblocks.com
+              <a href="/" className="flex items-center gap-3">
+              <span className="text-lg font-hind-siliguri font-medium">
+                এসো জাপানিজ শিখি
               </span>
             </a>
           </div>
@@ -152,8 +152,8 @@ export const Navbar5 = () => {
                   <SheetHeader>
                     <SheetTitle>
                       <a href="/" className="flex items-center gap-2">
-                        <span className="text-lg font-semibold tracking-tighter">
-                          Shadcnblocks.com
+                        <span className="text-lg font-medium font-hind-siliguri">
+                          এসো জাপানিজ শিখি
                         </span>
                       </a>
                     </SheetTitle>

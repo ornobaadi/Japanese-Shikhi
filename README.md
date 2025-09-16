@@ -18,7 +18,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project uses web fonts loaded in `app/layout.tsx` and CSS variables in `app/globals.css`.
+
+- **Latin / UI font:** `DM Sans` (for English UI text)
+- **Bengali / Bangla font:** `Li Ador Noirrit` (logo/branding) with fallbacks to `Noto Sans Bengali` for body/headings.
 
 ## Learn More
 

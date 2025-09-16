@@ -12,12 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Next.js 15** application for a Japanese learning platform called "Japanese Shikhi" using:
 
-- **Framework**: Next.js 15 with App Router architecture
-- **Styling**: Tailwind CSS with shadcn/ui component library
-- **UI Components**: Radix UI primitives via shadcn/ui
-- **Icons**: Lucide React
-- **Fonts**: Geist Sans and Geist Mono from Google Fonts
-- **Build Tool**: Turbopack for faster builds and development
+ **Fonts**: `DM Sans` for Latin UI and `Li Ador Noirrit` (with `Noto Sans Bengali` fallback) for Bengali text
 
 ### Project Structure
 
