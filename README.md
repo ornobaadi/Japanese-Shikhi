@@ -37,3 +37,36 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Admin Dashboard (Static Auth)
+
+A simple admin login is provided for development.
+
+- Visit `/admin-login` and use credentials from `.env.local`.
+- On success, you're redirected to `/admin`.
+- Logout via the button in the admin UI.
+
+Setup:
+
+1) Copy the example env and set credentials:
+
+```powershell
+copy .env.local.example .env.local
+```
+
+2) Edit `.env.local`:
+
+```dotenv
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=admin12345
+```
+
+3) Run dev server:
+
+```powershell
+npm run dev
+```
+
+Notes:
+- Admin routes are protected by `middleware.ts` using an `admin_session` cookie.
+- This is for local/dev usage; replace with real auth before production.
