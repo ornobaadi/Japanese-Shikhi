@@ -18,6 +18,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <div className="text-lg font-semibold tracking-tight">Admin</div>
         <nav className="flex flex-col gap-1 text-sm">
           <Link href="/admin" className="px-3 py-2 rounded-md hover:bg-accent">Dashboard</Link>
+          <Link href="/admin/courses" className="px-3 py-2 rounded-md hover:bg-accent">All Courses</Link>
+          <Link href="/admin/add-course" className="px-3 py-2 rounded-md hover:bg-accent">Add Course</Link>
         </nav>
         <div className="mt-auto">
           <form action="/admin/logout" method="post">
