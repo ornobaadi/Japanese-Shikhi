@@ -25,6 +25,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import Link from "next/link";
 
 export const Navbar5 = () => {
   const features = [
@@ -137,7 +138,9 @@ export const Navbar5 = () => {
           {/* Right: actions */}
           <div className="flex justify-end flex-1">
             <div className="hidden lg:flex items-center gap-6">
-              <Button variant="outline">Sign in</Button>
+              <Button asChild variant="outline">
+                <Link href="/admin-login">Sign in</Link>
+              </Button>
               <Button>Start for free</Button>
             </div>
 
@@ -201,7 +204,9 @@ export const Navbar5 = () => {
                     </div>
 
                     <div className="mt-6 flex flex-col gap-4">
-                      <Button variant="outline">Sign in</Button>
+                      <Button asChild variant="outline">
+                        <Link href="/admin-login">Sign in</Link>
+                      </Button>
                       <Button>Start for free</Button>
                     </div>
                   </div>
