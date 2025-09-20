@@ -1,6 +1,8 @@
 "use client";
 
 import { MenuIcon } from "lucide-react";
+import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
+import { useIsAdmin } from "@/lib/hooks/useAuth";
 
 import {
   Accordion,
@@ -27,6 +29,9 @@ import {
 } from "@/components/ui/sheet";
 
 export const Navbar5 = () => {
+  const { isSignedIn, user } = useUser();
+  const isAdmin = useIsAdmin();
+  
   const features = [
     {
       title: "Dashboard",
@@ -137,8 +142,30 @@ export const Navbar5 = () => {
           {/* Right: actions */}
           <div className="flex justify-end flex-1">
             <div className="hidden lg:flex items-center gap-6">
-              <Button variant="outline">Sign in</Button>
-              <Button>Start for free</Button>
+              {isSignedIn ? (
+                <>
+                  {isAdmin ? (
+                    <Button asChild>
+                      <a href="/admin-dashboard">Admin Dashboard</a>
+                    </Button>
+                  ) : (
+                    <Button asChild>
+                      <a href="/dashboard">Dashboard</a>
+                    </Button>
+                  )}
+                  <UserButton 
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-8 h-8"
+                      }
+                    }}
+                  />
+                </>
+              ) : (
+                <SignInButton mode="modal">
+                  <Button>Start for free</Button>
+                </SignInButton>
+              )}
             </div>
 
             <div className="lg:hidden">
@@ -201,8 +228,32 @@ export const Navbar5 = () => {
                     </div>
 
                     <div className="mt-6 flex flex-col gap-4">
-                      <Button variant="outline">Sign in</Button>
-                      <Button>Start for free</Button>
+                      {isSignedIn ? (
+                        <>
+                          {isAdmin ? (
+                            <Button asChild variant="outline">
+                              <a href="/admin-dashboard">Admin Dashboard</a>
+                            </Button>
+                          ) : (
+                            <Button asChild variant="outline">
+                              <a href="/dashboard">Dashboard</a>
+                            </Button>
+                          )}
+                          <div className="flex justify-center">
+                            <UserButton 
+                              appearance={{
+                                elements: {
+                                  avatarBox: "w-10 h-10"
+                                }
+                              }}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <SignInButton mode="modal">
+                          <Button>Start for free</Button>
+                        </SignInButton>
+                      )}
                     </div>
                   </div>
                 </SheetContent>

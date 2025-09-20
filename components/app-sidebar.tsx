@@ -1,0 +1,96 @@
+"use client"
+
+import * as React from "react"
+import {
+  IconBook,
+  IconChartBar,
+  IconDashboard,
+  IconInnerShadowTop,
+  IconPlus,
+  IconSettings,
+  IconUsers,
+} from "@tabler/icons-react"
+import { useUser } from "@clerk/nextjs"
+
+import { NavDocuments } from "@/components/nav-documents"
+import { NavMain } from "@/components/nav-main"
+import { NavSecondary } from "@/components/nav-secondary"
+import { NavUser } from "@/components/nav-user"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useUser()
+
+  const navMain = [
+    {
+      title: "Dashboard",
+      url: "/admin-dashboard",
+      icon: IconDashboard,
+    },
+    {
+      title: "All Courses",
+      url: "/admin-dashboard/courses",
+      icon: IconBook,
+    },
+    {
+      title: "Add Course",
+      url: "/admin-dashboard/courses/add",
+      icon: IconPlus,
+    },
+    {
+      title: "Users",
+      url: "/admin-dashboard/users",
+      icon: IconUsers,
+    },
+    {
+      title: "Analytics",
+      url: "/admin-dashboard/analytics",
+      icon: IconChartBar,
+    },
+  ]
+
+  const userData = {
+    name: user?.fullName || user?.firstName || "Admin",
+    email: user?.primaryEmailAddress?.emailAddress || "admin@japanese-shikhi.com",
+    avatar: user?.imageUrl || "/avatars/admin.jpg",
+  }
+
+  return (
+    <Sidebar collapsible="offcanvas" {...props} className="">
+      <SidebarHeader className="border-b border-border/40">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="h-12 px-3 hover:bg-muted transition-colors duration-200"
+            >
+              <a href="/admin-dashboard" className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <IconInnerShadowTop className="size-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">Japanese Shikhi</span>
+                  <span className="text-xs text-muted-foreground">Admin Panel</span>
+                </div>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent className="px-0 py-4">
+        <NavMain items={navMain} />
+      </SidebarContent>
+      <SidebarFooter className="border-t border-border/40 p-4">
+        <NavUser user={userData} />
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
