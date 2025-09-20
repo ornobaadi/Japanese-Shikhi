@@ -146,8 +146,8 @@ const UserSchema = new Schema<IUser>({
 });
 
 // Indexes for performance
-UserSchema.index({ email: 1 });
-UserSchema.index({ clerkUserId: 1 });
+// `email` and `clerkUserId` already have `unique: true` on their field definitions.
+// Keep other performance indexes here.
 UserSchema.index({ currentLevel: 1 });
 UserSchema.index({ subscriptionStatus: 1 });
 

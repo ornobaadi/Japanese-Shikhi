@@ -115,7 +115,7 @@ const VocabularySchema = new Schema<IVocabulary>({
   jlptLevel: {
     type: String,
     enum: ['N5', 'N4', 'N3', 'N2', 'N1'],
-    index: true
+    // indexed later via VocabularySchema.index({ jlptLevel: 1, difficulty: 1 })
   },
   frequency: {
     type: Number,
@@ -135,7 +135,7 @@ const VocabularySchema = new Schema<IVocabulary>({
     type: String,
     enum: ['vocabulary', 'kanji', 'phrase', 'expression'],
     required: true,
-    index: true
+    // indexed later via VocabularySchema.index({ jlptLevel: 1, wordType: 1, difficulty: 1 })
   },
   audioUrl: String,
   exampleSentences: [{
@@ -166,7 +166,7 @@ const VocabularySchema = new Schema<IVocabulary>({
   tags: {
     type: [String],
     default: [],
-    index: true
+    // indexed later via VocabularySchema.index({ tags: 1 })
   },
   usage: {
     formal: {
