@@ -1,0 +1,366 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { IconDeviceFloppy, IconLoader2 } from '@tabler/icons-react';
+import { toast } from 'sonner';
+
+interface CourseFormData {
+  title: string;
+  description: string;
+  level: string;
+  category: string;
+  estimatedDuration: string;
+  difficulty: string;
+  isPremium: boolean;
+  isPublished: boolean;
+  learningObjectives: string[];
+  prerequisites: string[];
+  tags: string[];
+  thumbnailUrl: string;
+  instructorNotes: string;
+}
+
+export default function CourseForm() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<CourseFormData>({
+    title: '',
+    description: '',
+    level: '',
+    category: '',
+    estimatedDuration: '',
+    difficulty: '5',
+    isPremium: false,
+    isPublished: false,
+    learningObjectives: [''],
+    prerequisites: [],
+    tags: [],
+    thumbnailUrl: '',
+    instructorNotes: ''
+  });
+
+  const handleInputChange = (field: keyof CourseFormData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleObjectiveChange = (index: number, value: string) => {
+    const newObjectives = [...formData.learningObjectives];
+    newObjectives[index] = value;
+    setFormData(prev => ({
+      ...prev,
+      learningObjectives: newObjectives
+    }));
+  };
+
+  const addObjective = () => {
+    if (formData.learningObjectives.length < 10) {
+      setFormData(prev => ({
+        ...prev,
+        learningObjectives: [...prev.learningObjectives, '']
+      }));
+    }
+  };
+
+  const removeObjective = (index: number) => {
+    if (formData.learningObjectives.length > 1) {
+      const newObjectives = formData.learningObjectives.filter((_, i) => i !== index);
+      setFormData(prev => ({
+        ...prev,
+        learningObjectives: newObjectives
+      }));
+    }
+  };
+
+  const handleSubmit = async (publishImmediately: boolean = false) => {
+    setIsLoading(true);
+    
+    try {
+      // Validation
+      if (!formData.title.trim()) {
+        toast.error('Course title is required');
+        return;
+      }
+      
+      if (!formData.description.trim()) {
+        toast.error('Course description is required');
+        return;
+      }
+      
+      if (!formData.level) {
+        toast.error('Course level is required');
+        return;
+      }
+      
+      if (!formData.category) {
+        toast.error('Course category is required');
+        return;
+      }
+      
+      if (!formData.estimatedDuration || parseInt(formData.estimatedDuration) <= 0) {
+        toast.error('Valid estimated duration is required');
+        return;
+      }
+      
+      const validObjectives = formData.learningObjectives.filter(obj => obj.trim());
+      if (validObjectives.length === 0) {
+        toast.error('At least one learning objective is required');
+        return;
+      }
+
+      const courseData = {
+        ...formData,
+        isPublished: publishImmediately,
+        learningObjectives: validObjectives,
+        estimatedDuration: parseInt(formData.estimatedDuration),
+        difficulty: parseInt(formData.difficulty)
+      };
+
+      const response = await fetch('/api/admin/courses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(courseData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.details && Array.isArray(result.details)) {
+          // Handle validation errors
+          throw new Error(`Validation failed: ${result.details.join(', ')}`);
+        }
+        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      toast.success(publishImmediately ? 'Course created and published successfully!' : 'Course saved as draft successfully!');
+      router.push('/admin-dashboard/courses');
+      router.refresh();
+
+    } catch (error: any) {
+      console.error('Error creating course:', error);
+      toast.error(error.message || 'Failed to create course');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto w-full">
+      <Card>
+        <CardHeader>
+          <CardTitle>Course Information</CardTitle>
+          <CardDescription>Basic details about your course</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Course Title *</Label>
+              <Input 
+                id="title" 
+                placeholder="e.g., Japan101 - Hiragana Basics"
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Description *</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Describe what students will learn in this course..."
+                rows={4}
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="level">JLPT Level *</Label>
+                <Select value={formData.level} onValueChange={(value) => handleInputChange('level', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="category">Category *</Label>
+                <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vocabulary">Vocabulary</SelectItem>
+                    <SelectItem value="grammar">Grammar</SelectItem>
+                    <SelectItem value="kanji">Kanji</SelectItem>
+                    <SelectItem value="conversation">Conversation</SelectItem>
+                    <SelectItem value="reading">Reading</SelectItem>
+                    <SelectItem value="writing">Writing</SelectItem>
+                    <SelectItem value="culture">Culture</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="duration">Estimated Duration (minutes) *</Label>
+                <Input 
+                  id="duration" 
+                  type="number" 
+                  min="5"
+                  max="600"
+                  placeholder="60"
+                  value={formData.estimatedDuration}
+                  onChange={(e) => handleInputChange('estimatedDuration', e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="difficulty">Difficulty (1-10)</Label>
+                <Input 
+                  id="difficulty" 
+                  type="number" 
+                  min="1"
+                  max="10"
+                  value={formData.difficulty}
+                  onChange={(e) => handleInputChange('difficulty', e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Learning Objectives */}
+          <div className="space-y-4">
+            <div>
+              <Label>Learning Objectives *</Label>
+              <p className="text-sm text-muted-foreground mb-3">
+                What will students learn from this course?
+              </p>
+              {formData.learningObjectives.map((objective, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <Input
+                    placeholder={`Learning objective ${index + 1}`}
+                    value={objective}
+                    onChange={(e) => handleObjectiveChange(index, e.target.value)}
+                    className="flex-1"
+                  />
+                  {formData.learningObjectives.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeObjective(index)}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {formData.learningObjectives.length < 10 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addObjective}
+                  className="mt-2"
+                >
+                  Add Objective
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="thumbnailUrl">Thumbnail URL (optional)</Label>
+              <Input 
+                id="thumbnailUrl" 
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={formData.thumbnailUrl}
+                onChange={(e) => handleInputChange('thumbnailUrl', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="instructorNotes">Instructor Notes (optional)</Label>
+              <Textarea 
+                id="instructorNotes" 
+                placeholder="Additional notes for instructors..."
+                rows={3}
+                value={formData.instructorNotes}
+                onChange={(e) => handleInputChange('instructorNotes', e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Settings */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="premium" 
+                checked={formData.isPremium}
+                onCheckedChange={(checked) => handleInputChange('isPremium', checked)}
+              />
+              <Label htmlFor="premium">Premium Course</Label>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-6">
+            <Button 
+              type="button"
+              variant="outline" 
+              className="flex-1"
+              onClick={() => handleSubmit(false)}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <IconLoader2 className="size-4 mr-2 animate-spin" />
+              ) : (
+                <IconDeviceFloppy className="size-4 mr-2" />
+              )}
+              Save as Draft
+            </Button>
+            <Button 
+              type="button"
+              className="flex-1"
+              onClick={() => handleSubmit(true)}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <IconLoader2 className="size-4 mr-2 animate-spin" />
+              ) : (
+                <IconDeviceFloppy className="size-4 mr-2" />
+              )}
+              Save & Publish
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

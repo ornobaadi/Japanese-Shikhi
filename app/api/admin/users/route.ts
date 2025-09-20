@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId, sessionClaims } = await auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const isAdmin = (sessionClaims?.publicMetadata as any)?.role === 'admin';
-    if (!isAdmin) {
+    // Check if user is admin by fetching user data directly
+    try {
+      const user = await (await clerkClient()).users.getUser(userId);
+      const isAdmin = (user.publicMetadata as any)?.role === 'admin';
+      
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      }
+    } catch (error) {
+      console.error('Error fetching user data in API:', error);
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 

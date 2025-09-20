@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans_Bengali, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner";
 
 const notoSansBengali = Noto_Sans_Bengali({
   subsets: ["bengali"],
@@ -37,6 +38,7 @@ export default function RootLayout({
         </head>
         <body className={`${notoSansBengali.variable} ${hindSiliguri.variable} antialiased`}>
           {children}
+          <Toaster richColors position="top-right" />
         </body>
       </html>
     </ClerkProvider>

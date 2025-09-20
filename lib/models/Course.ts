@@ -22,7 +22,7 @@ export interface ICourse extends Document {
   totalRatings: number;
   enrolledStudents: number;
   completionRate: number;
-  language: {
+  courseLanguage: {
     primary: string; // 'japanese'
     secondary: string; // 'english', 'bengali', etc.
   };
@@ -151,7 +151,7 @@ const CourseSchema = new Schema<ICourse>({
     min: 0,
     max: 100
   },
-  language: {
+  courseLanguage: {
     primary: {
       type: String,
       default: 'japanese'
@@ -191,12 +191,15 @@ CourseSchema.index({ averageRating: -1 });
 CourseSchema.index({ enrolledStudents: -1 });
 CourseSchema.index({ 'metadata.lastUpdated': -1 });
 
-// Text search index
-CourseSchema.index({
-  title: 'text',
-  description: 'text',
-  tags: 'text'
-});
+// Text search index temporarily disabled to isolate language field issue
+// CourseSchema.index({
+//   title: 'text',
+//   description: 'text',
+//   tags: 'text'
+// }, { 
+//   default_language: 'english',
+//   language_override: 'indexLanguage'
+// });
 
 // Virtual for formatted duration
 CourseSchema.virtual('formattedDuration').get(function() {
