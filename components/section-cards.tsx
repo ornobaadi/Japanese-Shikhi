@@ -17,21 +17,12 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Total Courses</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            8
+            0
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +2 this month
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            6 Active, 1 Draft, 1 Coming Soon <IconTrendingUp className="size-4" />
-          </div>
           <div className="text-muted-foreground">
-            Course creation trending up
+            No courses created yet
           </div>
         </CardFooter>
       </Card>
@@ -39,21 +30,12 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Total Students</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            108
+            0
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +15%
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Enrolled across all courses <IconTrendingUp className="size-4" />
-          </div>
           <div className="text-muted-foreground">
-            Strong enrollment growth this month
+            No enrollments yet
           </div>
         </CardFooter>
       </Card>
@@ -61,40 +43,22 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Total Revenue</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $3,258.92
+            $0.00
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +28.4%
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Revenue growth this month <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">From course enrollments</div>
+          <div className="text-muted-foreground">No revenue generated</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Course Completion</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            57 
+            0
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Students completed courses <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">52.8% completion rate</div>
+          <div className="text-muted-foreground">No completions yet</div>
         </CardFooter>
       </Card>
     </div>

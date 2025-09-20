@@ -3,26 +3,14 @@
 import * as React from "react"
 import {
   IconBook,
-  IconCalendar,
-  IconCamera,
   IconChartBar,
   IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
   IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
-  IconSchool,
-  IconSearch,
+  IconPlus,
   IconSettings,
   IconUsers,
-  IconVideo,
-  IconWorldWww,
 } from "@tabler/icons-react"
+import { useUser } from "@clerk/nextjs"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -38,13 +26,10 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const data = {
-  user: {
-    name: "Admin",
-    email: "admin@japanese-shikhi.com",
-    avatar: "/avatars/admin.jpg",
-  },
-  navMain: [
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useUser()
+
+  const navMain = [
     {
       title: "Dashboard",
       url: "/admin-dashboard",
@@ -56,9 +41,9 @@ const data = {
       icon: IconBook,
     },
     {
-      title: "Analytics",
-      url: "/admin-dashboard/analytics",
-      icon: IconChartBar,
+      title: "Add Course",
+      url: "/admin-dashboard/courses/add",
+      icon: IconPlus,
     },
     {
       title: "Users",
@@ -66,133 +51,45 @@ const data = {
       icon: IconUsers,
     },
     {
-      title: "Classes",
-      url: "/admin-dashboard/classes",
-      icon: IconSchool,
+      title: "Analytics",
+      url: "/admin-dashboard/analytics",
+      icon: IconChartBar,
     },
-  ],
-  navCourses: [
-    {
-      title: "Course Management",
-      icon: IconBook,
-      isActive: true,
-      url: "/admin-dashboard/courses",
-      items: [
-        {
-          title: "All Courses",
-          url: "/admin-dashboard/courses",
-        },
-        {
-          title: "Add New Course",
-          url: "/admin-dashboard/courses/add",
-        },
-        {
-          title: "Course Categories",
-          url: "/admin-dashboard/courses/categories",
-        },
-      ],
-    },
-    {
-      title: "Lessons & Curriculum",
-      icon: IconListDetails,
-      url: "/admin-dashboard/lessons",
-      items: [
-        {
-          title: "All Lessons",
-          url: "/admin-dashboard/lessons",
-        },
-        {
-          title: "Add New Lesson",
-          url: "/admin-dashboard/lessons/add",
-        },
-        {
-          title: "Lesson Order",
-          url: "/admin-dashboard/lessons/order",
-        },
-      ],
-    },
-    {
-      title: "Class Links",
-      icon: IconVideo,
-      url: "/admin-dashboard/classes",
-      items: [
-        {
-          title: "Live Classes",
-          url: "/admin-dashboard/classes/live",
-        },
-        {
-          title: "Recorded Classes",
-          url: "/admin-dashboard/classes/recorded",
-        },
-        {
-          title: "Schedule Classes",
-          url: "/admin-dashboard/classes/schedule",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "/admin-dashboard/settings",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "/admin-dashboard/help",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "/admin-dashboard/search",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Student Database",
-      url: "/admin-dashboard/users",
-      icon: IconDatabase,
-    },
-    {
-      name: "Course Reports",
-      url: "/admin-dashboard/reports",
-      icon: IconReport,
-    },
-    {
-      name: "Class Calendar",
-      url: "/admin-dashboard/classes/calendar",
-      icon: IconCalendar,
-    },
-  ],
-}
+  ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const userData = {
+    name: user?.fullName || user?.firstName || "Admin",
+    email: user?.primaryEmailAddress?.emailAddress || "admin@japanese-shikhi.com",
+    avatar: user?.imageUrl || "/avatars/admin.jpg",
+  }
+
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="offcanvas" {...props} className="">
+      <SidebarHeader className="border-b border-border/40">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="h-12 px-3 hover:bg-muted transition-colors duration-200"
             >
-              <a href="/admin-dashboard">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Japanese Shikhi Admin</span>
+              <a href="/admin-dashboard" className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <IconInnerShadowTop className="size-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">Japanese Shikhi</span>
+                  <span className="text-xs text-muted-foreground">Admin Panel</span>
+                </div>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavMain items={data.navCourses} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+      <SidebarContent className="px-0 py-4">
+        <NavMain items={navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
+      <SidebarFooter className="border-t border-border/40 p-4">
+        <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>
   )

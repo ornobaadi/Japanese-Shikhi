@@ -6,15 +6,10 @@ import {
 } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { IconPlus, IconEye, IconEdit, IconTrash, IconSearch, IconFilter, IconDownload } from "@tabler/icons-react"
-
-import adminData from "../admin-data.json"
+import { IconPlus, IconSearch } from "@tabler/icons-react"
 
 export default function CoursesPage() {
   return (
@@ -35,11 +30,13 @@ export default function CoursesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold">All Courses</h1>
-                <p className="text-muted-foreground">Manage your Japanese language courses ({adminData.length} total)</p>
+                <p className="text-muted-foreground">Manage your Japanese language courses</p>
               </div>
-              <Button className="gap-2">
-                <IconPlus className="size-4" />
-                Add New Course
+              <Button className="gap-2" asChild>
+                <a href="/admin-dashboard/courses/add">
+                  <IconPlus className="size-4" />
+                  Add New Course
+                </a>
               </Button>
             </div>
 
@@ -67,7 +64,7 @@ export default function CoursesPage() {
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="coming-soon">Coming Soon</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -108,103 +105,23 @@ export default function CoursesPage() {
               </CardContent>
             </Card>
 
-            {/* Courses Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {adminData.map((course) => (
-                <Card key={course.id} className="h-fit">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg line-clamp-2">{course.courseName}</CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={course.status === "Active" ? "default" : course.status === "Draft" ? "secondary" : "outline"}>
-                            {course.status}
-                          </Badge>
-                          <Badge variant="outline">{course.level}</Badge>
-                          <Badge variant="outline">{course.category}</Badge>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <IconEdit className="size-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Instructor</p>
-                        <p className="font-medium">{course.instructor}</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Enrolled</p>
-                          <p className="font-medium text-lg">{course.enrolled}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Completed</p>
-                          <p className="font-medium text-lg">{course.completed}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Revenue</p>
-                          <p className="font-medium text-lg">${course.revenue.toFixed(2)}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Completion Rate</p>
-                          <p className="font-medium text-lg">
-                            {course.enrolled > 0 ? Math.round((course.completed / course.enrolled) * 100) : 0}%
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-muted-foreground">Last Updated: {course.lastUpdated}</p>
-                      </div>
-                      
-                      <div className="flex gap-2 pt-2">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <IconEye className="size-4 mr-2" />
-                          View
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <IconEdit className="size-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                          <IconTrash className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Bulk Actions */}
+            {/* Empty State */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Bulk Actions</CardTitle>
-                <CardDescription>Select multiple courses to perform bulk operations</CardDescription>
+                <CardTitle>Your Courses</CardTitle>
+                <CardDescription>Create and manage your Japanese language courses</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4">
-                  <Checkbox id="select-all" />
-                  <Label htmlFor="select-all" className="text-sm">Select all courses</Label>
-                  <div className="flex gap-2 ml-auto">
-                    <Button variant="outline" size="sm" disabled>
-                      <IconDownload className="size-4 mr-2" />
-                      Export Selected
-                    </Button>
-                    <Button variant="outline" size="sm" disabled>
-                      Bulk Edit
-                    </Button>
-                    <Button variant="outline" size="sm" disabled className="text-destructive">
-                      Delete Selected
-                    </Button>
+                <div className="text-center py-12">
+                  <div className="text-muted-foreground mb-4">
+                    No courses created yet
                   </div>
+                  <Button asChild>
+                    <a href="/admin-dashboard/courses/add">
+                      <IconPlus className="size-4 mr-2" />
+                      Create Your First Course
+                    </a>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

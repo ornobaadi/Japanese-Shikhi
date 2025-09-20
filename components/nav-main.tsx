@@ -1,8 +1,9 @@
 "use client"
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
+import { type Icon } from "@tabler/icons-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
-import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -20,37 +21,38 @@ export function NavMain({
     icon?: Icon
   }[]
 }) {
+  const pathname = usePathname() || "/"
+
   return (
     <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Quick Create"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-            >
-              <IconCirclePlusFilled />
-              <span>Quick Create</span>
-            </SidebarMenuButton>
-            <Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <IconMail />
-              <span className="sr-only">Inbox</span>
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+      <SidebarGroupContent className="px-2">
+        <SidebarMenu className="space-y-1">
+          {items.map((item) => {
+            // Fix active detection - only exact match or specific sub-routes
+            const isActive = pathname === item.url || 
+              (item.url === "/admin-dashboard/courses" && pathname.startsWith("/admin-dashboard/courses") && pathname !== "/admin-dashboard/courses/add") ||
+              (item.url === "/admin-dashboard/courses/add" && pathname === "/admin-dashboard/courses/add")
+            
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton 
+                  asChild 
+                  className={`
+                    h-10 px-3 rounded-lg transition-all duration-200 ease-in-out
+                    ${isActive 
+                      ? "bg-primary text-primary-foreground shadow-sm font-medium" 
+                      : "hover:bg-muted hover:text-foreground text-muted-foreground"
+                    }
+                  `}
+                >
+                  <Link href={item.url} className="flex items-center gap-3">
+                    {item.icon && <item.icon className="size-5 flex-shrink-0" />}
+                    <span className="text-sm font-medium">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
