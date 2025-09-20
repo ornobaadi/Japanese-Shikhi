@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "courseName": "Japan101 - Hiragana Basics",
+    "instructor": "Tanaka Sensei",
+    "status": "Active",
+    "enrolled": 15,
+    "completed": 8,
+    "level": "N5",
+    "category": "Vocabulary",
+    "lastUpdated": "2025-09-18",
+    "revenue": 299.85
+  },
+  {
+    "id": 2,
+    "courseName": "Japanese Grammar Fundamentals",
+    "instructor": "Sato Sensei", 
+    "status": "Active",
+    "enrolled": 23,
+    "completed": 12,
+    "level": "N4",
+    "category": "Grammar",
+    "lastUpdated": "2025-09-15",
+    "revenue": 459.77
+  },
+  {
+    "id": 3,
+    "courseName": "Katakana Mastery",
+    "instructor": "Yamamoto Sensei",
+    "status": "Draft",
+    "enrolled": 0,
+    "completed": 0,
+    "level": "N5",
+    "category": "Vocabulary",
+    "lastUpdated": "2025-09-10",
+    "revenue": 0
+  },
+  {
+    "id": 4,
+    "courseName": "Business Japanese Conversation",
+    "instructor": "Suzuki Sensei",
+    "status": "Active",
+    "enrolled": 8,
+    "completed": 3,
+    "level": "N2",
+    "category": "Conversation",
+    "lastUpdated": "2025-09-19",
+    "revenue": 639.92
+  },
+  {
+    "id": 5,
+    "courseName": "Kanji for Beginners",
+    "instructor": "Watanabe Sensei",
+    "status": "Active",
+    "enrolled": 31,
+    "completed": 18,
+    "level": "N4",
+    "category": "Kanji",
+    "lastUpdated": "2025-09-17",
+    "revenue": 929.69
+  },
+  {
+    "id": 6,
+    "courseName": "Japanese Culture & Etiquette",
+    "instructor": "Kobayashi Sensei",
+    "status": "Active",
+    "enrolled": 12,
+    "completed": 9,
+    "level": "N3",
+    "category": "Culture",
+    "lastUpdated": "2025-09-16",
+    "revenue": 359.88
+  },
+  {
+    "id": 7,
+    "courseName": "JLPT N3 Preparation",
+    "instructor": "Takahashi Sensei",
+    "status": "Coming Soon",
+    "enrolled": 0,
+    "completed": 0,
+    "level": "N3",
+    "category": "Grammar",
+    "lastUpdated": "2025-09-12",
+    "revenue": 0
+  },
+  {
+    "id": 8,
+    "courseName": "Japanese Reading Comprehension",
+    "instructor": "Inoue Sensei",
+    "status": "Active",
+    "enrolled": 19,
+    "completed": 7,
+    "level": "N3",
+    "category": "Reading",
+    "lastUpdated": "2025-09-14",
+    "revenue": 569.81
+  }
+]
