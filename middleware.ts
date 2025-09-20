@@ -18,10 +18,11 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(new URL('/sign-in', req.url));
   }
 
-  // If user is signed in and accessing root, redirect to dashboard
-  if (userId && pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
-  }
+  // If user is signed in and accessing root, don't redirect to dashboard
+  // Allow them to visit the landing page
+  // if (userId && pathname === '/') {
+  //   return NextResponse.redirect(new URL('/dashboard', req.url));
+  // }
 
   return NextResponse.next();
 });

@@ -141,22 +141,22 @@ export const Navbar5 = () => {
           <div className="flex justify-end flex-1">
             <div className="hidden lg:flex items-center gap-6">
               {isSignedIn ? (
-                <UserButton 
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-8 h-8"
-                    }
-                  }}
-                />
-              ) : (
                 <>
-                  <SignInButton mode="modal">
-                    <Button variant="outline">Sign in</Button>
-                  </SignInButton>
-                  <SignInButton mode="modal">
-                    <Button>Start for free</Button>
-                  </SignInButton>
+                  <Button asChild>
+                    <a href="/dashboard">Dashboard</a>
+                  </Button>
+                  <UserButton 
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-8 h-8"
+                      }
+                    }}
+                  />
                 </>
+              ) : (
+                <SignInButton mode="modal">
+                  <Button>Start for free</Button>
+                </SignInButton>
               )}
             </div>
 
@@ -221,24 +221,24 @@ export const Navbar5 = () => {
 
                     <div className="mt-6 flex flex-col gap-4">
                       {isSignedIn ? (
-                        <div className="flex justify-center">
-                          <UserButton 
-                            appearance={{
-                              elements: {
-                                avatarBox: "w-10 h-10"
-                              }
-                            }}
-                          />
-                        </div>
-                      ) : (
                         <>
-                          <SignInButton mode="modal">
-                            <Button variant="outline">Sign in</Button>
-                          </SignInButton>
-                          <SignInButton mode="modal">
-                            <Button>Start for free</Button>
-                          </SignInButton>
+                          <Button asChild variant="outline">
+                            <a href="/dashboard">Dashboard</a>
+                          </Button>
+                          <div className="flex justify-center">
+                            <UserButton 
+                              appearance={{
+                                elements: {
+                                  avatarBox: "w-10 h-10"
+                                }
+                              }}
+                            />
+                          </div>
                         </>
+                      ) : (
+                        <SignInButton mode="modal">
+                          <Button>Start for free</Button>
+                        </SignInButton>
                       )}
                     </div>
                   </div>
