@@ -30,14 +30,14 @@ export const updateCourseSchema = z.object({
 
 // Course query schemas
 export const getCoursesQuerySchema = z.object({
-  page: z.string().transform(Number).optional().default("1"),
-  limit: z.string().transform(Number).optional().default("10"),
+  page: z.string().transform(Number).optional().default(1),
+  limit: z.string().transform(Number).optional().default(10),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   category: z.enum(['hiragana', 'katakana', 'kanji', 'grammar', 'vocabulary', 'conversation', 'culture']).optional(),
   isPremium: z.string().transform(val => val === 'true').optional(),
-  isPublished: z.string().transform(val => val === 'true').optional().default("true"),
+  isPublished: z.string().transform(val => val === 'true').optional().default(true),
   search: z.string().optional(),
-  sortBy: z.enum(['title', 'difficulty', 'enrollmentCount', 'rating', 'createdAt']).optional().default('order'),
+  sortBy: z.enum(['title', 'difficulty', 'enrollmentCount', 'rating', 'createdAt']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
 });
 

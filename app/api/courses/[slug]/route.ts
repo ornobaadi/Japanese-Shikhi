@@ -7,16 +7,16 @@ import { updateCourseSchema, type UpdateCourseInput } from '@/lib/validations/co
 // GET /api/courses/[slug] - Get course by slug
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     // Connect to database
     await connectDB();
 
-    const { slug } = params;
+    const { slug } = await params;
 
     // Find course by slug
-    const course = await Course.findOne({ slug }).lean();
+    const course = await Course.findOne({ slug });
 
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
@@ -50,7 +50,7 @@ export async function GET(
 // PUT /api/courses/[slug] - Update course (Admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     // Check authentication
@@ -62,7 +62,7 @@ export async function PUT(
     // Connect to database
     await connectDB();
 
-    const { slug } = params;
+    const { slug } = await params;
 
     // Parse and validate request body
     const body = await request.json();
@@ -106,7 +106,7 @@ export async function PUT(
 // DELETE /api/courses/[slug] - Delete course (Admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     // Check authentication
@@ -118,7 +118,7 @@ export async function DELETE(
     // Connect to database
     await connectDB();
 
-    const { slug } = params;
+    const { slug } = await params;
 
     // Find course
     const course = await Course.findOne({ slug });

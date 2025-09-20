@@ -99,7 +99,7 @@ export function createErrorResponse(
     statusCode = 400;
     errorMessage = 'Validation error';
     code = 'VALIDATION_ERROR';
-    details = error.errors.map(err => ({
+    details = error.issues.map(err => ({
       field: err.path.join('.'),
       message: err.message,
       code: err.code,

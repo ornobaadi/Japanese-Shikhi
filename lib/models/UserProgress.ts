@@ -284,7 +284,7 @@ UserProgressSchema.methods.calculateNextReview = function(quality: number) {
 
 // Instance method to add a mistake
 UserProgressSchema.methods.addMistake = function(type: string, description: string) {
-  const existingMistake = this.mistakesMade.find(m => m.type === type && m.description === description);
+  const existingMistake = this.mistakesMade.find((m: { type: string; description: string; count: number; lastOccurrence: Date }) => m.type === type && m.description === description);
 
   if (existingMistake) {
     existingMistake.count += 1;

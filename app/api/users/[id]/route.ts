@@ -7,7 +7,7 @@ import { updateUserSchema, type UpdateUserInput } from '@/lib/validations/user';
 // GET /api/users/[id] - Get user by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -19,7 +19,7 @@ export async function GET(
     // Connect to database
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     // Find user by MongoDB ID or Clerk ID
     const user = await User.findOne({
@@ -47,7 +47,7 @@ export async function GET(
 // PUT /api/users/[id] - Update user
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -59,7 +59,7 @@ export async function PUT(
     // Connect to database
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     // Parse and validate request body
     const body = await request.json();
@@ -122,7 +122,7 @@ export async function PUT(
 // DELETE /api/users/[id] - Delete user
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -134,7 +134,7 @@ export async function DELETE(
     // Connect to database
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     // Find user
     const user = await User.findOne({

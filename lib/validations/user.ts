@@ -59,8 +59,8 @@ export const getUserQuerySchema = z.object({
 });
 
 export const getUsersQuerySchema = z.object({
-  page: z.string().transform(Number).optional().default("1"),
-  limit: z.string().transform(Number).optional().default("10"),
+  page: z.string().transform(Number).optional().default(1),
+  limit: z.string().transform(Number).optional().default(10),
   level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   subscription: z.enum(['free', 'premium', 'lifetime']).optional(),
   sortBy: z.enum(['createdAt', 'totalXP', 'streak']).optional().default('createdAt'),

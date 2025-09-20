@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let event;
+  let event: any;
 
   try {
-    const wh = new Webhook(webhookSecret);
+    const wh = new Webhook(webhookSecret!);
     event = wh.verify(payload, {
       'svix-id': svixId,
       'svix-timestamp': svixTimestamp,

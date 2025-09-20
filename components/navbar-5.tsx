@@ -2,6 +2,7 @@
 
 import { MenuIcon } from "lucide-react";
 import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
+import { useIsAdmin } from "@/lib/hooks/useAuth";
 
 import {
   Accordion,
@@ -29,6 +30,7 @@ import {
 
 export const Navbar5 = () => {
   const { isSignedIn, user } = useUser();
+  const isAdmin = useIsAdmin();
   
   const features = [
     {
@@ -142,9 +144,15 @@ export const Navbar5 = () => {
             <div className="hidden lg:flex items-center gap-6">
               {isSignedIn ? (
                 <>
-                  <Button asChild>
-                    <a href="/dashboard">Dashboard</a>
-                  </Button>
+                  {isAdmin ? (
+                    <Button asChild>
+                      <a href="/admin-dashboard">Admin Dashboard</a>
+                    </Button>
+                  ) : (
+                    <Button asChild>
+                      <a href="/dashboard">Dashboard</a>
+                    </Button>
+                  )}
                   <UserButton 
                     appearance={{
                       elements: {
@@ -222,9 +230,15 @@ export const Navbar5 = () => {
                     <div className="mt-6 flex flex-col gap-4">
                       {isSignedIn ? (
                         <>
-                          <Button asChild variant="outline">
-                            <a href="/dashboard">Dashboard</a>
-                          </Button>
+                          {isAdmin ? (
+                            <Button asChild variant="outline">
+                              <a href="/admin-dashboard">Admin Dashboard</a>
+                            </Button>
+                          ) : (
+                            <Button asChild variant="outline">
+                              <a href="/dashboard">Dashboard</a>
+                            </Button>
+                          )}
                           <div className="flex justify-center">
                             <UserButton 
                               appearance={{
