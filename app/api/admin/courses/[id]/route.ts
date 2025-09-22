@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Course from '@/lib/models/Course';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await connectToDatabase();
   try {
-    const course = await Course.findById(params.id).lean();
+    const { id } = await params;
+    const course = await Course.findById(id).lean();
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
@@ -15,12 +16,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await connectToDatabase();
   try {
+    const { id } = await params;
     const body = await request.json();
     const updatedCourse = await Course.findByIdAndUpdate(
-      params.id,
+      id,
       { ...body, updatedAt: new Date() },
       { new: true, runValidators: true }
     );
@@ -35,10 +37,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await connectToDatabase();
   try {
-    const result = await Course.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const result = await Course.findByIdAndDelete(id);
     if (!result) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }

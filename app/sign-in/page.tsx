@@ -1,6 +1,34 @@
+"use client";
+
 import { SignIn } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { isSignedIn } = useUser();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      // Check if there's a pending course enrollment
+      const pendingCourseId = localStorage.getItem('pendingCourseEnrollment');
+      // Use window.location.search on the client to avoid useSearchParams suspense during prerender
+      const redirectUrl = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('redirect_url')
+        : null;
+
+      if (pendingCourseId) {
+        localStorage.removeItem('pendingCourseEnrollment');
+        router.push(`/payment/${pendingCourseId}`);
+      } else if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push('/dashboard');
+      }
+    }
+  }, [isSignedIn, router]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8">

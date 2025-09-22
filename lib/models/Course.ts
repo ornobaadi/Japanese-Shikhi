@@ -13,6 +13,9 @@ export interface ICourse extends Document {
   isPremium: boolean;
   isPublished: boolean;
   thumbnailUrl?: string;
+  actualPrice?: number;
+  discountedPrice?: number;
+  enrollmentDeadline?: Date;
   instructorNotes?: string;
   learningObjectives: string[];
   prerequisites: string[];
@@ -102,6 +105,35 @@ const CourseSchema = new Schema<ICourse>({
     index: true
   },
   thumbnailUrl: String,
+  actualPrice: {
+    type: Number,
+    min: 0,
+    validate: {
+      validator: function(price: number) {
+        return !this.isPremium || price > 0;
+      },
+      message: 'Premium courses must have a price'
+    }
+  },
+  discountedPrice: {
+    type: Number,
+    min: 0,
+    validate: {
+      validator: function(discountPrice: number) {
+        return !this.actualPrice || discountPrice <= this.actualPrice;
+      },
+      message: 'Discounted price cannot be higher than actual price'
+    }
+  },
+  enrollmentDeadline: {
+    type: Date,
+    validate: {
+      validator: function(deadline: Date) {
+        return !deadline || deadline > new Date();
+      },
+      message: 'Enrollment deadline must be in the future'
+    }
+  },
   instructorNotes: {
     type: String,
     maxlength: 1000
