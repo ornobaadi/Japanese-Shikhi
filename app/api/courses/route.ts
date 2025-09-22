@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import Course from '@/lib/models/Course';
+import Lesson from '@/lib/models/Lesson';
 import User from '@/lib/models/User';
 import { z } from 'zod';
 

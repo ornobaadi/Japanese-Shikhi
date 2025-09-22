@@ -43,71 +43,20 @@ export default function EnrolledCourses() {
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
       try {
-        // This would fetch from your API
-        // For now, using mock data
-        const mockCourses: Course[] = [
-          {
-            _id: '1',
-            title: 'Japanese for Beginners - Hiragana & Katakana',
-            description: 'Master the fundamental writing systems of Japanese language',
-            level: 'beginner',
-            category: 'writing',
-            estimatedDuration: 180,
-            enrolledStudents: 1250,
-            totalLessons: 24,
-            progress: {
-              completedLessons: 8,
-              progressPercentage: 33
-            },
-            nextClass: {
-              date: '2025-09-22T10:00:00Z',
-              meetingLink: 'https://meet.google.com/abc-defg-hij',
-              title: 'Katakana Practice Session'
-            }
-          },
-          {
-            _id: '2',
-            title: 'Essential Japanese Vocabulary',
-            description: 'Learn 1000+ most commonly used Japanese words',
-            level: 'beginner',
-            category: 'vocabulary',
-            estimatedDuration: 240,
-            enrolledStudents: 890,
-            totalLessons: 30,
-            progress: {
-              completedLessons: 15,
-              progressPercentage: 50
-            }
-          },
-          {
-            _id: '3',
-            title: 'Japanese Grammar Fundamentals',
-            description: 'Understand basic Japanese sentence structure and grammar rules',
-            level: 'intermediate',
-            category: 'grammar',
-            estimatedDuration: 300,
-            enrolledStudents: 567,
-            totalLessons: 36,
-            progress: {
-              completedLessons: 3,
-              progressPercentage: 8
-            },
-            nextClass: {
-              date: '2025-09-25T14:00:00Z',
-              meetingLink: 'https://zoom.us/j/123456789',
-              title: 'Particle Usage Workshop'
-            }
-          }
-        ];
-        
-        setCourses(mockCourses);
+        const res = await fetch('/api/users/me/courses');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setCourses(json.data);
+        } else {
+          setCourses([]);
+        }
       } catch (error) {
-        console.error('Error fetching courses:', error);
+        console.error('Error fetching enrolled courses:', error);
+        setCourses([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchEnrolledCourses();
   }, []);
 

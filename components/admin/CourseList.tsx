@@ -315,15 +315,39 @@ export default function CourseList() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <IconEye className="size-4 mr-1" />
-                        View
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/admin-dashboard/courses/${course._id}`}>
+                          <IconEye className="size-4 mr-1" />
+                          View
+                        </Link>
                       </Button>
-                      <Button variant="outline" size="sm">
-                        <IconEdit className="size-4 mr-1" />
-                        Edit
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/admin-dashboard/courses/edit/${course._id}`}>
+                          <IconEdit className="size-4 mr-1" />
+                          Edit
+                        </Link>
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={async () => {
+                          if (confirm(`Are you sure you want to delete course "${course.title}"?`)) {
+                            try {
+                              const res = await fetch(`/api/admin/courses/${course._id}`, { method: 'DELETE' });
+                              if (res.ok) {
+                                toast.success('Course deleted');
+                                setCourses(prev => prev.filter(c => c._id !== course._id));
+                              } else {
+                                const err = await res.json().catch(() => ({}));
+                                toast.error(err.error || 'Failed to delete course');
+                              }
+                            } catch (err) {
+                              toast.error('Failed to delete course');
+                            }
+                          }
+                        }}
+                      >
                         <IconTrash className="size-4 mr-1" />
                         Delete
                       </Button>
