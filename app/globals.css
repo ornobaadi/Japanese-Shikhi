@@ -277,3 +277,23 @@ html:lang(en) {
 .bn-logo, [class*="bn-"], .font-hind-siliguri {
   font-family: var(--font-hind-siliguri, 'Hind Siliguri', 'Noto Sans Bengali', sans-serif) !important;
 }
+
+/* Japanese font support */
+.font-japanese {
+  font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

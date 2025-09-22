@@ -3,6 +3,7 @@
 import { MenuIcon } from "lucide-react";
 import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import { useIsAdmin } from "@/lib/hooks/useAuth";
+import { usePathname } from "next/navigation";
 
 import {
   Accordion,
@@ -31,6 +32,14 @@ import {
 export const Navbar5 = () => {
   const { isSignedIn, user } = useUser();
   const isAdmin = useIsAdmin();
+  const pathname = usePathname();
+  
+  const isActivePath = (path: string) => {
+    if (path === '/courses') {
+      return pathname === '/courses' || pathname?.startsWith('/courses/');
+    }
+    return pathname === path;
+  };
   
   const features = [
     {
@@ -107,6 +116,19 @@ export const Navbar5 = () => {
                       ))}
                     </div>
                   </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    href="/courses"
+                    className={`${navigationMenuTriggerStyle()} ${
+                      isActivePath('/courses') 
+                        ? 'bg-white/20 text-foreground' 
+                        : 'bg-transparent'
+                    } px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
+                  >
+                    Courses
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
@@ -216,6 +238,11 @@ export const Navbar5 = () => {
                     </Accordion>
 
                     <div className="flex flex-col gap-6 mt-4">
+                      <a href="/courses" className={`font-medium ${
+                        isActivePath('/courses') ? 'text-blue-600' : ''
+                      }`}>
+                        Courses
+                      </a>
                       <a href="#" className="font-medium">
                         Templates
                       </a>

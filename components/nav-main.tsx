@@ -28,10 +28,18 @@ export function NavMain({
       <SidebarGroupContent className="px-2">
         <SidebarMenu className="space-y-1">
           {items.map((item) => {
-            // Fix active detection - only exact match or specific sub-routes
-            const isActive = pathname === item.url || 
-              (item.url === "/admin-dashboard/courses" && pathname.startsWith("/admin-dashboard/courses") && pathname !== "/admin-dashboard/courses/add") ||
-              (item.url === "/admin-dashboard/courses/add" && pathname === "/admin-dashboard/courses/add")
+            // Enhanced active detection for both admin and student dashboards
+            let isActive = false
+            
+            if (pathname === item.url) {
+              isActive = true
+            } else if (item.url === "/admin-dashboard/courses" && pathname.startsWith("/admin-dashboard/courses") && pathname !== "/admin-dashboard/courses/add") {
+              isActive = true
+            } else if (item.url === "/admin-dashboard/courses/add" && pathname === "/admin-dashboard/courses/add") {
+              isActive = true
+            } else if (item.url.startsWith("/dashboard/") && pathname.startsWith(item.url)) {
+              isActive = true
+            }
             
             return (
               <SidebarMenuItem key={item.title}>
