@@ -122,12 +122,7 @@ export default function CourseCurriculumPage() {
   };
 
   const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    return 'bg-secondary text-secondary-foreground';
   };
 
   const getLessonIcon = (type: string) => {
@@ -141,7 +136,7 @@ export default function CourseCurriculumPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="h-24" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-8 w-32 mb-6" />
@@ -163,11 +158,11 @@ export default function CourseCurriculumPage() {
 
   if (error || !course) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Course Not Found</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold text-foreground mb-2">Course Not Found</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
           <Button onClick={() => router.push('/courses')} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Courses
@@ -180,7 +175,7 @@ export default function CourseCurriculumPage() {
   const daysLeft = getDaysLeft(course.enrollmentDeadline);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Navbar */}
       <Navbar5 />
       
@@ -202,7 +197,7 @@ export default function CourseCurriculumPage() {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Course Header */}
-            <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
+            <Card className="p-8 mb-6">
               {course.thumbnailUrl && (
                 <div className="aspect-video w-full overflow-hidden rounded-lg mb-6">
                   <img 
@@ -215,12 +210,12 @@ export default function CourseCurriculumPage() {
               
               <div className="flex items-start justify-between mb-4">
                 <div className="flex gap-2">
-                  <Badge className={`${getLevelColor(course.level)}`}>
+                  <Badge variant="secondary">
                     {course.level}
                   </Badge>
                   <Badge variant="outline">{course.category}</Badge>
                   {course.isPremium && (
-                    <Badge variant="outline" className="border-yellow-500 text-yellow-700">
+                    <Badge variant="outline">
                       Premium
                     </Badge>
                   )}
@@ -234,71 +229,71 @@ export default function CourseCurriculumPage() {
                 )}
               </div>
               
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-foreground mb-2">
                 {course.title}
               </h1>
               
               {course.titleJp ? (
-                <h2 className="text-xl text-gray-600 mb-4 font-japanese">
+                <h2 className="text-xl text-muted-foreground mb-4 font-japanese">
                   {course.titleJp}
                 </h2>
               ) : (
-                <div className="text-xl text-gray-400 mb-4">-</div>
+                <div className="text-xl text-muted-foreground mb-4">-</div>
               )}
               
-              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+              <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
                 {course.description || '-'}
               </p>
               
               {course.descriptionJp ? (
-                <p className="text-gray-600 mb-6 font-japanese leading-relaxed">
+                <p className="text-muted-foreground mb-6 font-japanese leading-relaxed">
                   {course.descriptionJp}
                 </p>
               ) : (
-                <p className="text-gray-400 mb-6">-</p>
+                <p className="text-muted-foreground mb-6">-</p>
               )}
 
               {/* Course Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-6 border-t border-b">
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-2">
-                    <Users className="w-5 h-5 text-blue-500" />
+                    <Users className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{course.enrolledStudents || 0}</div>
-                  <div className="text-sm text-gray-600">Students</div>
+                  <div className="text-2xl font-bold text-foreground">{course.enrolledStudents || 0}</div>
+                  <div className="text-sm text-muted-foreground">Students</div>
                 </div>
                 
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-2">
-                    <Clock className="w-5 h-5 text-green-500" />
+                    <Clock className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{course.formattedDuration || '-'}</div>
-                  <div className="text-sm text-gray-600">Duration</div>
+                  <div className="text-2xl font-bold text-foreground">{course.formattedDuration || '-'}</div>
+                  <div className="text-sm text-muted-foreground">Duration</div>
                 </div>
                 
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-2">
-                    <BookOpen className="w-5 h-5 text-purple-500" />
+                    <BookOpen className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{course.totalLessons || 0}</div>
-                  <div className="text-sm text-gray-600">Lessons</div>
+                  <div className="text-2xl font-bold text-foreground">{course.totalLessons || 0}</div>
+                  <div className="text-sm text-muted-foreground">Lessons</div>
                 </div>
                 
                 <div className="text-center">
                   <div className="flex items-center justify-center mb-2">
-                    <Globe className="w-5 h-5 text-orange-500" />
+                    <Globe className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{course.difficultyLabel || '-'}</div>
-                  <div className="text-sm text-gray-600">Difficulty</div>
+                  <div className="text-2xl font-bold text-foreground">{course.difficultyLabel || '-'}</div>
+                  <div className="text-sm text-muted-foreground">Difficulty</div>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Learning Objectives */}
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-blue-500" />
+                  <Target className="w-5 h-5 mr-2 text-muted-foreground" />
                   What You'll Learn
                 </CardTitle>
               </CardHeader>
@@ -308,12 +303,12 @@ export default function CourseCurriculumPage() {
                     {course.learningObjectives.map((objective, index) => (
                       <div key={index} className="flex items-start">
                         <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">{objective}</span>
+                        <span className="text-muted-foreground">{objective}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-gray-500 italic">No learning objectives specified</div>
+                  <div className="text-muted-foreground italic">No learning objectives specified</div>
                 )}
               </CardContent>
             </Card>
@@ -322,7 +317,7 @@ export default function CourseCurriculumPage() {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Award className="w-5 h-5 mr-2 text-orange-500" />
+                  <Award className="w-5 h-5 mr-2 text-muted-foreground" />
                   Prerequisites
                 </CardTitle>
               </CardHeader>
@@ -331,13 +326,13 @@ export default function CourseCurriculumPage() {
                   <ul className="space-y-2">
                     {course.prerequisites.map((prerequisite, index) => (
                       <li key={index} className="flex items-start">
-                        <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-3 flex-shrink-0" />
-                        <span className="text-gray-700">{prerequisite}</span>
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full mt-2 mr-3 flex-shrink-0" />
+                        <span className="text-muted-foreground">{prerequisite}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <div className="text-gray-500 italic">No prerequisites required</div>
+                  <div className="text-muted-foreground italic">No prerequisites required</div>
                 )}
               </CardContent>
             </Card>
@@ -346,7 +341,7 @@ export default function CourseCurriculumPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <BookOpen className="w-5 h-5 mr-2 text-purple-500" />
+                  <BookOpen className="w-5 h-5 mr-2 text-muted-foreground" />
                   Course Curriculum
                 </CardTitle>
               </CardHeader>
@@ -389,27 +384,29 @@ export default function CourseCurriculumPage() {
             <Card className="sticky top-32">
               <CardContent className="p-6">
                 {/* Pricing */}
-                {(course.actualPrice || course.discountedPrice) && (
+                {(
+                  (course as any).actualPrice || (course as any).discountedPrice
+                ) && (
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-2">
-                      <DollarSign className="w-5 h-5 text-gray-600" />
-                      <span className="text-sm text-gray-600">Price</span>
+                      <DollarSign className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Price</span>
                     </div>
                     {course.discountedPrice && course.actualPrice ? (
                       <div className="flex items-center gap-3">
-                        <span className="text-3xl font-bold text-green-600">
-                          ${course.discountedPrice}
+                        <span className="text-3xl font-bold text-foreground">
+                          {`৳${course.discountedPrice}`}
                         </span>
-                        <span className="text-lg text-gray-500 line-through">
-                          ${course.actualPrice}
+                        <span className="text-lg text-muted-foreground line-through">
+                          {`৳${course.actualPrice}`}
                         </span>
-                        <span className="text-sm bg-red-100 text-red-800 px-2 py-1 rounded">
+                        <Badge variant="destructive" className="text-xs">
                           {Math.round((1 - course.discountedPrice / course.actualPrice) * 100)}% OFF
-                        </span>
+                        </Badge>
                       </div>
                     ) : (
-                      <div className="text-3xl font-bold text-gray-900">
-                        ${course.actualPrice || course.discountedPrice}
+                      <div className="text-3xl font-bold text-foreground">
+                        {`৳${course.actualPrice ?? course.discountedPrice ?? 999}`}
                       </div>
                     )}
                   </div>
@@ -417,8 +414,8 @@ export default function CourseCurriculumPage() {
 
                 {/* Enrollment Deadline */}
                 {daysLeft !== null && (
-                  <div className="mb-6 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <div className="flex items-center text-orange-800">
+                  <div className="mb-6 p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <div className="flex items-center text-orange-800 dark:text-orange-200">
                       <Calendar className="w-4 h-4 mr-2" />
                       <span className="font-medium">
                         {daysLeft > 0 ? `${daysLeft} days left to enroll` : 'Enrollment closing soon!'}
@@ -430,7 +427,7 @@ export default function CourseCurriculumPage() {
                 {/* Enroll Button */}
                 <Button 
                   onClick={handleEnrollClick}
-                  className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90 text-lg py-6 mb-4"
+                  className="w-full text-lg py-6 mb-4"
                   size="lg"
                 >
                   Enroll Now
@@ -439,7 +436,7 @@ export default function CourseCurriculumPage() {
                 {/* Course Tags */}
                 {course.tags && course.tags.length > 0 && (
                   <div className="pt-4 border-t">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">Course Tags</h4>
+                    <h4 className="text-sm font-medium text-foreground mb-3">Course Tags</h4>
                     <div className="flex flex-wrap gap-2">
                       {course.tags.map((tag, index) => (
                         <Badge key={index} variant="secondary" className="text-xs">
@@ -452,8 +449,8 @@ export default function CourseCurriculumPage() {
 
                 {/* Languages */}
                 <div className="pt-4 border-t mt-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Languages</h4>
-                  <div className="space-y-2 text-sm text-gray-600">
+                  <h4 className="text-sm font-medium text-foreground mb-3">Languages</h4>
+                  <div className="space-y-2 text-sm text-muted-foreground">
                     <div>Primary: {course.courseLanguage?.primary || '-'}</div>
                     <div>Secondary: {course.courseLanguage?.secondary || '-'}</div>
                   </div>

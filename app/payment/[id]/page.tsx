@@ -42,6 +42,8 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [alreadyEnrolled, setAlreadyEnrolled] = useState(false);
+  const [enrollmentMessage, setEnrollmentMessage] = useState<string | null>(null);
   
   // Form states for dummy payment
   const [formData, setFormData] = useState({
@@ -71,6 +73,21 @@ export default function PaymentPage() {
         
         if (data.success) {
           setCourse(data.data);
+          // After loading course, check enrollment status
+          try {
+            const enrollCheckRes = await fetch('/api/users/me/courses');
+            const enrollCheckJson = await enrollCheckRes.json();
+            if (enrollCheckJson.success && Array.isArray(enrollCheckJson.data)) {
+              const found = enrollCheckJson.data.some((c: any) => c._id === courseId);
+              if (found) {
+                setAlreadyEnrolled(true);
+                setEnrollmentMessage('You are already enrolled in this course. Redirecting...');
+                setTimeout(() => router.push('/dashboard/courses'), 1800);
+              }
+            }
+          } catch (e) {
+            console.warn('Enrollment status check failed', e);
+          }
         } else {
           setError(data.error || 'Course not found');
         }
@@ -89,11 +106,18 @@ export default function PaymentPage() {
 
   const handlePayment = async () => {
     if (!course) return;
-    
-    // Basic validation for dummy form
-    if (!formData.cardNumber || !formData.expiryDate || !formData.cvv || !formData.cardholderName) {
-      alert('Please fill in all payment fields');
+    if (alreadyEnrolled) {
+      router.push('/dashboard/courses');
       return;
+    }
+    const finalPrice = course.discountedPrice || course.actualPrice || 0;
+    
+    // Skip card validation for free courses
+    if (finalPrice > 0) {
+      if (!formData.cardNumber || !formData.expiryDate || !formData.cvv || !formData.cardholderName) {
+        alert('Please fill in all payment fields');
+        return;
+      }
     }
     
     setProcessing(true);
@@ -101,22 +125,57 @@ export default function PaymentPage() {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // TODO: Replace with actual payment processing
-      console.log('Processing payment with dummy data:', {
-        courseId: course._id,
-        userId: user?.id,
-        amount: finalPrice,
-        paymentData: formData
+      // Prepare enrollment data
+      const enrollmentPayload: any = {
+        courseId: course._id
+      };
+      if (finalPrice > 0) {
+        enrollmentPayload.paymentData = {
+          amount: finalPrice,
+          paymentMethod: 'dummy_card',
+          transactionId: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        };
+      }
+
+      console.log('Sending enrollment data:', enrollmentPayload);
+      
+      // Process the enrollment through our API
+      let enrollmentResponse = await fetch('/api/courses/enroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(enrollmentPayload),
       });
+      let enrollmentData = await enrollmentResponse.json();
+
+      // If user was auto-created in backend and first call failed due to race, retry once
+      if (!enrollmentData.success && enrollmentData.error?.toLowerCase().includes('user not found')) {
+        console.warn('First enrollment attempt failed due to missing user. Retrying...');
+        await new Promise(r => setTimeout(r, 400));
+        enrollmentResponse = await fetch('/api/courses/enroll', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(enrollmentPayload),
+        });
+        enrollmentData = await enrollmentResponse.json();
+      }
+
+      if (!enrollmentData.success && !enrollmentData.alreadyEnrolled) {
+        throw new Error(enrollmentData.error || 'Enrollment failed');
+      }
+
+      if (enrollmentData.alreadyEnrolled) {
+        setEnrollmentMessage('You were already enrolled. Redirecting to your courses...');
+      } else {
+        setEnrollmentMessage(finalPrice > 0 ? 'Payment successful! Enrollment complete.' : 'Enrollment successful!');
+      }
       
-      // Simulate successful payment
-      alert(`Payment successful! You have enrolled in "${course.title}"`);
-      
-      // Redirect to dashboard or course page
-      router.push(`/dashboard/courses/${course._id}`);
+      // Redirect to dashboard courses page
+      setTimeout(() => router.push('/dashboard/courses'), 1200);
     } catch (error) {
-      console.error('Payment failed:', error);
-      alert('Payment failed. Please try again.');
+      console.error('Payment/Enrollment failed:', error);
+  setEnrollmentMessage(`Enrollment failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
     } finally {
       setProcessing(false);
     }
@@ -136,7 +195,7 @@ export default function PaymentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="h-24" />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-8 w-32 mb-6" />
@@ -151,11 +210,11 @@ export default function PaymentPage() {
 
   if (error || !course) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Course Not Found</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold text-foreground mb-2">Course Not Found</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
           <Button onClick={() => router.push('/courses')} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Courses
@@ -165,13 +224,28 @@ export default function PaymentPage() {
     );
   }
 
-  const finalPrice = course.discountedPrice || course.actualPrice || 0;
+  const finalPrice = course.discountedPrice ?? course.actualPrice ?? 999;
   const savings = course.actualPrice && course.discountedPrice 
     ? course.actualPrice - course.discountedPrice 
     : 0;
 
+  const formatBDT = (v: number) => `৳${v}`;
+
+  // Debug log to check pricing
+  console.log('Course pricing:', {
+    actualPrice: course.actualPrice,
+    discountedPrice: course.discountedPrice,
+    finalPrice,
+    savings
+  });
+
+  // Show a warning if course has no pricing
+  if (finalPrice === 0 && !course.actualPrice && !course.discountedPrice) {
+    console.warn('Course has no pricing data set');
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Navbar */}
       <Navbar5 />
       
@@ -210,33 +284,33 @@ export default function PaymentPage() {
                   </div>
                 )}
                 
-                <h3 className="text-xl font-semibold mb-3">{course.title}</h3>
+                <h3 className="text-xl font-semibold mb-3 text-foreground">{course.title}</h3>
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Level:</span>
-                    <Badge>{course.level || '-'}</Badge>
+                    <span className="text-muted-foreground">Level:</span>
+                    <Badge variant="secondary">{course.level || '-'}</Badge>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Duration:</span>
-                    <div className="flex items-center">
+                    <span className="text-muted-foreground">Duration:</span>
+                    <div className="flex items-center text-muted-foreground">
                       <Clock className="w-4 h-4 mr-1" />
                       {course.formattedDuration || '-'}
                     </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Lessons:</span>
-                    <div className="flex items-center">
+                    <span className="text-muted-foreground">Lessons:</span>
+                    <div className="flex items-center text-muted-foreground">
                       <BookOpen className="w-4 h-4 mr-1" />
                       {course.totalLessons || 0}
                     </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Students:</span>
-                    <div className="flex items-center">
+                    <span className="text-muted-foreground">Students:</span>
+                    <div className="flex items-center text-muted-foreground">
                       <Users className="w-4 h-4 mr-1" />
                       {course.enrolledStudents || 0}
                     </div>
@@ -245,23 +319,23 @@ export default function PaymentPage() {
 
                 {/* What's Included */}
                 <div className="pt-4 border-t">
-                  <h4 className="font-semibold mb-3">What's included:</h4>
+                  <h4 className="font-semibold mb-3 text-foreground">What's included:</h4>
                   <div className="space-y-2">
-                    <div className="flex items-center">
+                    <div className="flex items-center text-muted-foreground">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      <span className="text-sm">Lifetime access to course materials</span>
+                      <span className="text-sm text-muted-foreground">Lifetime access to course materials</span>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center text-muted-foreground">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      <span className="text-sm">Interactive lessons and exercises</span>
+                      <span className="text-sm text-muted-foreground">Interactive lessons and exercises</span>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center text-muted-foreground">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      <span className="text-sm">Progress tracking</span>
+                      <span className="text-sm text-muted-foreground">Progress tracking</span>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center text-muted-foreground">
                       <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                      <span className="text-sm">Certificate of completion</span>
+                      <span className="text-sm text-muted-foreground">Certificate of completion</span>
                     </div>
                   </div>
                 </div>
@@ -281,42 +355,43 @@ export default function PaymentPage() {
               <CardContent>
                 <div className="space-y-4 mb-6">
                   <div className="flex items-center justify-between">
-                    <span>Course Price:</span>
-                    {course.actualPrice && course.discountedPrice ? (
-                      <div className="text-right">
-                        <div className="text-lg font-semibold text-green-600">
-                          ${course.discountedPrice}
-                        </div>
-                        <div className="text-sm text-gray-500 line-through">
-                          ${course.actualPrice}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-lg font-semibold">
-                        ${finalPrice}
-                      </span>
-                    )}
+                    <span className="text-muted-foreground">Course Price:</span>
+                                    {course.actualPrice && course.discountedPrice ? (
+                                      <div className="text-right">
+                                        <div className="text-lg font-semibold text-foreground">
+                                          {formatBDT(course.discountedPrice as number)}
+                                        </div>
+                                        <div className="text-sm text-muted-foreground line-through">
+                                          {formatBDT(course.actualPrice as number)}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-lg font-semibold text-foreground">
+                                        {formatBDT(finalPrice)}
+                                      </span>
+                                    )}
                   </div>
                   
                   {savings > 0 && (
                     <div className="flex items-center justify-between text-green-600">
                       <span>You Save:</span>
-                      <span className="font-semibold">${savings}</span>
+                      <span className="font-semibold">{formatBDT(savings)}</span>
                     </div>
                   )}
                   
                   <hr />
                   
-                  <div className="flex items-center justify-between text-lg font-bold">
+                  <div className="flex items-center justify-between text-lg font-bold text-foreground">
                     <span>Total:</span>
-                    <span>${finalPrice}</span>
+                    <span>{formatBDT(finalPrice)}</span>
                   </div>
                 </div>
 
-                {/* Payment Form */}
+                {/* Payment / Enrollment Form */}
+                {finalPrice > 0 && !alreadyEnrolled && (
                 <div className="space-y-4 mb-6">
                   <div>
-                    <Label htmlFor="cardholderName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <Label htmlFor="cardholderName" className="block text-sm font-medium text-foreground mb-2">
                       Cardholder Name
                     </Label>
                     <Input
@@ -331,7 +406,7 @@ export default function PaymentPage() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                    <Label htmlFor="cardNumber" className="block text-sm font-medium text-foreground mb-2">
                       Card Number
                     </Label>
                     <Input
@@ -348,7 +423,7 @@ export default function PaymentPage() {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-2">
+                      <Label htmlFor="expiryDate" className="block text-sm font-medium text-foreground mb-2">
                         Expiry Date
                       </Label>
                       <Input
@@ -363,7 +438,7 @@ export default function PaymentPage() {
                     </div>
                     
                     <div>
-                      <Label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-2">
+                      <Label htmlFor="cvv" className="block text-sm font-medium text-foreground mb-2">
                         CVV
                       </Label>
                       <Input
@@ -378,27 +453,36 @@ export default function PaymentPage() {
                     </div>
                   </div>
                 </div>
+                )}
 
-                {/* Security Notice */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                {finalPrice === 0 && !alreadyEnrolled && (
+                  <div className="mb-6 p-4 rounded-md border text-sm text-muted-foreground">
+                    This course is free. Click the button below to enroll instantly.
+                  </div>
+                )}
+
+                {/* Security Notice (only for paid) */}
+                {finalPrice > 0 && !alreadyEnrolled && (
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
                   <div className="flex items-start">
                     <Shield className="w-5 h-5 text-blue-500 mr-2 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-semibold text-blue-900">
+                      <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
                         Secure Payment
                       </h4>
-                      <p className="text-sm text-blue-700">
+                      <p className="text-sm text-blue-700 dark:text-blue-200">
                         Your payment information is encrypted and secure.
                       </p>
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Enroll Button */}
                 <Button 
                   onClick={handlePayment}
-                  disabled={processing}
-                  className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90 text-lg py-6"
+                  disabled={processing || alreadyEnrolled}
+                  className="w-full text-lg py-6"
                   size="lg"
                 >
                   {processing ? (
@@ -406,17 +490,29 @@ export default function PaymentPage() {
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                       Processing...
                     </>
-                  ) : (
+                  ) : alreadyEnrolled ? (
+                    'Already Enrolled'
+                  ) : finalPrice > 0 ? (
                     <>
                       <DollarSign className="w-5 h-5 mr-2" />
-                      Complete Enrollment (${finalPrice})
+                      Complete Enrollment ({formatBDT(finalPrice)})
                     </>
+                  ) : (
+                    'Enroll Free'
                   )}
                 </Button>
 
-                <p className="text-xs text-gray-500 text-center mt-4">
-                  By enrolling, you agree to our Terms of Service and Privacy Policy.
-                </p>
+                {enrollmentMessage && (
+                  <p className="text-xs text-center mt-4 text-muted-foreground">
+                    {enrollmentMessage}
+                  </p>
+                )}
+
+                {!enrollmentMessage && (
+                  <p className="text-xs text-muted-foreground text-center mt-4">
+                    By enrolling, you agree to our Terms of Service and Privacy Policy.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>

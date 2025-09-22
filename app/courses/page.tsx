@@ -89,19 +89,14 @@ export default function CoursesPage() {
   };
 
   const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    return 'bg-secondary text-secondary-foreground';
   };
 
   const CourseCard = ({ course }: { course: Course }) => {
     const daysLeft = getDaysLeft(course.enrollmentDeadline);
     
     return (
-      <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-300">
+      <Card className="h-full flex flex-col hover:shadow-md transition-all duration-200 border-0 shadow-sm">
         {course.thumbnailUrl && (
           <div className="aspect-video w-full overflow-hidden rounded-t-lg">
             <img 
@@ -112,9 +107,9 @@ export default function CoursesPage() {
           </div>
         )}
         
-        <CardHeader className="flex-1">
-          <div className="flex items-start justify-between mb-2">
-            <Badge className={`${getLevelColor(course.level)} text-xs`}>
+        <CardHeader className="flex-1 p-6">
+          <div className="flex items-start justify-between mb-3">
+            <Badge variant="secondary" className="text-xs">
               {course.level}
             </Badge>
             {course.isPremium && (
@@ -124,7 +119,7 @@ export default function CoursesPage() {
             )}
           </div>
           
-          <h3 className="text-lg font-semibold line-clamp-2 mb-2">
+          <h3 className="text-lg font-semibold line-clamp-2 mb-2 text-foreground">
             {course.title}
           </h3>
           
@@ -132,54 +127,53 @@ export default function CoursesPage() {
             {course.description}
           </p>
           
-          <div className="space-y-2">
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Users className="w-3 h-3 mr-1" />
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center text-muted-foreground">
+              <Users className="w-4 h-4 mr-2" />
               <span>{course.enrolledStudents} students</span>
             </div>
             
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Clock className="w-3 h-3 mr-1" />
-              <span>{course.formattedDuration}</span>
-            </div>
-            
-            <div className="flex items-center text-xs text-muted-foreground">
-              <BookOpen className="w-3 h-3 mr-1" />
+            <div className="flex items-center text-muted-foreground">
+              <BookOpen className="w-4 h-4 mr-2" />
               <span>{course.totalLessons} lessons</span>
             </div>
             
-            {course.averageRating > 0 && (
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-                <span>{course.averageRating.toFixed(1)} ({course.totalRatings} reviews)</span>
-              </div>
-            )}
+            <div className="flex items-center text-muted-foreground">
+              <Clock className="w-4 h-4 mr-2" />
+              <span>{course.formattedDuration}</span>
+            </div>
             
             {daysLeft !== null && (
-              <div className="flex items-center text-xs text-orange-600">
-                <Calendar className="w-3 h-3 mr-1" />
-                <span>{daysLeft} days left to enroll</span>
+              <div className="flex items-center text-orange-600">
+                <Calendar className="w-4 h-4 mr-2" />
+                <span>{daysLeft} days left</span>
               </div>
             )}
           </div>
+          
+          {course.averageRating > 0 && (
+            <div className="flex items-center mt-3 text-sm text-muted-foreground">
+              <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
+              <span>{course.averageRating.toFixed(1)} ({course.totalRatings} reviews)</span>
+            </div>
+          )}
         </CardHeader>
         
-        <CardFooter className="pt-0 flex flex-col gap-3">
-          {(course.actualPrice || course.discountedPrice) && (
-            <div className="flex items-center gap-2 w-full">
-              <DollarSign className="w-4 h-4 text-muted-foreground" />
+        <CardFooter className="pt-0 px-6 pb-6 flex flex-col gap-3">
+          {(course.actualPrice || course.discountedPrice || true) && (
+            <div className="flex items-center justify-between w-full">
               {course.discountedPrice && course.actualPrice ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-green-600">
-                    ${course.discountedPrice}
+                  <span className="text-xl font-bold text-foreground">
+                    ৳{course.discountedPrice}
                   </span>
                   <span className="text-sm text-muted-foreground line-through">
-                    ${course.actualPrice}
+                    ৳{course.actualPrice}
                   </span>
                 </div>
               ) : (
-                <span className="text-lg font-bold">
-                  ${course.actualPrice || course.discountedPrice}
+                <span className="text-xl font-bold text-foreground">
+                  ৳{course.actualPrice ?? course.discountedPrice ?? 999}
                 </span>
               )}
             </div>
@@ -188,7 +182,7 @@ export default function CoursesPage() {
           <div className="flex gap-2 w-full">
             <Button 
               onClick={() => handleEnrollClick(course._id)}
-              className="flex-1 bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90"
+              className="flex-1"
             >
               Enroll Now
             </Button>
@@ -209,7 +203,7 @@ export default function CoursesPage() {
     const daysLeft = getDaysLeft(course.enrollmentDeadline);
     
     return (
-      <Card className="p-6 hover:shadow-lg transition-shadow duration-300">
+      <Card className="p-6 hover:shadow-md transition-all duration-200 border-0 shadow-sm">
         <div className="flex gap-6">
           {course.thumbnailUrl && (
             <div className="w-48 aspect-video overflow-hidden rounded-lg flex-shrink-0">
@@ -224,7 +218,7 @@ export default function CoursesPage() {
           <div className="flex-1 flex flex-col">
             <div className="flex items-start justify-between mb-3">
               <div className="flex gap-2">
-                <Badge className={`${getLevelColor(course.level)} text-xs`}>
+                <Badge variant="secondary" className="text-xs">
                   {course.level}
                 </Badge>
                 {course.isPremium && (
@@ -234,52 +228,51 @@ export default function CoursesPage() {
                 )}
               </div>
               
-              {(course.actualPrice || course.discountedPrice) && (
+              {(course.actualPrice || course.discountedPrice || true) && (
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
                   {course.discountedPrice && course.actualPrice ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold text-green-600">
-                        ${course.discountedPrice}
+                      <span className="text-xl font-bold text-foreground">
+                        ৳{course.discountedPrice}
                       </span>
                       <span className="text-sm text-muted-foreground line-through">
-                        ${course.actualPrice}
+                        ৳{course.actualPrice}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-xl font-bold">
-                      ${course.actualPrice || course.discountedPrice}
+                    <span className="text-xl font-bold text-foreground">
+                      ৳{course.actualPrice ?? course.discountedPrice ?? 999}
                     </span>
                   )}
                 </div>
               )}
             </div>
             
-            <h3 className="text-xl font-semibold mb-2">{course.title}</h3>
+            <h3 className="text-xl font-semibold mb-2 text-foreground">{course.title}</h3>
             <p className="text-muted-foreground mb-4 line-clamp-2">{course.description}</p>
             
             <div className="flex items-center gap-6 mb-4 text-sm text-muted-foreground">
               <div className="flex items-center">
-                <Users className="w-4 h-4 mr-1" />
+                <Users className="w-4 h-4 mr-2" />
                 <span>{course.enrolledStudents} students</span>
               </div>
               <div className="flex items-center">
-                <Clock className="w-4 h-4 mr-1" />
+                <Clock className="w-4 h-4 mr-2" />
                 <span>{course.formattedDuration}</span>
               </div>
               <div className="flex items-center">
-                <BookOpen className="w-4 h-4 mr-1" />
+                <BookOpen className="w-4 h-4 mr-2" />
                 <span>{course.totalLessons} lessons</span>
               </div>
               {course.averageRating > 0 && (
                 <div className="flex items-center">
-                  <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
+                  <Star className="w-4 h-4 mr-2 fill-yellow-400 text-yellow-400" />
                   <span>{course.averageRating.toFixed(1)} ({course.totalRatings})</span>
                 </div>
               )}
               {daysLeft !== null && (
                 <div className="flex items-center text-orange-600">
-                  <Calendar className="w-4 h-4 mr-1" />
+                  <Calendar className="w-4 h-4 mr-2" />
                   <span>{daysLeft} days left</span>
                 </div>
               )}
@@ -288,7 +281,6 @@ export default function CoursesPage() {
             <div className="flex gap-3 mt-auto">
               <Button 
                 onClick={() => handleEnrollClick(course._id)}
-                className="bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90"
               >
                 Enroll Now
               </Button>
@@ -322,7 +314,7 @@ export default function CoursesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Navbar */}
       <Navbar5 />
       
@@ -334,14 +326,14 @@ export default function CoursesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">All Courses</h1>
-              <p className="mt-2 text-lg text-gray-600">
+              <h1 className="text-3xl font-bold text-foreground">All Courses</h1>
+              <p className="mt-2 text-lg text-muted-foreground">
                 Discover the perfect course to advance your Japanese learning journey
               </p>
             </div>
             
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">View:</span>
+              <span className="text-sm text-muted-foreground">View:</span>
               <ToggleGroup 
                 type="single" 
                 value={viewMode} 
@@ -366,9 +358,9 @@ export default function CoursesPage() {
           <LoadingSkeleton />
         ) : courses.length === 0 ? (
           <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No courses found</h3>
-            <p className="text-gray-600">Check back later for new courses!</p>
+            <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">No courses found</h3>
+            <p className="text-muted-foreground">Check back later for new courses!</p>
           </div>
         ) : (
           <div className={

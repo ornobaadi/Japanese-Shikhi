@@ -2,14 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Course from '@/lib/models/Course';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Next.js App Router will pass the dynamic params in the second argument
+// Adjust to avoid warnings if signature expectations change between versions
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await connectToDatabase();
 
-    const course = await Course.findById(params.id)
+    const resolvedParams = await context.params;
+    const courseId = resolvedParams?.id;
+    if (!courseId) {
+      return NextResponse.json(
+        { success: false, error: 'Course ID missing' },
+        { status: 400 }
+      );
+    }
+
+    const course = await Course.findById(courseId)
       .populate('lessons', 'title estimatedDuration type')
       .select('-instructorNotes -metadata.createdBy');
 
