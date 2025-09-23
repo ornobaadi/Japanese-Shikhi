@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { IconDeviceFloppy, IconLoader2 } from '@tabler/icons-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CourseFormData {
   title: string;
@@ -22,14 +23,19 @@ interface CourseFormData {
   isPremium: boolean;
   isPublished: boolean;
   learningObjectives: string[];
-  prerequisites: string[];
-  tags: string[];
+  links: string[];
   thumbnailUrl: string;
   instructorNotes: string;
+  whatYoullLearn: string;
+  courseLessonModule: string;
+  actualPrice: string;
+  discountedPrice: string;
+  enrollmentLastDate: string;
 }
 
 export default function CourseForm() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CourseFormData>({
     title: '',
@@ -41,10 +47,14 @@ export default function CourseForm() {
     isPremium: false,
     isPublished: false,
     learningObjectives: [''],
-    prerequisites: [],
-    tags: [],
+    links: [''],
     thumbnailUrl: '',
-    instructorNotes: ''
+    instructorNotes: '',
+    whatYoullLearn: '',
+    courseLessonModule: '',
+    actualPrice: '',
+    discountedPrice: '',
+    enrollmentLastDate: ''
   });
 
   const handleInputChange = (field: keyof CourseFormData, value: any) => {
@@ -82,36 +92,58 @@ export default function CourseForm() {
     }
   };
 
+  // Helper functions for Links
+  const addLink = () => {
+    setFormData(prev => ({
+      ...prev,
+      links: [...prev.links, '']
+    }));
+  };
+
+  const removeLink = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      links: prev.links.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateLink = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      links: prev.links.map((link, i) => i === index ? value : link)
+    }));
+  };
+
   const handleSubmit = async (publishImmediately: boolean = false) => {
     setIsLoading(true);
-    
+
     try {
       // Validation
       if (!formData.title.trim()) {
         toast.error('Course title is required');
         return;
       }
-      
+
       if (!formData.description.trim()) {
         toast.error('Course description is required');
         return;
       }
-      
+
       if (!formData.level) {
         toast.error('Course level is required');
         return;
       }
-      
+
       if (!formData.category) {
         toast.error('Course category is required');
         return;
       }
-      
+
       if (!formData.estimatedDuration || parseInt(formData.estimatedDuration) <= 0) {
         toast.error('Valid estimated duration is required');
         return;
       }
-      
+
       const validObjectives = formData.learningObjectives.filter(obj => obj.trim());
       if (validObjectives.length === 0) {
         toast.error('At least one learning objective is required');
@@ -122,6 +154,7 @@ export default function CourseForm() {
         ...formData,
         isPublished: publishImmediately,
         learningObjectives: validObjectives,
+        links: formData.links.filter(link => link.trim()),
         estimatedDuration: parseInt(formData.estimatedDuration),
         difficulty: parseInt(formData.difficulty)
       };
@@ -160,28 +193,40 @@ export default function CourseForm() {
     <div className="max-w-3xl mx-auto w-full">
       <Card>
         <CardHeader>
-          <CardTitle>Course Information</CardTitle>
-          <CardDescription>Basic details about your course</CardDescription>
+          <CardTitle>{t('admin.createCourse')}</CardTitle>
+          <CardDescription>
+            {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+              ? 'আপনার কোর্স সম্পর্কে মৌলিক বিবরণ'
+              : 'Basic details about your course'}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
             <div>
-              <Label htmlFor="title">Course Title *</Label>
-              <Input 
-                id="title" 
-                placeholder="e.g., Japan101 - Hiragana Basics"
+              <Label htmlFor="title">{t('form.title')} *</Label>
+              <Input
+                id="title"
+                placeholder={
+                  t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                    ? 'যেমন, Japan101 - হিরাগানা বেসিক'
+                    : 'e.g., Japan101 - Hiragana Basics'
+                }
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 required
               />
             </div>
-            
+
             <div>
-              <Label htmlFor="description">Description *</Label>
-              <Textarea 
-                id="description" 
-                placeholder="Describe what students will learn in this course..."
+              <Label htmlFor="description">{t('form.description')} *</Label>
+              <Textarea
+                id="description"
+                placeholder={
+                  t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                    ? 'শিক্ষার্থীরা এই কোর্সে কী শিখবে তা বর্ণনা করুন...'
+                    : 'Describe what students will learn in this course...'
+                }
                 rows={4}
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
@@ -189,35 +234,116 @@ export default function CourseForm() {
               />
             </div>
 
+            <div>
+              <Label htmlFor="whatYoullLearn">{t('form.whatYoullLearn')}</Label>
+              <Textarea
+                id="whatYoullLearn"
+                placeholder={
+                  t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                    ? 'শিক্ষার্থীরা এই কোর্স থেকে কী শিখবে...'
+                    : 'What will students learn from this course...'
+                }
+                value={formData.whatYoullLearn}
+                onChange={(e) => handleInputChange('whatYoullLearn', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="courseLessonModule">{t('form.courseLessonModule')}</Label>
+              <Textarea
+                id="courseLessonModule"
+                placeholder={
+                  t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                    ? 'কোর্সের পাঠ্যক্রম, পাঠ এবং মডিউল বর্ণনা করুন...'
+                    : 'Describe the course curriculum, lessons, and modules...'
+                }
+                value={formData.courseLessonModule}
+                onChange={(e) => handleInputChange('courseLessonModule', e.target.value)}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="level">JLPT Level *</Label>
+                <Label htmlFor="actualPrice">{t('form.actualPrice')}</Label>
+                <Input
+                  id="actualPrice"
+                  placeholder={t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '৳৯৯.৯৯' : '$99.99'}
+                  value={formData.actualPrice}
+                  onChange={(e) => handleInputChange('actualPrice', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="discountedPrice">{t('form.discountedPrice')}</Label>
+                <Input
+                  id="discountedPrice"
+                  placeholder={t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '৳৪৯.৯৯' : '$49.99'}
+                  value={formData.discountedPrice}
+                  onChange={(e) => handleInputChange('discountedPrice', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="enrollmentLastDate">{t('form.enrollmentLastDate')}</Label>
+              <Input
+                id="enrollmentLastDate"
+                placeholder={
+                  t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                    ? '৩১ ডিসেম্বর, ২০২৫'
+                    : 'December 31, 2025'
+                }
+                value={formData.enrollmentLastDate}
+                onChange={(e) => handleInputChange('enrollmentLastDate', e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="level">{t('form.level')} *</Label>
                 <Select value={formData.level} onValueChange={(value) => handleInputChange('level', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select level" />
+                    <SelectValue placeholder={
+                      t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'স্তর নির্বাচন করুন' : 'Select level'
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="beginner">{t('courses.beginner')}</SelectItem>
+                    <SelectItem value="intermediate">{t('courses.intermediate')}</SelectItem>
+                    <SelectItem value="advanced">{t('courses.advanced')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
-                <Label htmlFor="category">Category *</Label>
+                <Label htmlFor="category">{t('form.category')} *</Label>
                 <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={
+                      t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'বিভাগ নির্বাচন করুন' : 'Select category'
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vocabulary">Vocabulary</SelectItem>
-                    <SelectItem value="grammar">Grammar</SelectItem>
-                    <SelectItem value="kanji">Kanji</SelectItem>
-                    <SelectItem value="conversation">Conversation</SelectItem>
-                    <SelectItem value="reading">Reading</SelectItem>
-                    <SelectItem value="writing">Writing</SelectItem>
-                    <SelectItem value="culture">Culture</SelectItem>
+                    <SelectItem value="vocabulary">
+                      {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'শব্দভান্ডার' : 'Vocabulary'}
+                    </SelectItem>
+                    <SelectItem value="grammar">
+                      {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'ব্যাকরণ' : 'Grammar'}
+                    </SelectItem>
+                    <SelectItem value="kanji">
+                      {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'কাঞ্জি' : 'Kanji'}
+                    </SelectItem>
+                    <SelectItem value="conversation">
+                      {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'কথোপকথন' : 'Conversation'}
+                    </SelectItem>
+                    <SelectItem value="reading">
+                      {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'পড়া' : 'Reading'}
+                    </SelectItem>
+                    <SelectItem value="writing">
+                      {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'লেখা' : 'Writing'}
+                    </SelectItem>
+                    <SelectItem value="culture">
+                      {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সংস্কৃতি' : 'Culture'}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -225,10 +351,10 @@ export default function CourseForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="duration">Estimated Duration (minutes) *</Label>
-                <Input 
-                  id="duration" 
-                  type="number" 
+                <Label htmlFor="duration">{t('form.estimatedDuration')} *</Label>
+                <Input
+                  id="duration"
+                  type="number"
                   min="5"
                   max="600"
                   placeholder="60"
@@ -238,10 +364,10 @@ export default function CourseForm() {
                 />
               </div>
               <div>
-                <Label htmlFor="difficulty">Difficulty (1-10)</Label>
-                <Input 
-                  id="difficulty" 
-                  type="number" 
+                <Label htmlFor="difficulty">{t('form.difficultyLevel')}</Label>
+                <Input
+                  id="difficulty"
+                  type="number"
                   min="1"
                   max="10"
                   value={formData.difficulty}
@@ -254,14 +380,14 @@ export default function CourseForm() {
           {/* Learning Objectives */}
           <div className="space-y-4">
             <div>
-              <Label>Learning Objectives *</Label>
+              <Label>{t('form.learningObjectives')} *</Label>
               <p className="text-sm text-muted-foreground mb-3">
-                What will students learn from this course?
+                {t('form.learningObjectivesDesc')}
               </p>
               {formData.learningObjectives.map((objective, index) => (
                 <div key={index} className="flex gap-2 mb-2">
                   <Input
-                    placeholder={`Learning objective ${index + 1}`}
+                    placeholder={`${t('form.learningObjectiveNum')} ${index + 1}`}
                     value={objective}
                     onChange={(e) => handleObjectiveChange(index, e.target.value)}
                     className="flex-1"
@@ -286,7 +412,48 @@ export default function CourseForm() {
                   onClick={addObjective}
                   className="mt-2"
                 >
-                  Add Objective
+                  {t('form.addObjective')}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Links */}
+          <div className="space-y-4">
+            <div>
+              <Label>{t('form.links')}</Label>
+              <p className="text-sm text-muted-foreground mb-3">
+                {t('form.linksDesc')}
+              </p>
+              {formData.links.map((link, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <Input
+                    placeholder={`Link ${index + 1}`}
+                    value={link}
+                    onChange={(e) => updateLink(index, e.target.value)}
+                    className="flex-1"
+                  />
+                  {formData.links.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeLink(index)}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {formData.links.length < 10 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addLink}
+                  className="mt-2"
+                >
+                  {t('form.addLink')}
                 </Button>
               )}
             </div>
@@ -295,21 +462,21 @@ export default function CourseForm() {
           {/* Additional Information */}
           <div className="space-y-4">
             <div>
-              <Label htmlFor="thumbnailUrl">Thumbnail URL (optional)</Label>
-              <Input 
-                id="thumbnailUrl" 
+              <Label htmlFor="thumbnailUrl">{t('form.thumbnailUrlOptional')}</Label>
+              <Input
+                id="thumbnailUrl"
                 type="url"
-                placeholder="https://example.com/image.jpg"
+                placeholder={t('form.thumbnailPlaceholder')}
                 value={formData.thumbnailUrl}
                 onChange={(e) => handleInputChange('thumbnailUrl', e.target.value)}
               />
             </div>
 
             <div>
-              <Label htmlFor="instructorNotes">Instructor Notes (optional)</Label>
-              <Textarea 
-                id="instructorNotes" 
-                placeholder="Additional notes for instructors..."
+              <Label htmlFor="instructorNotes">{t('form.instructorNotesOptional')}</Label>
+              <Textarea
+                id="instructorNotes"
+                placeholder={t('form.instructorNotesPlaceholder')}
                 rows={3}
                 value={formData.instructorNotes}
                 onChange={(e) => handleInputChange('instructorNotes', e.target.value)}
@@ -320,20 +487,20 @@ export default function CourseForm() {
           {/* Settings */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="premium" 
+              <Checkbox
+                id="premium"
                 checked={formData.isPremium}
                 onCheckedChange={(checked) => handleInputChange('isPremium', checked)}
               />
-              <Label htmlFor="premium">Premium Course</Label>
+              <Label htmlFor="premium">{t('form.premiumCourse')}</Label>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-6">
-            <Button 
+            <Button
               type="button"
-              variant="outline" 
+              variant="outline"
               className="flex-1"
               onClick={() => handleSubmit(false)}
               disabled={isLoading}
@@ -343,9 +510,9 @@ export default function CourseForm() {
               ) : (
                 <IconDeviceFloppy className="size-4 mr-2" />
               )}
-              Save as Draft
+              {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'খসড়া হিসেবে সংরক্ষণ' : 'Save as Draft'}
             </Button>
-            <Button 
+            <Button
               type="button"
               className="flex-1"
               onClick={() => handleSubmit(true)}
@@ -356,7 +523,7 @@ export default function CourseForm() {
               ) : (
                 <IconDeviceFloppy className="size-4 mr-2" />
               )}
-              Save & Publish
+              {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সংরক্ষণ ও প্রকাশ' : 'Save & Publish'}
             </Button>
           </div>
         </CardContent>

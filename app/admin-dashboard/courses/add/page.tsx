@@ -1,3 +1,5 @@
+'use client';
+
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -5,8 +7,11 @@ import { Button } from "@/components/ui/button";
 import { IconArrowLeft } from "@tabler/icons-react";
 import CourseForm from "@/components/admin/CourseForm";
 import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function AddCoursePage() {
+  const { t } = useLanguage();
+
   return (
     <SidebarProvider
       style={
@@ -24,8 +29,8 @@ export default function AddCoursePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold">Add New Course</h1>
-                  <p className="text-muted-foreground">Create a new Japanese language course</p>
+                  <h1 className="text-2xl font-bold">{t('admin.addNewCourse')}</h1>
+                  <p className="text-muted-foreground">{t('admin.createNewCourseDesc')}</p>
                 </div>
               </div>
             </div>

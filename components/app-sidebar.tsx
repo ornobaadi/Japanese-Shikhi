@@ -25,33 +25,35 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser()
+  const { t } = useLanguage()
 
   const navMain = [
     {
-      title: "Dashboard",
+      title: t('admin.dashboard'),
       url: "/admin-dashboard",
       icon: IconDashboard,
     },
     {
-      title: "All Courses",
+      title: t('admin.allCourses'),
       url: "/admin-dashboard/courses",
       icon: IconBook,
     },
     {
-      title: "Add Course",
+      title: t('admin.addCourse'),
       url: "/admin-dashboard/courses/add",
       icon: IconPlus,
     },
     {
-      title: "Users",
+      title: t('admin.users'),
       url: "/admin-dashboard/users",
       icon: IconUsers,
     },
     {
-      title: "Analytics",
+      title: t('admin.analytics'),
       url: "/admin-dashboard/analytics",
       icon: IconChartBar,
     },
@@ -77,8 +79,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <IconInnerShadowTop className="size-4" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold">Japanese Shikhi</span>
-                  <span className="text-xs text-muted-foreground">Admin Panel</span>
+                  <span className="text-sm font-semibold">{t('admin.japaneseShikhi')}</span>
+                  <span className="text-xs text-muted-foreground">{t('admin.adminPanel')}</span>
                 </div>
               </a>
             </SidebarMenuButton>
