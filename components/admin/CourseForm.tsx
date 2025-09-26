@@ -35,7 +35,7 @@ interface CourseFormData {
 
 export default function CourseForm() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CourseFormData>({
     title: '',
@@ -267,7 +267,7 @@ export default function CourseForm() {
                 <Label htmlFor="actualPrice">{t('form.actualPrice')}</Label>
                 <Input
                   id="actualPrice"
-                  placeholder={t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '৳৯৯.৯৯' : '$99.99'}
+                  placeholder="৳৯৯.৯৯"
                   value={formData.actualPrice}
                   onChange={(e) => handleInputChange('actualPrice', e.target.value)}
                 />
@@ -276,7 +276,7 @@ export default function CourseForm() {
                 <Label htmlFor="discountedPrice">{t('form.discountedPrice')}</Label>
                 <Input
                   id="discountedPrice"
-                  placeholder={t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '৳৪৯.৯৯' : '$49.99'}
+                  placeholder="৳৪৯.৯৯"
                   value={formData.discountedPrice}
                   onChange={(e) => handleInputChange('discountedPrice', e.target.value)}
                 />

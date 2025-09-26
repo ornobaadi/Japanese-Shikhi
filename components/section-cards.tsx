@@ -89,11 +89,11 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>{t('admin.totalRevenue')}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {stats.loading ? '...' : `$${stats.totalRevenue.toFixed(2)}`}
+            {stats.loading ? '...' : `৳${stats.totalRevenue.toFixed(2)}`}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="text-muted-foreground">{stats.loading ? t('common.loading') : (stats.totalRevenue === 0 ? t('admin.noRevenue') : `Revenue: $${stats.totalRevenue.toFixed(2)}`)}</div>
+          <div className="text-muted-foreground">{stats.loading ? t('common.loading') : (stats.totalRevenue === 0 ? t('admin.noRevenue') : `Revenue: ৳${stats.totalRevenue.toFixed(2)}`)}</div>
         </CardFooter>
       </Card>
       <Card className="@container/card">

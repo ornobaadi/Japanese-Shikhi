@@ -228,7 +228,7 @@ export default function Courses() {
                         <div className="text-center space-y-2">
                           {course.price ? (
                             <div>
-                              <div className="text-3xl font-bold text-gray-900">${course.price}</div>
+                              <div className="text-3xl font-bold text-gray-900">৳{course.price}</div>
                               <div className="text-sm text-gray-500">
                                 {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'এক-সময় পেমেন্ট' : 'One-time payment'}
                               </div>

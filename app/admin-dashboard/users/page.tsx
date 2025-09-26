@@ -87,7 +87,7 @@ export default function UsersPage() {
                   <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">$0.00</div>
+                  <div className="text-2xl font-bold">৳০.০০</div>
                   <p className="text-xs text-muted-foreground">No revenue yet</p>
                 </CardContent>
               </Card>

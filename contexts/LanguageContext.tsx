@@ -317,6 +317,11 @@ const translations = {
         'admin.whatYoullLearnPlaceholder': 'শিক্ষার্থীরা এই কোর্স থেকে কী শিখবে...',
         'admin.courseLessonModulePlaceholder': 'কোর্সের পাঠ্যক্রম, পাঠ এবং মডিউল বর্ণনা করুন...',
 
+        // Currency
+        'currency.bdt': 'টাকা',
+        'currency.symbol': '৳',
+        'currency.code': 'BDT',
+
         // Common
         'common.loading': 'লোড হচ্ছে...',
         'common.error': 'ত্রুটি',
@@ -629,6 +634,11 @@ const translations = {
         'admin.descriptionPlaceholder': 'Describe what students will learn in this course...',
         'admin.whatYoullLearnPlaceholder': 'What will students learn from this course...',
         'admin.courseLessonModulePlaceholder': 'Describe the course curriculum, lessons, and modules...',
+
+        // Currency
+        'currency.bdt': 'Taka',
+        'currency.symbol': '৳',
+        'currency.code': 'BDT',
 
         // Common
         'common.loading': 'Loading...',

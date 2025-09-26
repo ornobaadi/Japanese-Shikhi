@@ -126,7 +126,7 @@ export default function Pricing() {
                   <div className="space-y-2">
                     <div className="flex items-baseline space-x-2">
                       <span className="text-4xl font-bold text-gray-900">
-                        ${plan.price}
+                        ৳{plan.price}
                       </span>
                       <span className="text-lg text-gray-500">
                         /{plan.duration}

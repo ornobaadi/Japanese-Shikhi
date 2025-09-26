@@ -278,7 +278,7 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                     <Label htmlFor="actualPrice">{t('admin.actualPrice')}</Label>
                     <Input
                       id="actualPrice"
-                      placeholder="$99.99"
+                      placeholder="৳৯৯.৯৯"
                       value={formData.actualPrice}
                       onChange={(e) => handleInputChange('actualPrice', e.target.value)}
                     />
@@ -287,7 +287,7 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                     <Label htmlFor="discountedPrice">{t('admin.discountedPrice')}</Label>
                     <Input
                       id="discountedPrice"
-                      placeholder="$49.99"
+                      placeholder="৳৪৯.৯৯"
                       value={formData.discountedPrice}
                       onChange={(e) => handleInputChange('discountedPrice', e.target.value)}
                     />

@@ -6,6 +6,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useUser } from "@clerk/nextjs"
 import { IconHome } from "@tabler/icons-react"
 import { useLanguage } from '@/contexts/LanguageContext'
+import LanguageToggle from "@/components/ui/language-toggle"
 
 export function SiteHeader() {
   const { user } = useUser()
@@ -23,6 +24,7 @@ export function SiteHeader() {
           {t('admin.welcome')}, {user?.firstName || "Admin"}
         </h1>
         <div className="ml-auto flex items-center gap-2">
+          <LanguageToggle />
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
               href="/"
