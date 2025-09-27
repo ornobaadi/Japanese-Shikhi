@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  BookOpen, 
-  Users, 
-  Clock, 
+import {
+  BookOpen,
+  Users,
+  Clock,
   Calendar,
   ExternalLink,
   Play,
@@ -37,77 +38,27 @@ interface Course {
 }
 
 export default function EnrolledCourses() {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
       try {
-        // This would fetch from your API
-        // For now, using mock data
-        const mockCourses: Course[] = [
-          {
-            _id: '1',
-            title: 'Japanese for Beginners - Hiragana & Katakana',
-            description: 'Master the fundamental writing systems of Japanese language',
-            level: 'beginner',
-            category: 'writing',
-            estimatedDuration: 180,
-            enrolledStudents: 1250,
-            totalLessons: 24,
-            progress: {
-              completedLessons: 8,
-              progressPercentage: 33
-            },
-            nextClass: {
-              date: '2025-09-22T10:00:00Z',
-              meetingLink: 'https://meet.google.com/abc-defg-hij',
-              title: 'Katakana Practice Session'
-            }
-          },
-          {
-            _id: '2',
-            title: 'Essential Japanese Vocabulary',
-            description: 'Learn 1000+ most commonly used Japanese words',
-            level: 'beginner',
-            category: 'vocabulary',
-            estimatedDuration: 240,
-            enrolledStudents: 890,
-            totalLessons: 30,
-            progress: {
-              completedLessons: 15,
-              progressPercentage: 50
-            }
-          },
-          {
-            _id: '3',
-            title: 'Japanese Grammar Fundamentals',
-            description: 'Understand basic Japanese sentence structure and grammar rules',
-            level: 'intermediate',
-            category: 'grammar',
-            estimatedDuration: 300,
-            enrolledStudents: 567,
-            totalLessons: 36,
-            progress: {
-              completedLessons: 3,
-              progressPercentage: 8
-            },
-            nextClass: {
-              date: '2025-09-25T14:00:00Z',
-              meetingLink: 'https://zoom.us/j/123456789',
-              title: 'Particle Usage Workshop'
-            }
-          }
-        ];
-        
-        setCourses(mockCourses);
+        const res = await fetch('/api/users/me/courses');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setCourses(json.data);
+        } else {
+          setCourses([]);
+        }
       } catch (error) {
-        console.error('Error fetching courses:', error);
+        console.error('Error fetching enrolled courses:', error);
+        setCourses([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchEnrolledCourses();
   }, []);
 
@@ -128,9 +79,9 @@ export default function EnrolledCourses() {
 
   const formatNextClass = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -141,7 +92,7 @@ export default function EnrolledCourses() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>My Enrolled Courses</CardTitle>
+          <CardTitle>{t('courses.myEnrolledCourses')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -160,19 +111,19 @@ export default function EnrolledCourses() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>My Enrolled Courses</CardTitle>
+          <CardTitle>{t('courses.myEnrolledCourses')}</CardTitle>
           <CardDescription>
-            Continue learning with your enrolled courses
+            {t('courses.continueLearning')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">
-              No courses found. Start your learning journey by enrolling in a course!
+              {t('courses.noCourses')}
             </p>
             <Button asChild>
-              <a href="/">Browse Courses</a>
+              <a href="/">{t('courses.browseCourses')}</a>
             </Button>
           </div>
         </CardContent>
@@ -198,7 +149,7 @@ export default function EnrolledCourses() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   <Badge className={getLevelColor(course.level)}>
                     {course.level}
@@ -207,15 +158,15 @@ export default function EnrolledCourses() {
                     {course.category}
                   </Badge>
                 </div>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4" />
-                    <span>{course.enrolledStudents.toLocaleString()} students</span>
+                    <span>{course.enrolledStudents.toLocaleString()} {t('courses.students')}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <BookOpen className="h-4 w-4" />
-                    <span>{course.totalLessons} lessons</span>
+                    <span>{course.totalLessons} {t('courses.lessons')}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4" />
@@ -224,23 +175,23 @@ export default function EnrolledCourses() {
                   {course.progress && (
                     <div className="flex items-center space-x-2">
                       <Play className="h-4 w-4" />
-                      <span>{course.progress.completedLessons} completed</span>
+                      <span>{course.progress.completedLessons} {t('courses.completed')}</span>
                     </div>
                   )}
                 </div>
-                
+
                 {/* Progress Bar */}
                 {course.progress && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Progress</span>
+                      <span>{t('courses.progress')}</span>
                       <span>{course.progress.progressPercentage}%</span>
                     </div>
                     <Progress value={course.progress.progressPercentage} className="h-2" />
                   </div>
                 )}
               </div>
-              
+
               {/* Actions & Next Class */}
               <div className="space-y-4">
                 {course.nextClass && (
@@ -249,7 +200,7 @@ export default function EnrolledCourses() {
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2 text-blue-800">
                           <Calendar className="h-4 w-4" />
-                          <span className="text-sm font-medium">Next Class</span>
+                          <span className="text-sm font-medium">{t('courses.nextClass')}</span>
                         </div>
                         <p className="text-sm text-blue-700 font-medium">
                           {course.nextClass.title}
@@ -257,25 +208,25 @@ export default function EnrolledCourses() {
                         <p className="text-xs text-blue-600">
                           {formatNextClass(course.nextClass.date)}
                         </p>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           className="w-full"
                           onClick={() => window.open(course.nextClass!.meetingLink, '_blank')}
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          Join Class
+                          {t('courses.joinClass')}
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
                 )}
-                
+
                 <div className="space-y-2">
                   <Button className="w-full" variant="default">
-                    Continue Learning
+                    {t('courses.continueStudying')}
                   </Button>
                   <Button className="w-full" variant="outline">
-                    View Curriculum
+                    {t('courses.viewCurriculum')}
                   </Button>
                 </div>
               </div>

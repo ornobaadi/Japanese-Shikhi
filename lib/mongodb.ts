@@ -1,4 +1,9 @@
 import mongoose from 'mongoose';
+import './models/Lesson';
+import './models/Course';
+import './models/User';
+import './models/UserProgress';
+import './models/Vocabulary';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || 'Japanese';

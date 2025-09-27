@@ -3,11 +3,13 @@
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
   const { isLoaded, isSignedIn } = useUser();
+  const { t } = useLanguage();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
 
@@ -26,7 +28,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-muted-foreground">Loading dashboard...</p>
+          <p className="text-muted-foreground">{t('dashboard.loading')}</p>
         </div>
       </div>
     );
