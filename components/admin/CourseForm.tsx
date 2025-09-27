@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { IconDeviceFloppy, IconLoader2 } from '@tabler/icons-react';
+import { IconDeviceFloppy, IconLoader2, IconSettings } from '@tabler/icons-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -31,12 +31,49 @@ interface CourseFormData {
   actualPrice: string;
   discountedPrice: string;
   enrollmentLastDate: string;
+  classModules: ClassModule[];
+  classLinks: ClassLink[];
+  youtubeResources: Resource[];
+  enrolledStudents: EnrolledStudent[];
+}
+
+interface ClassModule {
+  id: string;
+  title: string;
+  content: string;
+  order: number;
+}
+
+interface ClassLink {
+  id: string;
+  title: string;
+  meetingUrl: string;
+  schedule: string;
+  description: string;
+}
+
+interface Resource {
+  id: string;
+  title: string;
+  url: string;
+  type: 'youtube' | 'document' | 'website';
+  description: string;
+}
+
+interface EnrolledStudent {
+  id: string;
+  name: string;
+  email: string;
+  enrollmentDate: string;
+  progress: number;
+  status: 'active' | 'inactive';
 }
 
 export default function CourseForm() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdvancedModal, setShowAdvancedModal] = useState(false);
   const [formData, setFormData] = useState<CourseFormData>({
     title: '',
     description: '',
@@ -54,7 +91,11 @@ export default function CourseForm() {
     courseLessonModule: '',
     actualPrice: '',
     discountedPrice: '',
-    enrollmentLastDate: ''
+    enrollmentLastDate: '',
+    classModules: [],
+    classLinks: [],
+    youtubeResources: [],
+    enrolledStudents: []
   });
 
   const handleInputChange = (field: keyof CourseFormData, value: any) => {
@@ -235,28 +276,20 @@ export default function CourseForm() {
             </div>
 
             <div>
-              <Label htmlFor="whatYoullLearn">{t('What You will Learn')}</Label>
+              <Label htmlFor="whatYoullLearn">{t('form.whatYoullLearn')}</Label>
               <Textarea
                 id="whatYoullLearn"
-                placeholder={
-                  t('nav.features') === 'বৈশিষ্ট্যসমূহ'
-                    ? 'শিক্ষার্থীরা এই কোর্স থেকে কী শিখবে...'
-                    : 'What will students learn from this course...'
-                }
+                placeholder={t('form.whatYoullLearnPlaceholder')}
                 value={formData.whatYoullLearn}
                 onChange={(e) => handleInputChange('whatYoullLearn', e.target.value)}
               />
             </div>
 
             <div>
-              <Label htmlFor="courseLessonModule">{t('Course Lesson Module')}</Label>
+              <Label htmlFor="courseLessonModule">{t('form.courseLessonModule')}</Label>
               <Textarea
                 id="courseLessonModule"
-                placeholder={
-                  t('nav.features') === 'বৈশিষ্ট্যসমূহ'
-                    ? 'কোর্সের পাঠ্যক্রম, পাঠ এবং মডিউল বর্ণনা করুন...'
-                    : 'Describe the course curriculum, lessons, and modules...'
-                }
+                placeholder={t('form.courseLessonModulePlaceholder')}
                 value={formData.courseLessonModule}
                 onChange={(e) => handleInputChange('courseLessonModule', e.target.value)}
               />
@@ -264,7 +297,7 @@ export default function CourseForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="actualPrice">{t('Actual Price')}</Label>
+                <Label htmlFor="actualPrice">{t('form.actualPrice')}</Label>
                 <Input
                   id="actualPrice"
                   placeholder="BDT99.99"
@@ -273,7 +306,7 @@ export default function CourseForm() {
                 />
               </div>
               <div>
-                <Label htmlFor="discountedPrice">{t('Discounted Price')}</Label>
+                <Label htmlFor="discountedPrice">{t('form.discountedPrice')}</Label>
                 <Input
                   id="discountedPrice"
                   placeholder="BDT 49.99"
@@ -284,7 +317,7 @@ export default function CourseForm() {
             </div>
 
             <div>
-              <Label htmlFor="enrollmentLastDate">{t('Enrollment Last Date')}</Label>
+              <Label htmlFor="enrollmentLastDate">{t('form.enrollmentLastDate')}</Label>
               <Input
                 id="enrollmentLastDate"
                 placeholder={
@@ -483,6 +516,475 @@ export default function CourseForm() {
               />
             </div>
           </div>
+
+          {/* Advanced Course Management Button */}
+          <div className="space-y-4">
+            <div className="border-t pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowAdvancedModal(true)}
+              >
+                <IconSettings className="size-4 mr-2" />
+                Advanced Course Management
+              </Button>
+              <p className="text-sm text-muted-foreground mt-2 text-center">
+                Manage class modules, links, resources, and enrolled students
+              </p>
+            </div>
+          </div>
+
+          {/* Advanced Course Management Modal */}
+          {showAdvancedModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                <div className="flex justify-between items-center p-6 border-b">
+                  <div>
+                    <h2 className="text-2xl font-bold">Advanced Course Management</h2>
+                    <p className="text-gray-600">Manage detailed course content and student information</p>
+                  </div>
+                  <Button variant="outline" onClick={() => setShowAdvancedModal(false)}>
+                    ✕
+                  </Button>
+                </div>
+
+                <div className="p-6 max-h-[70vh] overflow-y-auto space-y-8">
+                  {/* Class Modules Section */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Class Modules</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Add class modules to organize your course content
+                      </p>
+
+                      {formData.classModules.map((module, index) => (
+                        <div key={module.id} className="border rounded-lg p-4 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <Label>Module Title</Label>
+                              <Input
+                                value={module.title}
+                                onChange={(e) => {
+                                  const newModules = [...formData.classModules];
+                                  newModules[index].title = e.target.value;
+                                  handleInputChange('classModules', newModules);
+                                }}
+                                placeholder="e.g., Introduction to Hiragana"
+                              />
+                            </div>
+                            <div>
+                              <Label>Order</Label>
+                              <Input
+                                type="number"
+                                value={module.order}
+                                onChange={(e) => {
+                                  const newModules = [...formData.classModules];
+                                  newModules[index].order = parseInt(e.target.value);
+                                  handleInputChange('classModules', newModules);
+                                }}
+                                min="1"
+                              />
+                            </div>
+                          </div>
+                          <div className="mb-4">
+                            <Label>Module Content</Label>
+                            <Textarea
+                              value={module.content}
+                              onChange={(e) => {
+                                const newModules = [...formData.classModules];
+                                newModules[index].content = e.target.value;
+                                handleInputChange('classModules', newModules);
+                              }}
+                              placeholder="Describe the module content and learning objectives..."
+                              rows={3}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newModules = formData.classModules.filter((_, i) => i !== index);
+                              handleInputChange('classModules', newModules);
+                            }}
+                          >
+                            Remove Module
+                          </Button>
+                        </div>
+                      ))}
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const newModule: ClassModule = {
+                            id: Date.now().toString(),
+                            title: '',
+                            content: '',
+                            order: formData.classModules.length + 1
+                          };
+                          handleInputChange('classModules', [...formData.classModules, newModule]);
+                        }}
+                      >
+                        Add Class Module
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Class Links Section */}
+                  <div className="space-y-4">
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-4">Class Links</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Add meeting links for live classes
+                      </p>
+
+                      {formData.classLinks.map((link, index) => (
+                        <div key={link.id} className="border rounded-lg p-4 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <Label>Link Title</Label>
+                              <Input
+                                value={link.title}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.classLinks];
+                                  newLinks[index].title = e.target.value;
+                                  handleInputChange('classLinks', newLinks);
+                                }}
+                                placeholder="e.g., Weekly Grammar Class"
+                              />
+                            </div>
+                            <div>
+                              <Label>Meeting URL</Label>
+                              <Input
+                                type="url"
+                                value={link.meetingUrl}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.classLinks];
+                                  newLinks[index].meetingUrl = e.target.value;
+                                  handleInputChange('classLinks', newLinks);
+                                }}
+                                placeholder="https://zoom.us/j/123456789"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <Label>Schedule</Label>
+                              <Input
+                                type="datetime-local"
+                                value={link.schedule}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.classLinks];
+                                  newLinks[index].schedule = e.target.value;
+                                  handleInputChange('classLinks', newLinks);
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label>Description</Label>
+                              <Input
+                                value={link.description}
+                                onChange={(e) => {
+                                  const newLinks = [...formData.classLinks];
+                                  newLinks[index].description = e.target.value;
+                                  handleInputChange('classLinks', newLinks);
+                                }}
+                                placeholder="Brief description of the class"
+                              />
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newLinks = formData.classLinks.filter((_, i) => i !== index);
+                              handleInputChange('classLinks', newLinks);
+                            }}
+                          >
+                            Remove Link
+                          </Button>
+                        </div>
+                      ))}
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const newLink: ClassLink = {
+                            id: Date.now().toString(),
+                            title: '',
+                            meetingUrl: '',
+                            schedule: '',
+                            description: ''
+                          };
+                          handleInputChange('classLinks', [...formData.classLinks, newLink]);
+                        }}
+                      >
+                        Add Class Link
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* YouTube/Resources Section */}
+                  <div className="space-y-4">
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-4">YouTube / Resources</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Add YouTube videos and other learning resources
+                      </p>
+
+                      {formData.youtubeResources.map((resource, index) => (
+                        <div key={resource.id} className="border rounded-lg p-4 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <Label>Resource Title</Label>
+                              <Input
+                                value={resource.title}
+                                onChange={(e) => {
+                                  const newResources = [...formData.youtubeResources];
+                                  newResources[index].title = e.target.value;
+                                  handleInputChange('youtubeResources', newResources);
+                                }}
+                                placeholder="e.g., Hiragana Writing Practice"
+                              />
+                            </div>
+                            <div>
+                              <Label>Resource URL</Label>
+                              <Input
+                                type="url"
+                                value={resource.url}
+                                onChange={(e) => {
+                                  const newResources = [...formData.youtubeResources];
+                                  newResources[index].url = e.target.value;
+                                  handleInputChange('youtubeResources', newResources);
+                                }}
+                                placeholder="https://youtube.com/watch?v=..."
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <Label>Resource Type</Label>
+                              <Select
+                                value={resource.type}
+                                onValueChange={(value: 'youtube' | 'document' | 'website') => {
+                                  const newResources = [...formData.youtubeResources];
+                                  newResources[index].type = value;
+                                  handleInputChange('youtubeResources', newResources);
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="youtube">YouTube</SelectItem>
+                                  <SelectItem value="document">Document</SelectItem>
+                                  <SelectItem value="website">Website</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>Description</Label>
+                              <Input
+                                value={resource.description}
+                                onChange={(e) => {
+                                  const newResources = [...formData.youtubeResources];
+                                  newResources[index].description = e.target.value;
+                                  handleInputChange('youtubeResources', newResources);
+                                }}
+                                placeholder="Brief description of the resource"
+                              />
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newResources = formData.youtubeResources.filter((_, i) => i !== index);
+                              handleInputChange('youtubeResources', newResources);
+                            }}
+                          >
+                            Remove Resource
+                          </Button>
+                        </div>
+                      ))}
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const newResource: Resource = {
+                            id: Date.now().toString(),
+                            title: '',
+                            url: '',
+                            type: 'youtube',
+                            description: ''
+                          };
+                          handleInputChange('youtubeResources', [...formData.youtubeResources, newResource]);
+                        }}
+                      >
+                        Add Resource
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Enrolled Students Section */}
+                  <div className="space-y-4">
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-4">Enrolled Students Info</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Manage enrolled students for this course
+                      </p>
+
+                      {formData.enrolledStudents.map((student, index) => (
+                        <div key={student.id} className="border rounded-lg p-4 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <Label>Student Name</Label>
+                              <Input
+                                value={student.name}
+                                onChange={(e) => {
+                                  const newStudents = [...formData.enrolledStudents];
+                                  newStudents[index].name = e.target.value;
+                                  handleInputChange('enrolledStudents', newStudents);
+                                }}
+                                placeholder="e.g., Ahmed Hassan"
+                              />
+                            </div>
+                            <div>
+                              <Label>Email</Label>
+                              <Input
+                                type="email"
+                                value={student.email}
+                                onChange={(e) => {
+                                  const newStudents = [...formData.enrolledStudents];
+                                  newStudents[index].email = e.target.value;
+                                  handleInputChange('enrolledStudents', newStudents);
+                                }}
+                                placeholder="student@example.com"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                              <Label>Enrollment Date</Label>
+                              <Input
+                                type="date"
+                                value={student.enrollmentDate}
+                                onChange={(e) => {
+                                  const newStudents = [...formData.enrolledStudents];
+                                  newStudents[index].enrollmentDate = e.target.value;
+                                  handleInputChange('enrolledStudents', newStudents);
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label>Progress (%)</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={student.progress}
+                                onChange={(e) => {
+                                  const newStudents = [...formData.enrolledStudents];
+                                  newStudents[index].progress = parseInt(e.target.value);
+                                  handleInputChange('enrolledStudents', newStudents);
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label>Status</Label>
+                              <Select
+                                value={student.status}
+                                onValueChange={(value: 'active' | 'inactive') => {
+                                  const newStudents = [...formData.enrolledStudents];
+                                  newStudents[index].status = value;
+                                  handleInputChange('enrolledStudents', newStudents);
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="active">Active</SelectItem>
+                                  <SelectItem value="inactive">Inactive</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newStudents = formData.enrolledStudents.filter((_, i) => i !== index);
+                              handleInputChange('enrolledStudents', newStudents);
+                            }}
+                          >
+                            Remove Student
+                          </Button>
+                        </div>
+                      ))}
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const newStudent: EnrolledStudent = {
+                            id: Date.now().toString(),
+                            name: '',
+                            email: '',
+                            enrollmentDate: new Date().toISOString().split('T')[0],
+                            progress: 0,
+                            status: 'active'
+                          };
+                          handleInputChange('enrolledStudents', [...formData.enrolledStudents, newStudent]);
+                        }}
+                      >
+                        Add Student
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Assignment/Quiz Section (Coming Soon) */}
+                  <div className="space-y-4">
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-4">Assignment / Quiz</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Assignment and quiz management - Coming Soon
+                      </p>
+                      <div className="border rounded-lg p-8 text-center">
+                        <p className="text-muted-foreground">This feature will be available soon!</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 border-t">
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAdvancedModal(false)}
+                    >
+                      Close
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowAdvancedModal(false);
+                        toast.success('Advanced settings saved!');
+                      }}
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Settings */}
           <div className="space-y-4">
