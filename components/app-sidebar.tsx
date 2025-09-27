@@ -16,7 +16,6 @@ import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
-import LanguageToggle from "@/components/ui/language-toggle"
 import {
   Sidebar,
   SidebarContent,
@@ -91,10 +90,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="px-0 py-4">
         <NavMain items={navMain} />
       </SidebarContent>
-      <SidebarFooter className="border-t border-border/40 p-4 space-y-2">
-        <div className="flex justify-center">
-          <LanguageToggle />
-        </div>
+      <SidebarFooter className="border-t border-border/40 p-4">
         <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>

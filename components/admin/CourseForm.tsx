@@ -235,7 +235,7 @@ export default function CourseForm() {
             </div>
 
             <div>
-              <Label htmlFor="whatYoullLearn">{t('form.whatYoullLearn')}</Label>
+              <Label htmlFor="whatYoullLearn">{t('What You will Learn')}</Label>
               <Textarea
                 id="whatYoullLearn"
                 placeholder={
@@ -249,7 +249,7 @@ export default function CourseForm() {
             </div>
 
             <div>
-              <Label htmlFor="courseLessonModule">{t('form.courseLessonModule')}</Label>
+              <Label htmlFor="courseLessonModule">{t('Course Lesson Module')}</Label>
               <Textarea
                 id="courseLessonModule"
                 placeholder={
@@ -264,19 +264,19 @@ export default function CourseForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="actualPrice">{t('form.actualPrice')}</Label>
+                <Label htmlFor="actualPrice">{t('Actual Price')}</Label>
                 <Input
                   id="actualPrice"
-                  placeholder="৳৯৯.৯৯"
+                  placeholder="BDT99.99"
                   value={formData.actualPrice}
                   onChange={(e) => handleInputChange('actualPrice', e.target.value)}
                 />
               </div>
               <div>
-                <Label htmlFor="discountedPrice">{t('form.discountedPrice')}</Label>
+                <Label htmlFor="discountedPrice">{t('Discounted Price')}</Label>
                 <Input
                   id="discountedPrice"
-                  placeholder="৳৪৯.৯৯"
+                  placeholder="BDT 49.99"
                   value={formData.discountedPrice}
                   onChange={(e) => handleInputChange('discountedPrice', e.target.value)}
                 />
@@ -284,7 +284,7 @@ export default function CourseForm() {
             </div>
 
             <div>
-              <Label htmlFor="enrollmentLastDate">{t('form.enrollmentLastDate')}</Label>
+              <Label htmlFor="enrollmentLastDate">{t('Enrollment Last Date')}</Label>
               <Input
                 id="enrollmentLastDate"
                 placeholder={
