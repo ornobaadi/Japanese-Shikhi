@@ -190,7 +190,7 @@ export default function CourseForm() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-5xl mx-auto">
       <Card>
         <CardHeader>
           <CardTitle>{t('admin.createCourse')}</CardTitle>
@@ -200,10 +200,9 @@ export default function CourseForm() {
               : 'Basic details about your course'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-8">
-          {/* Basic Information - Full width for most fields */}
-          <div className="space-y-6">
-            {/* Title - Full width */}
+        <CardContent className="space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
             <div>
               <Label htmlFor="title">{t('form.title')} *</Label>
               <Input
@@ -218,8 +217,6 @@ export default function CourseForm() {
                 required
               />
             </div>
-
-            {/* Description - Full width */}
 
             <div>
               <Label htmlFor="description">{t('form.description')} *</Label>
