@@ -35,6 +35,30 @@ interface CourseFormData {
   classLinks: ClassLink[];
   youtubeResources: Resource[];
   enrolledStudents: EnrolledStudent[];
+  weeklyContent: WeeklyContent[];
+}
+
+interface WeeklyContent {
+  id: string;
+  week: number;
+  videoLinks: VideoLink[];
+  documents: DocumentFile[];
+  comments: string;
+}
+
+interface VideoLink {
+  id: string;
+  title: string;
+  url: string;
+  description: string;
+}
+
+interface DocumentFile {
+  id: string;
+  title: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: 'pdf' | 'doc' | 'docx' | 'other';
 }
 
 interface ClassModule {
@@ -74,7 +98,11 @@ export default function CourseForm() {
   const { t, language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [showAdvancedModal, setShowAdvancedModal] = useState(false);
-  const [formData, setFormData] = useState<CourseFormData>({
+  const [activeWeekTab, setActiveWeekTab] = useState(1);
+  const [activeCourseIndex, setActiveCourseIndex] = useState(0);
+
+  // Initial course data template
+  const getInitialCourseData = (): CourseFormData => ({
     title: '',
     description: '',
     level: '',
@@ -95,14 +123,61 @@ export default function CourseForm() {
     classModules: [],
     classLinks: [],
     youtubeResources: [],
-    enrolledStudents: []
+    enrolledStudents: [],
+    weeklyContent: [
+      { id: '1', week: 1, videoLinks: [], documents: [], comments: '' },
+      { id: '2', week: 2, videoLinks: [], documents: [], comments: '' },
+      { id: '3', week: 3, videoLinks: [], documents: [], comments: '' },
+      { id: '4', week: 4, videoLinks: [], documents: [], comments: '' }
+    ]
   });
+
+  const [courses, setCourses] = useState<CourseFormData[]>([getInitialCourseData()]);
+  const [formData, setFormData] = useState<CourseFormData>(getInitialCourseData());
 
   const handleInputChange = (field: keyof CourseFormData, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+
+    // Also update the active course in courses array
+    setCourses(prevCourses => {
+      const newCourses = [...prevCourses];
+      newCourses[activeCourseIndex] = {
+        ...newCourses[activeCourseIndex],
+        [field]: value
+      };
+      return newCourses;
+    });
+  };
+
+  const addNewCourse = () => {
+    const newCourse = getInitialCourseData();
+    setCourses(prev => [...prev, newCourse]);
+    setActiveCourseIndex(courses.length);
+    setFormData(newCourse);
+  };
+
+  const switchToCourse = (index: number) => {
+    setActiveCourseIndex(index);
+    setFormData(courses[index]);
+  };
+
+  const removeCourse = (index: number) => {
+    if (courses.length > 1) {
+      const newCourses = courses.filter((_, i) => i !== index);
+      setCourses(newCourses);
+
+      // Adjust active course index
+      if (index === activeCourseIndex) {
+        const newActiveIndex = index > 0 ? index - 1 : 0;
+        setActiveCourseIndex(newActiveIndex);
+        setFormData(newCourses[newActiveIndex]);
+      } else if (index < activeCourseIndex) {
+        setActiveCourseIndex(activeCourseIndex - 1);
+      }
+    }
   };
 
   const handleObjectiveChange = (index: number, value: string) => {
@@ -159,72 +234,107 @@ export default function CourseForm() {
     setIsLoading(true);
 
     try {
-      // Validation
-      if (!formData.title.trim()) {
-        toast.error('Course title is required');
-        return;
+      // Validate all courses
+      for (let i = 0; i < courses.length; i++) {
+        const course = courses[i];
+
+        if (!course.title.trim()) {
+          toast.error(`Course ${i + 1}: Title is required`);
+          setActiveCourseIndex(i);
+          setFormData(course);
+          return;
+        }
+
+        if (!course.description.trim()) {
+          toast.error(`Course ${i + 1}: Description is required`);
+          setActiveCourseIndex(i);
+          setFormData(course);
+          return;
+        }
+
+        if (!course.level) {
+          toast.error(`Course ${i + 1}: Level is required`);
+          setActiveCourseIndex(i);
+          setFormData(course);
+          return;
+        }
+
+        if (!course.category) {
+          toast.error(`Course ${i + 1}: Category is required`);
+          setActiveCourseIndex(i);
+          setFormData(course);
+          return;
+        }
+
+        if (!course.estimatedDuration || parseInt(course.estimatedDuration) <= 0) {
+          toast.error(`Course ${i + 1}: Valid estimated duration is required`);
+          setActiveCourseIndex(i);
+          setFormData(course);
+          return;
+        }
+
+        const validObjectives = course.learningObjectives.filter((obj: string) => obj.trim());
+        if (validObjectives.length === 0) {
+          toast.error(`Course ${i + 1}: At least one learning objective is required`);
+          setActiveCourseIndex(i);
+          setFormData(course);
+          return;
+        }
       }
 
-      if (!formData.description.trim()) {
-        toast.error('Course description is required');
-        return;
-      }
+      // Submit all courses
+      const submissions = courses.map(async (course, index) => {
+        const validObjectives = course.learningObjectives.filter((obj: string) => obj.trim());
 
-      if (!formData.level) {
-        toast.error('Course level is required');
-        return;
-      }
+        const courseData = {
+          ...course,
+          isPublished: publishImmediately,
+          learningObjectives: validObjectives,
+          links: course.links.filter((link: string) => link.trim()),
+          estimatedDuration: parseInt(course.estimatedDuration),
+          difficulty: parseInt(course.difficulty)
+        };
 
-      if (!formData.category) {
-        toast.error('Course category is required');
-        return;
-      }
+        console.log(`Submitting Course ${index + 1}:`, courseData);
 
-      if (!formData.estimatedDuration || parseInt(formData.estimatedDuration) <= 0) {
-        toast.error('Valid estimated duration is required');
-        return;
-      }
+        // Here you would make the API call for each course
+        const response = await fetch('/api/admin/courses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(courseData),
+        });
 
-      const validObjectives = formData.learningObjectives.filter(obj => obj.trim());
-      if (validObjectives.length === 0) {
-        toast.error('At least one learning objective is required');
-        return;
-      }
+        const result = await response.json();
 
-      const courseData = {
-        ...formData,
-        isPublished: publishImmediately,
-        learningObjectives: validObjectives,
-        links: formData.links.filter(link => link.trim()),
-        estimatedDuration: parseInt(formData.estimatedDuration),
-        difficulty: parseInt(formData.difficulty)
-      };
+        if (!response.ok) {
+          if (result.details && Array.isArray(result.details)) {
+            // Handle validation errors
+            throw new Error(`Course ${index + 1} - Validation failed: ${result.details.join(', ')}`);
+          }
+          throw new Error(result.error || `Course ${index + 1} - HTTP ${response.status}: ${response.statusText}`);
+        }
 
-      const response = await fetch('/api/admin/courses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(courseData),
+        return result;
       });
 
-      const result = await response.json();
+      await Promise.all(submissions);
 
-      if (!response.ok) {
-        if (result.details && Array.isArray(result.details)) {
-          // Handle validation errors
-          throw new Error(`Validation failed: ${result.details.join(', ')}`);
-        }
-        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
+      toast.success(`Successfully ${publishImmediately ? 'published' : 'saved'} ${courses.length} course${courses.length > 1 ? 's' : ''}!`);
 
-      toast.success(publishImmediately ? 'Course created and published successfully!' : 'Course saved as draft successfully!');
+      // Reset to single course after successful submission
+      const newCourse = getInitialCourseData();
+      setCourses([newCourse]);
+      setFormData(newCourse);
+      setActiveCourseIndex(0);
+      setShowAdvancedModal(false);
+
       router.push('/admin-dashboard/courses');
       router.refresh();
-
     } catch (error: any) {
-      console.error('Error creating course:', error);
-      toast.error(error.message || 'Failed to create course');
+      console.error('Error submitting courses:', error);
+      toast.error(error.message || 'Failed to submit courses. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -538,7 +648,7 @@ export default function CourseForm() {
           {/* Advanced Course Management Modal */}
           {showAdvancedModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center p-6 border-b">
                   <div>
                     <h2 className="text-2xl font-bold">Advanced Course Management</h2>
@@ -549,86 +659,359 @@ export default function CourseForm() {
                   </Button>
                 </div>
 
-                <div className="p-6 max-h-[70vh] overflow-y-auto space-y-8">
-                  {/* Class Modules Section */}
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Class Modules</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Add class modules to organize your course content
-                      </p>
-
-                      {formData.classModules.map((module, index) => (
-                        <div key={module.id} className="border rounded-lg p-4 mb-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <Label>Module Title</Label>
-                              <Input
-                                value={module.title}
-                                onChange={(e) => {
-                                  const newModules = [...formData.classModules];
-                                  newModules[index].title = e.target.value;
-                                  handleInputChange('classModules', newModules);
-                                }}
-                                placeholder="e.g., Introduction to Hiragana"
-                              />
-                            </div>
-                            <div>
-                              <Label>Order</Label>
-                              <Input
-                                type="number"
-                                value={module.order}
-                                onChange={(e) => {
-                                  const newModules = [...formData.classModules];
-                                  newModules[index].order = parseInt(e.target.value);
-                                  handleInputChange('classModules', newModules);
-                                }}
-                                min="1"
-                              />
-                            </div>
-                          </div>
-                          <div className="mb-4">
-                            <Label>Module Content</Label>
-                            <Textarea
-                              value={module.content}
-                              onChange={(e) => {
-                                const newModules = [...formData.classModules];
-                                newModules[index].content = e.target.value;
-                                handleInputChange('classModules', newModules);
-                              }}
-                              placeholder="Describe the module content and learning objectives..."
-                              rows={3}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const newModules = formData.classModules.filter((_, i) => i !== index);
-                              handleInputChange('classModules', newModules);
-                            }}
-                          >
-                            Remove Module
-                          </Button>
-                        </div>
-                      ))}
-
+                <div className="p-6 flex-1 overflow-y-auto space-y-6">
+                  {/* Course Management Header */}
+                  <div className="space-y-4 border-b pb-6">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-bold">Course Management</h2>
                       <Button
                         type="button"
-                        variant="outline"
-                        onClick={() => {
-                          const newModule: ClassModule = {
-                            id: Date.now().toString(),
-                            title: '',
-                            content: '',
-                            order: formData.classModules.length + 1
-                          };
-                          handleInputChange('classModules', [...formData.classModules, newModule]);
-                        }}
+                        onClick={addNewCourse}
+                        className="bg-green-600 hover:bg-green-700"
                       >
-                        Add Class Module
+                        + Add New Course
                       </Button>
+                    </div>
+
+                    {/* Course Tabs */}
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {courses.map((course, index) => (
+                          <div key={index} className="flex items-center">
+                            <button
+                              onClick={() => switchToCourse(index)}
+                              className={`px-3 py-1 text-sm font-medium rounded-l-lg border transition-colors ${activeCourseIndex === index
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                            >
+                              Course {index + 1}: {course.title || 'Untitled'}
+                            </button>
+                            {courses.length > 1 && (
+                              <button
+                                onClick={() => removeCourse(index)}
+                                className={`px-2 py-1 text-sm rounded-r-lg border-l-0 border transition-colors ${activeCourseIndex === index
+                                  ? 'bg-red-600 hover:bg-red-700 text-white border-blue-600'
+                                  : 'bg-gray-100 hover:bg-red-100 text-red-600 border-gray-300'
+                                  }`}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Course Naming Section */}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <Label className="text-sm font-medium">Course {activeCourseIndex + 1} Name</Label>
+                        <Input
+                          value={formData.title}
+                          onChange={(e) => handleInputChange('title', e.target.value)}
+                          placeholder="e.g., Data Structure 1, Algorithm Basics, etc."
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          This will be the display name for Course {activeCourseIndex + 1}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-sm text-muted-foreground">
+                      Currently editing: <span className="font-semibold">Course {activeCourseIndex + 1}</span>
+                      {courses.length > 1 && <span> ({courses.length} courses total)</span>}
+                    </div>
+                  </div>
+
+                  {/* Add Courses Section */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Add Courses Content</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Organize your course content by weeks for Course {activeCourseIndex + 1}
+                      </p>
+
+                      {/* Week Tabs */}
+                      <div className="flex border-b mb-6">
+                        {[1, 2, 3, 4].map((week) => (
+                          <button
+                            key={week}
+                            onClick={() => setActiveWeekTab(week)}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeWeekTab === week
+                              ? 'border-blue-500 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700'
+                              }`}
+                          >
+                            Week {week}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Week Content */}
+                      {formData.weeklyContent.map((weekContent) => (
+                        <div key={weekContent.id} className={activeWeekTab === weekContent.week ? 'block' : 'hidden'}>
+                          <div className="space-y-6">
+                            {/* Video Upload Links Section */}
+                            <div className="space-y-4">
+                              <h4 className="font-semibold text-md">Video Upload Links</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Add multiple video links for Week {weekContent.week}
+                              </p>
+
+                              {weekContent.videoLinks.map((video, videoIndex) => (
+                                <div key={video.id} className="border rounded-lg p-4 space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>Video Title</Label>
+                                      <Input
+                                        value={video.title}
+                                        onChange={(e) => {
+                                          const newWeeklyContent = [...formData.weeklyContent];
+                                          const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                          newWeeklyContent[weekIndex].videoLinks[videoIndex].title = e.target.value;
+                                          handleInputChange('weeklyContent', newWeeklyContent);
+                                        }}
+                                        placeholder="e.g., Hiragana Introduction"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label>Video URL</Label>
+                                      <Input
+                                        type="url"
+                                        value={video.url}
+                                        onChange={(e) => {
+                                          const newWeeklyContent = [...formData.weeklyContent];
+                                          const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                          newWeeklyContent[weekIndex].videoLinks[videoIndex].url = e.target.value;
+                                          handleInputChange('weeklyContent', newWeeklyContent);
+                                        }}
+                                        placeholder="https://youtube.com/watch?v=... or upload link"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label>Description</Label>
+                                    <Textarea
+                                      value={video.description}
+                                      onChange={(e) => {
+                                        const newWeeklyContent = [...formData.weeklyContent];
+                                        const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                        newWeeklyContent[weekIndex].videoLinks[videoIndex].description = e.target.value;
+                                        handleInputChange('weeklyContent', newWeeklyContent);
+                                      }}
+                                      placeholder="Brief description of the video content..."
+                                      rows={2}
+                                    />
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newWeeklyContent = [...formData.weeklyContent];
+                                      const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                      newWeeklyContent[weekIndex].videoLinks = newWeeklyContent[weekIndex].videoLinks.filter((_, i) => i !== videoIndex);
+                                      handleInputChange('weeklyContent', newWeeklyContent);
+                                    }}
+                                  >
+                                    Remove Video
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  const newWeeklyContent = [...formData.weeklyContent];
+                                  const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                  const newVideo: VideoLink = {
+                                    id: Date.now().toString(),
+                                    title: '',
+                                    url: '',
+                                    description: ''
+                                  };
+                                  newWeeklyContent[weekIndex].videoLinks.push(newVideo);
+                                  handleInputChange('weeklyContent', newWeeklyContent);
+                                }}
+                              >
+                                Add Video Link
+                              </Button>
+                            </div>
+
+                            {/* PDF/DOCS Upload Section */}
+                            <div className="space-y-4 border-t pt-6">
+                              <h4 className="font-semibold text-md">PDF/DOCS Upload</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Upload multiple documents for Week {weekContent.week}
+                              </p>
+
+                              {weekContent.documents.map((doc, docIndex) => (
+                                <div key={doc.id} className="border rounded-lg p-4 space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>Document Title</Label>
+                                      <Input
+                                        value={doc.title}
+                                        onChange={(e) => {
+                                          const newWeeklyContent = [...formData.weeklyContent];
+                                          const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                          newWeeklyContent[weekIndex].documents[docIndex].title = e.target.value;
+                                          handleInputChange('weeklyContent', newWeeklyContent);
+                                        }}
+                                        placeholder="e.g., Hiragana Practice Sheet"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label>File Type</Label>
+                                      <Select
+                                        value={doc.fileType}
+                                        onValueChange={(value: 'pdf' | 'doc' | 'docx' | 'other') => {
+                                          const newWeeklyContent = [...formData.weeklyContent];
+                                          const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                          newWeeklyContent[weekIndex].documents[docIndex].fileType = value;
+                                          handleInputChange('weeklyContent', newWeeklyContent);
+                                        }}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select file type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="pdf">PDF</SelectItem>
+                                          <SelectItem value="doc">DOC</SelectItem>
+                                          <SelectItem value="docx">DOCX</SelectItem>
+                                          <SelectItem value="other">Other</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>File Name</Label>
+                                      <Input
+                                        value={doc.fileName}
+                                        onChange={(e) => {
+                                          const newWeeklyContent = [...formData.weeklyContent];
+                                          const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                          newWeeklyContent[weekIndex].documents[docIndex].fileName = e.target.value;
+                                          handleInputChange('weeklyContent', newWeeklyContent);
+                                        }}
+                                        placeholder="filename.pdf"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label>File URL</Label>
+                                      <Input
+                                        type="url"
+                                        value={doc.fileUrl}
+                                        onChange={(e) => {
+                                          const newWeeklyContent = [...formData.weeklyContent];
+                                          const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                          newWeeklyContent[weekIndex].documents[docIndex].fileUrl = e.target.value;
+                                          handleInputChange('weeklyContent', newWeeklyContent);
+                                        }}
+                                        placeholder="https://example.com/file.pdf or upload URL"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Upload from PC Section */}
+                                  <div className="border-t pt-3 mt-3">
+                                    <Label className="text-sm font-medium">Or Upload from PC</Label>
+                                    <div className="mt-2 flex gap-2">
+                                      <Input
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.txt,.ppt,.pptx"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            const newWeeklyContent = [...formData.weeklyContent];
+                                            const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                            newWeeklyContent[weekIndex].documents[docIndex].fileName = file.name;
+                                            newWeeklyContent[weekIndex].documents[docIndex].fileUrl = `uploading-${file.name}`;
+                                            handleInputChange('weeklyContent', newWeeklyContent);
+                                            toast.success(`File "${file.name}" ready for upload!`);
+                                          }
+                                        }}
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          toast.info('File upload functionality will be implemented with backend integration');
+                                        }}
+                                      >
+                                        Upload
+                                      </Button>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Accepted formats: PDF, DOC, DOCX, TXT, PPT, PPTX (Max: 10MB)
+                                    </p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newWeeklyContent = [...formData.weeklyContent];
+                                      const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                      newWeeklyContent[weekIndex].documents = newWeeklyContent[weekIndex].documents.filter((_, i) => i !== docIndex);
+                                      handleInputChange('weeklyContent', newWeeklyContent);
+                                    }}
+                                  >
+                                    Remove Document
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  const newWeeklyContent = [...formData.weeklyContent];
+                                  const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                  const newDoc: DocumentFile = {
+                                    id: Date.now().toString(),
+                                    title: '',
+                                    fileName: '',
+                                    fileUrl: '',
+                                    fileType: 'pdf'
+                                  };
+                                  newWeeklyContent[weekIndex].documents.push(newDoc);
+                                  handleInputChange('weeklyContent', newWeeklyContent);
+                                }}
+                              >
+                                Add Document
+                              </Button>
+                            </div>
+
+                            {/* Comments Section */}
+                            <div className="space-y-4 border-t pt-6">
+                              <h4 className="font-semibold text-md">Comments</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Add comments or notes for Week {weekContent.week}
+                              </p>
+
+                              <div>
+                                <Label>Week {weekContent.week} Comments</Label>
+                                <Textarea
+                                  value={weekContent.comments}
+                                  onChange={(e) => {
+                                    const newWeeklyContent = [...formData.weeklyContent];
+                                    const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                    newWeeklyContent[weekIndex].comments = e.target.value;
+                                    handleInputChange('weeklyContent', newWeeklyContent);
+                                  }}
+                                  placeholder="Add your comments, notes, or instructions for this week..."
+                                  rows={4}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -724,110 +1107,6 @@ export default function CourseForm() {
                         }}
                       >
                         Add Class Link
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* YouTube/Resources Section */}
-                  <div className="space-y-4">
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-4">YouTube / Resources</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Add YouTube videos and other learning resources
-                      </p>
-
-                      {formData.youtubeResources.map((resource, index) => (
-                        <div key={resource.id} className="border rounded-lg p-4 mb-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <Label>Resource Title</Label>
-                              <Input
-                                value={resource.title}
-                                onChange={(e) => {
-                                  const newResources = [...formData.youtubeResources];
-                                  newResources[index].title = e.target.value;
-                                  handleInputChange('youtubeResources', newResources);
-                                }}
-                                placeholder="e.g., Hiragana Writing Practice"
-                              />
-                            </div>
-                            <div>
-                              <Label>Resource URL</Label>
-                              <Input
-                                type="url"
-                                value={resource.url}
-                                onChange={(e) => {
-                                  const newResources = [...formData.youtubeResources];
-                                  newResources[index].url = e.target.value;
-                                  handleInputChange('youtubeResources', newResources);
-                                }}
-                                placeholder="https://youtube.com/watch?v=..."
-                              />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <Label>Resource Type</Label>
-                              <Select
-                                value={resource.type}
-                                onValueChange={(value: 'youtube' | 'document' | 'website') => {
-                                  const newResources = [...formData.youtubeResources];
-                                  newResources[index].type = value;
-                                  handleInputChange('youtubeResources', newResources);
-                                }}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="youtube">YouTube</SelectItem>
-                                  <SelectItem value="document">Document</SelectItem>
-                                  <SelectItem value="website">Website</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label>Description</Label>
-                              <Input
-                                value={resource.description}
-                                onChange={(e) => {
-                                  const newResources = [...formData.youtubeResources];
-                                  newResources[index].description = e.target.value;
-                                  handleInputChange('youtubeResources', newResources);
-                                }}
-                                placeholder="Brief description of the resource"
-                              />
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const newResources = formData.youtubeResources.filter((_, i) => i !== index);
-                              handleInputChange('youtubeResources', newResources);
-                            }}
-                          >
-                            Remove Resource
-                          </Button>
-                        </div>
-                      ))}
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          const newResource: Resource = {
-                            id: Date.now().toString(),
-                            title: '',
-                            url: '',
-                            type: 'youtube',
-                            description: ''
-                          };
-                          handleInputChange('youtubeResources', [...formData.youtubeResources, newResource]);
-                        }}
-                      >
-                        Add Resource
                       </Button>
                     </div>
                   </div>
@@ -949,37 +1228,38 @@ export default function CourseForm() {
                       </Button>
                     </div>
                   </div>
-
-                  {/* Assignment/Quiz Section (Coming Soon) */}
-                  <div className="space-y-4">
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-4">Assignment / Quiz</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Assignment and quiz management - Coming Soon
-                      </p>
-                      <div className="border rounded-lg p-8 text-center">
-                        <p className="text-muted-foreground">This feature will be available soon!</p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
-                <div className="p-6 border-t">
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowAdvancedModal(false)}
-                    >
-                      Close
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowAdvancedModal(false);
-                        toast.success('Advanced settings saved!');
-                      }}
-                    >
-                      Save Changes
-                    </Button>
+                {/* Modal Footer - Always Visible */}
+                <div className="border-t bg-gray-50 p-4 flex-shrink-0">
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-gray-600">
+                      <p className="font-medium">Summary:</p>
+                      <p>{courses.length} course{courses.length > 1 ? 's' : ''} ready to submit</p>
+                      {courses.length > 1 && (
+                        <p>Currently editing: Course {activeCourseIndex + 1}</p>
+                      )}
+                    </div>
+
+                    <div className="flex space-x-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowAdvancedModal(false)}
+                        size="sm"
+                      >
+                        Close
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowAdvancedModal(false);
+                          toast.success(`Advanced settings saved for ${courses.length} course${courses.length > 1 ? 's' : ''}!`);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700"
+                        size="sm"
+                      >
+                        Save & Continue
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1012,7 +1292,9 @@ export default function CourseForm() {
               ) : (
                 <IconDeviceFloppy className="size-4 mr-2" />
               )}
-              {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'খসড়া হিসেবে সংরক্ষণ' : 'Save as Draft'}
+              {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                ? `খসড়া হিসেবে সংরক্ষণ ${courses.length > 1 ? `(${courses.length} কোর্স)` : ''}`
+                : `Save as Draft ${courses.length > 1 ? `(${courses.length} courses)` : ''}`}
             </Button>
             <Button
               type="button"
@@ -1025,7 +1307,9 @@ export default function CourseForm() {
               ) : (
                 <IconDeviceFloppy className="size-4 mr-2" />
               )}
-              {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সংরক্ষণ ও প্রকাশ' : 'Save & Publish'}
+              {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                ? `সংরক্ষণ ও প্রকাশ ${courses.length > 1 ? `(${courses.length} কোর্স)` : ''}`
+                : `Save & Publish ${courses.length > 1 ? `(${courses.length} courses)` : ''}`}
             </Button>
           </div>
         </CardContent>
