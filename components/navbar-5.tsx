@@ -114,7 +114,7 @@ export const Navbar5 = () => {
 
                   <NavigationMenuItem>
                     <NavigationMenuLink
-                      href="#"
+                      href="/blog"
                       className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
                       {t('nav.products')}
@@ -224,7 +224,7 @@ export const Navbar5 = () => {
                       </Accordion>
 
                       <div className="flex flex-col gap-6 mt-4">
-                        <a href="#" className="font-medium">
+                        <a href="/blog" className="font-medium">
                           {t('nav.products')}
                         </a>
                         <a href="#" className="font-medium">

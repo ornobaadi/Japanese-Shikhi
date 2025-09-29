@@ -17,7 +17,7 @@ const translations = {
     bn: {
         // Navigation
         'nav.features': 'বৈশিষ্ট্যসমূহ',
-        'nav.products': 'পণ্যসমূহ',
+        'nav.products': 'ব্লগ',
         'nav.resources': 'সম্পদ',
         'nav.contact': 'যোগাযোগ',
         'nav.startForFree': 'বিনামূল্যে শুরু করুন',
@@ -453,7 +453,7 @@ const translations = {
     en: {
         // Navigation
         'nav.features': 'Features',
-        'nav.products': 'Products',
+        'nav.products': 'Blog',
         'nav.resources': 'Resources',
         'nav.contact': 'Contact',
         'nav.startForFree': 'Start for free',

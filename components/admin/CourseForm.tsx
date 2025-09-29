@@ -36,6 +36,7 @@ interface CourseFormData {
   youtubeResources: Resource[];
   enrolledStudents: EnrolledStudent[];
   weeklyContent: WeeklyContent[];
+  blogPosts: BlogPost[];
 }
 
 interface WeeklyContent {
@@ -93,6 +94,18 @@ interface EnrolledStudent {
   status: 'active' | 'inactive';
 }
 
+interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  author: string;
+  publishDate: string;
+  tags: string[];
+  isPublished: boolean;
+  featuredImage: string;
+}
+
 export default function CourseForm() {
   const router = useRouter();
   const { t, language } = useLanguage();
@@ -129,7 +142,8 @@ export default function CourseForm() {
       { id: '2', week: 2, videoLinks: [], documents: [], comments: '' },
       { id: '3', week: 3, videoLinks: [], documents: [], comments: '' },
       { id: '4', week: 4, videoLinks: [], documents: [], comments: '' }
-    ]
+    ],
+    blogPosts: []
   });
 
   const [courses, setCourses] = useState<CourseFormData[]>([getInitialCourseData()]);
@@ -320,6 +334,35 @@ export default function CourseForm() {
       });
 
       await Promise.all(submissions);
+
+      // Save published blogs to localStorage for the blog page
+      const allBlogs = courses.flatMap(course =>
+        (course.blogPosts || []).map(blog => ({
+          ...blog,
+          courseName: course.title || 'Untitled Course'
+        }))
+      );
+
+      if (allBlogs.length > 0) {
+        try {
+          const existingBlogs = JSON.parse(localStorage.getItem('publishedBlogs') || '[]');
+
+          // Filter out existing blogs to prevent duplicates
+          const existingIds = existingBlogs.map((blog: any) => blog.id);
+          const newBlogs = allBlogs.filter(blog => !existingIds.includes(blog.id));
+
+          const updatedBlogs = [...existingBlogs, ...newBlogs];
+          localStorage.setItem('publishedBlogs', JSON.stringify(updatedBlogs));
+
+          const publishedCount = allBlogs.filter(blog => blog.isPublished).length;
+          if (publishedCount > 0) {
+            toast.success(`${publishedCount} blog post${publishedCount > 1 ? 's' : ''} published to the blog page!`);
+          }
+        } catch (error) {
+          console.error('Error saving blogs:', error);
+          toast.error('Failed to save blogs to blog page');
+        }
+      }
 
       toast.success(`Successfully ${publishImmediately ? 'published' : 'saved'} ${courses.length} course${courses.length > 1 ? 's' : ''}!`);
 
@@ -1111,6 +1154,198 @@ export default function CourseForm() {
                     </div>
                   </div>
 
+                  {/* Blog Management Section */}
+                  <div className="space-y-4">
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-4">Blog Management</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Create and manage blog posts related to your courses
+                      </p>
+
+                      {formData.blogPosts?.map((blog, index) => (
+                        <div key={blog.id} className="border rounded-lg p-4 mb-4 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label>Blog Title</Label>
+                              <Input
+                                value={blog.title}
+                                onChange={(e) => {
+                                  const newBlogs = [...(formData.blogPosts || [])];
+                                  newBlogs[index].title = e.target.value;
+                                  handleInputChange('blogPosts', newBlogs);
+                                }}
+                                placeholder="e.g., Learning Hiragana: A Beginner's Guide"
+                              />
+                            </div>
+                            <div>
+                              <Label>Author</Label>
+                              <Input
+                                value={blog.author}
+                                onChange={(e) => {
+                                  const newBlogs = [...(formData.blogPosts || [])];
+                                  newBlogs[index].author = e.target.value;
+                                  handleInputChange('blogPosts', newBlogs);
+                                }}
+                                placeholder="e.g., John Doe"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Blog Excerpt</Label>
+                            <Textarea
+                              value={blog.excerpt}
+                              onChange={(e) => {
+                                const newBlogs = [...(formData.blogPosts || [])];
+                                newBlogs[index].excerpt = e.target.value;
+                                handleInputChange('blogPosts', newBlogs);
+                              }}
+                              placeholder="Brief description of the blog post..."
+                              rows={2}
+                            />
+                          </div>
+
+                          <div>
+                            <Label>Blog Content</Label>
+                            <Textarea
+                              value={blog.content}
+                              onChange={(e) => {
+                                const newBlogs = [...(formData.blogPosts || [])];
+                                newBlogs[index].content = e.target.value;
+                                handleInputChange('blogPosts', newBlogs);
+                              }}
+                              placeholder="Write your full blog content here..."
+                              rows={6}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label>Featured Image URL</Label>
+                              <Input
+                                type="url"
+                                value={blog.featuredImage}
+                                onChange={(e) => {
+                                  const newBlogs = [...(formData.blogPosts || [])];
+                                  newBlogs[index].featuredImage = e.target.value;
+                                  handleInputChange('blogPosts', newBlogs);
+                                }}
+                                placeholder="https://example.com/image.jpg"
+                              />
+                            </div>
+                            <div>
+                              <Label>Publish Date</Label>
+                              <Input
+                                type="date"
+                                value={blog.publishDate}
+                                onChange={(e) => {
+                                  const newBlogs = [...(formData.blogPosts || [])];
+                                  newBlogs[index].publishDate = e.target.value;
+                                  handleInputChange('blogPosts', newBlogs);
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Tags (comma-separated)</Label>
+                            <Input
+                              value={blog.tags.join(', ')}
+                              onChange={(e) => {
+                                const newBlogs = [...(formData.blogPosts || [])];
+                                newBlogs[index].tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                                handleInputChange('blogPosts', newBlogs);
+                              }}
+                              placeholder="e.g., japanese, hiragana, learning, beginner"
+                            />
+                          </div>
+
+                          {/* Upload from PC Section for Blog Images */}
+                          <div className="border-t pt-3 mt-3">
+                            <Label className="text-sm font-medium">Upload Featured Image from PC</Label>
+                            <div className="mt-2 flex gap-2">
+                              <Input
+                                type="file"
+                                accept=".jpg,.jpeg,.png,.gif,.webp"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const newBlogs = [...(formData.blogPosts || [])];
+                                    newBlogs[index].featuredImage = `uploading-${file.name}`;
+                                    handleInputChange('blogPosts', newBlogs);
+                                    toast.success(`Image "${file.name}" ready for upload!`);
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  toast.info('Image upload functionality will be implemented with backend integration');
+                                }}
+                              >
+                                Upload
+                              </Button>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Accepted formats: JPG, JPEG, PNG, GIF, WebP (Max: 5MB)
+                            </p>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-3 border-t">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`blog-published-${blog.id}`}
+                                checked={blog.isPublished}
+                                onCheckedChange={(checked) => {
+                                  const newBlogs = [...(formData.blogPosts || [])];
+                                  newBlogs[index].isPublished = checked === true;
+                                  handleInputChange('blogPosts', newBlogs);
+                                }}
+                              />
+                              <Label htmlFor={`blog-published-${blog.id}`}>Publish immediately</Label>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newBlogs = (formData.blogPosts || []).filter((_, i) => i !== index);
+                                handleInputChange('blogPosts', newBlogs);
+                              }}
+                            >
+                              Remove Blog
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const newBlog: BlogPost = {
+                            id: Date.now().toString(),
+                            title: '',
+                            content: '',
+                            excerpt: '',
+                            author: '',
+                            publishDate: new Date().toISOString().split('T')[0],
+                            tags: [],
+                            isPublished: false,
+                            featuredImage: ''
+                          };
+                          handleInputChange('blogPosts', [...(formData.blogPosts || []), newBlog]);
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        + Add New Blog
+                      </Button>
+                    </div>
+                  </div>
+
                   {/* Enrolled Students Section */}
                   <div className="space-y-4">
                     <div className="border-t pt-6">
@@ -1251,6 +1486,35 @@ export default function CourseForm() {
                       </Button>
                       <Button
                         onClick={() => {
+                          // Save blogs to localStorage when modal is closed
+                          const allBlogs = courses.flatMap(course =>
+                            (course.blogPosts || []).map(blog => ({
+                              ...blog,
+                              courseName: course.title || 'Untitled Course'
+                            }))
+                          );
+
+                          if (allBlogs.length > 0) {
+                            try {
+                              const existingBlogs = JSON.parse(localStorage.getItem('publishedBlogs') || '[]');
+
+                              // Filter out existing blogs to prevent duplicates
+                              const existingIds = existingBlogs.map((blog: any) => blog.id);
+                              const newBlogs = allBlogs.filter(blog => !existingIds.includes(blog.id));
+
+                              const updatedBlogs = [...existingBlogs, ...newBlogs];
+                              localStorage.setItem('publishedBlogs', JSON.stringify(updatedBlogs));
+
+                              const publishedCount = allBlogs.filter(blog => blog.isPublished).length;
+                              if (publishedCount > 0) {
+                                toast.success(`${publishedCount} blog post${publishedCount > 1 ? 's' : ''} published to the blog page!`);
+                              }
+                            } catch (error) {
+                              console.error('Error saving blogs:', error);
+                              toast.error('Failed to save blogs to blog page');
+                            }
+                          }
+
                           setShowAdvancedModal(false);
                           toast.success(`Advanced settings saved for ${courses.length} course${courses.length > 1 ? 's' : ''}!`);
                         }}
