@@ -277,3 +277,17 @@ html:lang(en) {
 .bn-logo, [class*="bn-"], .font-hind-siliguri {
   font-family: var(--font-hind-siliguri, 'Hind Siliguri', 'Noto Sans Bengali', sans-serif) !important;
 }
+
+/* Custom animations */
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+}

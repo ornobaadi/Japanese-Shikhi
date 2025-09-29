@@ -1,3 +1,5 @@
+'use client';
+
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { SectionCards } from "@/components/section-cards"
@@ -9,8 +11,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { IconPlus, IconBook, IconUsers, IconChartBar } from "@tabler/icons-react"
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export default function Page() {
+  const { t } = useLanguage();
   return (
     <SidebarProvider
       style={
@@ -29,31 +33,31 @@ export default function Page() {
               <div className="px-4 lg:px-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-2xl font-bold">Dashboard</h1>
-                    <p className="text-muted-foreground">Overview of your Japanese language courses</p>
+                    <h1 className="text-2xl font-bold">{t('admin.dashboard')}</h1>
+                    <p className="text-muted-foreground">{t('admin.dashboardOverview')}</p>
                   </div>
                   <Button className="gap-2" asChild>
                     <a href="/admin-dashboard/courses/add">
                       <IconPlus className="size-4" />
-                      Add New Course
+                      {t('admin.addNewCourse')}
                     </a>
                   </Button>
                 </div>
               </div>
-              
+
               <SectionCards />
 
               {/* Empty State for Recent Activity */}
               <div className="px-4 lg:px-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>Latest course and student activity</CardDescription>
+                    <CardTitle>{t('admin.recentActivity')}</CardTitle>
+                    <CardDescription>{t('admin.latestActivity')}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-8">
                       <div className="text-muted-foreground">
-                        No recent activity to display
+                        {t('admin.noRecentActivity')}
                       </div>
                     </div>
                   </CardContent>

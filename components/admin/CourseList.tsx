@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { IconSearch, IconEdit, IconTrash, IconEye, IconLoader2, IconPlus } from '@tabler/icons-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Course {
   _id: string;
@@ -44,6 +45,7 @@ interface CourseListProps {
 }
 
 export default function CourseList() {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -75,7 +77,7 @@ export default function CourseList() {
       });
 
       const response = await fetch(`/api/admin/courses?${params}`);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
@@ -127,6 +129,28 @@ export default function CourseList() {
     return `${mins}m`;
   };
 
+  const translateLevel = (level: string) => {
+    switch (level) {
+      case 'beginner': return t('courses.beginner');
+      case 'intermediate': return t('courses.intermediate');
+      case 'advanced': return t('courses.advanced');
+      default: return level;
+    }
+  };
+
+  const translateCategory = (category: string) => {
+    switch (category) {
+      case 'vocabulary': return t('admin.vocabulary');
+      case 'grammar': return t('admin.grammar');
+      case 'kanji': return t('admin.kanji');
+      case 'conversation': return t('admin.conversation');
+      case 'culture': return t('admin.culture');
+      case 'reading': return t('admin.reading');
+      case 'writing': return t('admin.writing');
+      default: return category;
+    }
+  };
+
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'beginner': return 'bg-green-100 text-green-800';
@@ -162,17 +186,17 @@ export default function CourseList() {
       {/* Filters and Search */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Filter & Search</CardTitle>
+          <CardTitle className="text-lg">{t('admin.filterSearch')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <Label htmlFor="search">Search courses</Label>
+              <Label htmlFor="search">{t('admin.searchCourses')}</Label>
               <div className="relative">
                 <IconSearch className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                <Input 
-                  id="search" 
-                  placeholder="Search by course name, description..." 
+                <Input
+                  id="search"
+                  placeholder={t('admin.searchPlaceholder')}
                   className="pl-10"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
@@ -180,47 +204,47 @@ export default function CourseList() {
               </div>
             </div>
             <div>
-              <Label>Status</Label>
+              <Label>{t('admin.status')}</Label>
               <Select value={statusFilter} onValueChange={(value) => handleFilterChange('status', value)}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="all">{t('admin.allStatus')}</SelectItem>
+                  <SelectItem value="published">{t('admin.published')}</SelectItem>
+                  <SelectItem value="draft">{t('admin.draft')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Level</Label>
+              <Label>{t('admin.level')}</Label>
               <Select value={levelFilter} onValueChange={(value) => handleFilterChange('level', value)}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="all">{t('admin.allLevels')}</SelectItem>
+                  <SelectItem value="beginner">{t('courses.beginner')}</SelectItem>
+                  <SelectItem value="intermediate">{t('courses.intermediate')}</SelectItem>
+                  <SelectItem value="advanced">{t('courses.advanced')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Category</Label>
+              <Label>{t('admin.category')}</Label>
               <Select value={categoryFilter} onValueChange={(value) => handleFilterChange('category', value)}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="vocabulary">Vocabulary</SelectItem>
-                  <SelectItem value="grammar">Grammar</SelectItem>
-                  <SelectItem value="kanji">Kanji</SelectItem>
-                  <SelectItem value="conversation">Conversation</SelectItem>
-                  <SelectItem value="culture">Culture</SelectItem>
-                  <SelectItem value="reading">Reading</SelectItem>
-                  <SelectItem value="writing">Writing</SelectItem>
+                  <SelectItem value="all">{t('admin.allCategories')}</SelectItem>
+                  <SelectItem value="vocabulary">{t('admin.vocabulary')}</SelectItem>
+                  <SelectItem value="grammar">{t('admin.grammar')}</SelectItem>
+                  <SelectItem value="kanji">{t('admin.kanji')}</SelectItem>
+                  <SelectItem value="conversation">{t('admin.conversation')}</SelectItem>
+                  <SelectItem value="culture">{t('admin.culture')}</SelectItem>
+                  <SelectItem value="reading">{t('admin.reading')}</SelectItem>
+                  <SelectItem value="writing">{t('admin.writing')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -232,15 +256,15 @@ export default function CourseList() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Your Courses</CardTitle>
+            <CardTitle>{t('admin.yourCourses')}</CardTitle>
             <CardDescription>
-              Showing {courses.length} of {pagination.totalCourses} courses
+              {t('admin.showingCourses')} {courses.length} {t('admin.ofCourses')} {pagination.totalCourses} {t('admin.coursesText')}
             </CardDescription>
           </div>
           <Button asChild>
             <Link href="/admin-dashboard/courses/add">
               <IconPlus className="size-4 mr-2" />
-              Add Course
+              {t('admin.addCourse')}
             </Link>
           </Button>
         </CardHeader>
@@ -248,12 +272,12 @@ export default function CourseList() {
           {courses.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground mb-4">
-                No courses found
+                {t('admin.noCourses')}
               </div>
               <Button asChild>
                 <Link href="/admin-dashboard/courses/add">
                   <IconPlus className="size-4 mr-2" />
-                  Create Your First Course
+                  {t('admin.createFirstCourse')}
                 </Link>
               </Button>
             </div>
@@ -265,8 +289,8 @@ export default function CourseList() {
                     <div className="flex-1">
                       <div className="flex items-start gap-3">
                         {course.thumbnailUrl && (
-                          <img 
-                            src={course.thumbnailUrl} 
+                          <img
+                            src={course.thumbnailUrl}
                             alt={course.title}
                             className="w-16 h-16 rounded object-cover"
                           />
@@ -276,14 +300,14 @@ export default function CourseList() {
                             <h3 className="font-semibold text-lg">{course.title}</h3>
                             {course.isPremium && (
                               <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                Premium
+                                {t('admin.premium')}
                               </Badge>
                             )}
-                            <Badge 
-                              variant="secondary" 
+                            <Badge
+                              variant="secondary"
                               className={course.isPublished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                             >
-                              {course.isPublished ? 'Published' : 'Draft'}
+                              {course.isPublished ? t('admin.published') : t('admin.draft')}
                             </Badge>
                           </div>
                           <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
@@ -291,16 +315,16 @@ export default function CourseList() {
                           </p>
                           <div className="flex flex-wrap gap-2">
                             <Badge className={getLevelColor(course.level)}>
-                              {course.level}
+                              {translateLevel(course.level)}
                             </Badge>
                             <Badge className={getCategoryColor(course.category)}>
-                              {course.category}
+                              {translateCategory(course.category)}
                             </Badge>
                             <Badge variant="outline">
                               {formatDuration(course.estimatedDuration)}
                             </Badge>
                             <Badge variant="outline">
-                              Difficulty: {course.difficulty}/10
+                              {t('admin.difficulty')}: {course.difficulty}/10
                             </Badge>
                             {course.totalRatings > 0 && (
                               <Badge variant="outline">
@@ -308,22 +332,46 @@ export default function CourseList() {
                               </Badge>
                             )}
                             <Badge variant="outline">
-                              {course.enrolledStudents} students
+                              {course.enrolledStudents} {t('admin.studentsCount')}
                             </Badge>
                           </div>
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <IconEye className="size-4 mr-1" />
-                        View
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/admin-dashboard/courses/${course._id}`}>
+                          <IconEye className="size-4 mr-1" />
+                          {t('admin.view')}
+                        </Link>
                       </Button>
-                      <Button variant="outline" size="sm">
-                        <IconEdit className="size-4 mr-1" />
-                        Edit
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/admin-dashboard/courses/edit/${course._id}`}>
+                          <IconEdit className="size-4 mr-1" />
+                          {t('admin.edit')}
+                        </Link>
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={async () => {
+                          if (confirm(`${t('admin.deleteConfirm')} "${course.title}"?`)) {
+                            try {
+                              const res = await fetch(`/api/admin/courses/${course._id}`, { method: 'DELETE' });
+                              if (res.ok) {
+                                toast.success(t('admin.courseDeleted'));
+                                setCourses(prev => prev.filter(c => c._id !== course._id));
+                              } else {
+                                const err = await res.json().catch(() => ({}));
+                                toast.error(err.error || t('admin.failedToDelete'));
+                              }
+                            } catch (err) {
+                              toast.error(t('admin.failedToDelete'));
+                            }
+                          }
+                        }}
+                      >
                         <IconTrash className="size-4 mr-1" />
                         Delete
                       </Button>
@@ -341,16 +389,16 @@ export default function CourseList() {
                 Page {pagination.currentPage} of {pagination.totalPages}
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   disabled={pagination.currentPage <= 1}
                   onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }))}
                 >
                   Previous
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   disabled={pagination.currentPage >= pagination.totalPages}
                   onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }))}

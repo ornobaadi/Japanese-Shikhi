@@ -121,10 +121,10 @@ export async function POST(request: NextRequest) {
       isPremium,
       isPublished,
       learningObjectives,
-      prerequisites,
-      tags,
+      links,
       thumbnailUrl,
-      instructorNotes
+      instructorNotes,
+      courseSummary
     } = body;
 
     // Validation
@@ -146,10 +146,10 @@ export async function POST(request: NextRequest) {
       isPremium: isPremium || false,
       isPublished: isPublished || false,
       learningObjectives: learningObjectives || [],
-      prerequisites: prerequisites || [],
-      tags: tags || [],
+      links: links || [],
       thumbnailUrl: thumbnailUrl || '',
       instructorNotes: instructorNotes || '',
+      courseSummary: courseSummary || '',
       lessons: [],
       totalLessons: 0,
       averageRating: 0,
