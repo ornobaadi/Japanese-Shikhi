@@ -3,8 +3,12 @@
 import { MenuIcon } from "lucide-react";
 import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import { useIsAdmin } from "@/lib/hooks/useAuth";
+<<<<<<< HEAD
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageToggle from "@/components/ui/language-toggle";
+=======
+import { usePathname } from "next/navigation";
+>>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
 
 import {
   Accordion,
@@ -33,8 +37,20 @@ import {
 export const Navbar5 = () => {
   const { isSignedIn, user } = useUser();
   const isAdmin = useIsAdmin();
+<<<<<<< HEAD
   const { t } = useLanguage();
 
+=======
+  const pathname = usePathname();
+  
+  const isActivePath = (path: string) => {
+    if (path === '/courses') {
+      return pathname === '/courses' || pathname?.startsWith('/courses/');
+    }
+    return pathname === path;
+  };
+  
+>>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
   const features = [
     {
       title: t('features.interactive.title'),
@@ -76,10 +92,119 @@ export const Navbar5 = () => {
             {/* Left: brand */}
             <div className="flex items-center flex-1">
               <a href="/" className="flex items-center gap-3">
+<<<<<<< HEAD
                 <span className="text-lg font-hind-siliguri font-medium">
                   {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'এসো জাপানিজ শিখি' : 'Japanese Shikhi'}
                 </span>
               </a>
+=======
+              <span className="text-lg font-hind-siliguri font-medium">
+                এসো জাপানিজ শিখি
+              </span>
+            </a>
+          </div>
+
+          {/* Center: nav links */}
+          <div className="hidden lg:flex justify-center flex-1">
+            <NavigationMenu>
+              <NavigationMenuList className="flex items-center gap-2">
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className={`${navigationMenuTriggerStyle()} px-3 py-2 rounded-md hover:bg-white/10 transition-colors bg-transparent`}>
+                    Features
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="grid w-[600px] grid-cols-2 p-3">
+                      {features.map((feature, index) => (
+                        <NavigationMenuLink
+                          href={feature.href}
+                          key={index}
+                          className="rounded-md p-3 transition-colors hover:bg-white/5"
+                        >
+                          <div>
+                            <p className="mb-1 font-semibold text-foreground">
+                              {feature.title}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {feature.description}
+                            </p>
+                          </div>
+                        </NavigationMenuLink>
+                      ))}
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    href="/courses"
+                    className={`${navigationMenuTriggerStyle()} ${
+                      isActivePath('/courses') 
+                        ? 'bg-white/20 text-foreground' 
+                        : 'bg-transparent'
+                    } px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
+                  >
+                    Courses
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    href="#"
+                    className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
+                  >
+                    Products
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    href="#"
+                    className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
+                  >
+                    Resources
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    href="#"
+                    className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
+                  >
+                    Contact
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
+
+          {/* Right: actions */}
+          <div className="flex justify-end flex-1">
+            <div className="hidden lg:flex items-center gap-6">
+              {isSignedIn ? (
+                <>
+                  {isAdmin ? (
+                    <Button asChild>
+                      <a href="/admin-dashboard">Admin Dashboard</a>
+                    </Button>
+                  ) : (
+                    <Button asChild>
+                      <a href="/dashboard">Dashboard</a>
+                    </Button>
+                  )}
+                  <UserButton 
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-8 h-8"
+                      }
+                    }}
+                  />
+                </>
+              ) : (
+                <SignInButton mode="modal">
+                  <Button>Start for free</Button>
+                </SignInButton>
+              )}
+>>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
             </div>
 
             {/* Center: nav links */}
@@ -121,6 +246,7 @@ export const Navbar5 = () => {
                     </NavigationMenuLink>
                   </NavigationMenuItem>
 
+<<<<<<< HEAD
                   <NavigationMenuItem>
                     <NavigationMenuLink
                       href="#"
@@ -129,6 +255,24 @@ export const Navbar5 = () => {
                       {t('nav.resources')}
                     </NavigationMenuLink>
                   </NavigationMenuItem>
+=======
+                    <div className="flex flex-col gap-6 mt-4">
+                      <a href="/courses" className={`font-medium ${
+                        isActivePath('/courses') ? 'text-blue-600' : ''
+                      }`}>
+                        Courses
+                      </a>
+                      <a href="#" className="font-medium">
+                        Templates
+                      </a>
+                      <a href="#" className="font-medium">
+                        Blog
+                      </a>
+                      <a href="#" className="font-medium">
+                        Pricing
+                      </a>
+                    </div>
+>>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
 
                   <NavigationMenuItem>
                     <NavigationMenuLink

@@ -9,8 +9,12 @@ import {
   IconPlus,
   IconSettings,
   IconUsers,
+  IconCalendar,
+  IconUser,
+  IconTrendingUp,
 } from "@tabler/icons-react"
 import { useUser } from "@clerk/nextjs"
+import { usePathname } from "next/navigation"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -29,9 +33,18 @@ import { useLanguage } from '@/contexts/LanguageContext'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser()
+<<<<<<< HEAD
   const { t } = useLanguage()
+=======
+  const pathname = usePathname()
+  
+  // Determine if this is admin or student dashboard based on URL
+  const isAdminDashboard = pathname?.startsWith('/admin-dashboard')
+  const isStudentDashboard = pathname?.startsWith('/dashboard')
+>>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
 
-  const navMain = [
+  // Admin navigation items
+  const adminNavMain = [
     {
       title: t('admin.dashboard'),
       url: "/admin-dashboard",
@@ -59,10 +72,44 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
   ]
 
+  // Student navigation items
+  const studentNavMain = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: IconDashboard,
+    },
+    {
+      title: "My Courses",
+      url: "/dashboard/courses",
+      icon: IconBook,
+    },
+    {
+      title: "Schedule",
+      url: "/dashboard/schedule",
+      icon: IconCalendar,
+    },
+    {
+      title: "Profile",
+      url: "/dashboard/profile",
+      icon: IconUser,
+    },
+    {
+      title: "Progress",
+      url: "/dashboard/progress",
+      icon: IconTrendingUp,
+    },
+  ]
+
+  // Choose navigation items based on context
+  const navMain = isAdminDashboard ? adminNavMain : studentNavMain
+  const dashboardUrl = isAdminDashboard ? "/admin-dashboard" : "/dashboard"
+  const panelType = isAdminDashboard ? "Admin Panel" : "Student Dashboard"
+
   const userData = {
-    name: user?.fullName || user?.firstName || "Admin",
-    email: user?.primaryEmailAddress?.emailAddress || "admin@japanese-shikhi.com",
-    avatar: user?.imageUrl || "/avatars/admin.jpg",
+    name: user?.fullName || user?.firstName || (isAdminDashboard ? "Admin" : "Student"),
+    email: user?.primaryEmailAddress?.emailAddress || (isAdminDashboard ? "admin@japanese-shikhi.com" : "student@japanese-shikhi.com"),
+    avatar: user?.imageUrl || "/avatars/user.jpg",
   }
 
   return (
@@ -74,13 +121,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="h-12 px-3 hover:bg-muted transition-colors duration-200"
             >
-              <a href="/admin-dashboard" className="flex items-center gap-3">
+              <a href={dashboardUrl} className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <IconInnerShadowTop className="size-4" />
                 </div>
                 <div className="flex flex-col">
+<<<<<<< HEAD
                   <span className="text-sm font-semibold">{t('admin.japaneseShikhi')}</span>
                   <span className="text-xs text-muted-foreground">{t('admin.adminPanel')}</span>
+=======
+                  <span className="text-sm font-semibold">Japanese Shikhi</span>
+                  <span className="text-xs text-muted-foreground">{panelType}</span>
+>>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
                 </div>
               </a>
             </SidebarMenuButton>
