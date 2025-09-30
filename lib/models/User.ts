@@ -15,6 +15,16 @@ export interface IUser extends Document {
   learningStreak: number;
   lastActiveDate: Date;
   totalStudyTime: number; // in minutes
+  enrolledCourses: {
+    courseId: mongoose.Types.ObjectId;
+    enrolledAt: Date;
+    progress: {
+      completedLessons: number;
+      totalLessons: number;
+      progressPercentage: number;
+      lastAccessedAt: Date;
+    };
+  }[];
   preferences: {
     dailyGoal: number; // minutes per day
     notifications: boolean;
@@ -93,6 +103,29 @@ const UserSchema = new Schema<IUser>({
     type: Number,
     default: 0,
     min: 0
+  },
+  // Courses user is enrolled in
+  enrolledCourses: {
+    type: [
+      {
+        courseId: {
+          type: Schema.Types.ObjectId,
+          ref: 'Course',
+          required: true
+        },
+        enrolledAt: {
+          type: Date,
+          default: Date.now
+        },
+        progress: {
+          completedLessons: { type: Number, default: 0, min: 0 },
+          totalLessons: { type: Number, default: 0, min: 0 },
+          progressPercentage: { type: Number, default: 0, min: 0, max: 100 },
+          lastAccessedAt: { type: Date, default: Date.now }
+        }
+      }
+    ],
+    default: []
   },
   preferences: {
     dailyGoal: {
