@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import {
   IconBook,
   IconChartBar,
@@ -14,7 +15,6 @@ import {
   IconTrendingUp,
 } from "@tabler/icons-react"
 import { useUser } from "@clerk/nextjs"
-import { usePathname } from "next/navigation"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -33,15 +33,12 @@ import { useLanguage } from '@/contexts/LanguageContext'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser()
-<<<<<<< HEAD
   const { t } = useLanguage()
-=======
   const pathname = usePathname()
   
   // Determine if this is admin or student dashboard based on URL
   const isAdminDashboard = pathname?.startsWith('/admin-dashboard')
   const isStudentDashboard = pathname?.startsWith('/dashboard')
->>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
 
   // Admin navigation items
   const adminNavMain = [
@@ -126,13 +123,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <IconInnerShadowTop className="size-4" />
                 </div>
                 <div className="flex flex-col">
-<<<<<<< HEAD
                   <span className="text-sm font-semibold">{t('admin.japaneseShikhi')}</span>
-                  <span className="text-xs text-muted-foreground">{t('admin.adminPanel')}</span>
-=======
-                  <span className="text-sm font-semibold">Japanese Shikhi</span>
                   <span className="text-xs text-muted-foreground">{panelType}</span>
->>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
                 </div>
               </a>
             </SidebarMenuButton>

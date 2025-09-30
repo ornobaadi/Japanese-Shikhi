@@ -118,11 +118,7 @@ export default function EnrolledCourses() {
               {t('courses.noCourses')}
             </p>
             <Button asChild>
-<<<<<<< HEAD
-              <a href="/">{t('courses.browseCourses')}</a>
-=======
-              <a href="/courses">Browse Courses</a>
->>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
+              <a href="/courses">{t('courses.browseCourses')}</a>
             </Button>
           </div>
         </CardContent>
@@ -157,13 +153,8 @@ export default function EnrolledCourses() {
                     {course.category}
                   </Badge>
                 </div>
-<<<<<<< HEAD
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-=======
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
->>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4" />
                     <span>{course.enrolledStudents.toLocaleString()} {t('courses.students')}</span>
@@ -188,13 +179,8 @@ export default function EnrolledCourses() {
                 {course.progress && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-<<<<<<< HEAD
-                      <span>{t('courses.progress')}</span>
-                      <span>{course.progress.progressPercentage}%</span>
-=======
-                      <span className="text-muted-foreground">Progress</span>
+                      <span className="text-muted-foreground">{t('courses.progress')}</span>
                       <span className="text-foreground font-medium">{course.progress.progressPercentage}%</span>
->>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
                     </div>
                     <Progress value={course.progress.progressPercentage} className="h-2" />
                   </div>
@@ -234,17 +220,12 @@ export default function EnrolledCourses() {
                   <Button className="w-full" variant="default">
                     {t('courses.continueStudying')}
                   </Button>
-<<<<<<< HEAD
-                  <Button className="w-full" variant="outline">
-                    {t('courses.viewCurriculum')}
-=======
                   <Button 
                     className="w-full" 
                     variant="outline"
                     onClick={() => window.location.href = `/courses/${course._id}/curriculum`}
                   >
-                    View Curriculum
->>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
+                    {t('courses.viewCurriculum')}
                   </Button>
                 </div>
               </div>

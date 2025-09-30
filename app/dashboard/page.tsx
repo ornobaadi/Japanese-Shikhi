@@ -3,10 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
 import { useLanguage } from "@/contexts/LanguageContext";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
-=======
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -21,7 +18,6 @@ import {
   Target,
   Flame
 } from "lucide-react";
->>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
 import { Loader2 } from "lucide-react";
 
 interface UserStats {
@@ -34,12 +30,8 @@ interface UserStats {
 }
 
 export default function DashboardPage() {
-<<<<<<< HEAD
-  const { isLoaded, isSignedIn } = useUser();
-  const { t } = useLanguage();
-=======
   const { isLoaded, isSignedIn, user } = useUser();
->>>>>>> 8ceb6c0639d86c7249a82bd4243d1f4ef37c9262
+  const { t } = useLanguage();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
