@@ -18,6 +18,7 @@ import {
   Flame
 } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface UserStats {
   totalCourses: number;
@@ -30,6 +31,7 @@ interface UserStats {
 
 export default function DashboardPage() {
   const { isLoaded, isSignedIn, user } = useUser();
+  const { t } = useLanguage();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [userStats, setUserStats] = useState<UserStats | null>(null);

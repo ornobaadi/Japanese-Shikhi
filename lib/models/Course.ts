@@ -18,7 +18,12 @@ export interface ICourse extends Document {
   enrollmentDeadline?: Date;
   instructorNotes?: string;
   learningObjectives: string[];
-  prerequisites: string[];
+  links: string[];
+  whatYoullLearn?: string;
+  courseLessonModule?: string;
+  actualPrice?: string;
+  discountedPrice?: string;
+  enrollmentLastDate?: string;
   lessons: mongoose.Types.ObjectId[];
   totalLessons: number;
   averageRating: number;
@@ -138,6 +143,26 @@ const CourseSchema = new Schema<ICourse>({
     type: String,
     maxlength: 1000
   },
+  whatYoullLearn: {
+    type: String,
+    maxlength: 1000
+  },
+  courseLessonModule: {
+    type: String,
+    maxlength: 2000
+  },
+  actualPrice: {
+    type: String,
+    maxlength: 50
+  },
+  discountedPrice: {
+    type: String,
+    maxlength: 50
+  },
+  enrollmentLastDate: {
+    type: String,
+    maxlength: 100
+  },
   learningObjectives: {
     type: [String],
     required: true,
@@ -148,9 +173,15 @@ const CourseSchema = new Schema<ICourse>({
       message: 'Course must have 1-10 learning objectives'
     }
   },
-  prerequisites: {
+  links: {
     type: [String],
-    default: []
+    default: [],
+    validate: {
+      validator: function(links: string[]) {
+        return links.length <= 10;
+      },
+      message: 'Course cannot have more than 10 links'
+    }
   },
   lessons: [{
     type: Schema.Types.ObjectId,

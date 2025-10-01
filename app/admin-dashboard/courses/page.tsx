@@ -1,3 +1,5 @@
+'use client';
+
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -8,8 +10,11 @@ import { Button } from "@/components/ui/button"
 import { IconPlus } from "@tabler/icons-react"
 import CourseList from "@/components/admin/CourseList"
 import Link from "next/link"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export default function CoursesPage() {
+  const { t } = useLanguage();
+
   return (
     <SidebarProvider
       style={
@@ -27,13 +32,13 @@ export default function CoursesPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold">All Courses</h1>
-                <p className="text-muted-foreground">Manage your Japanese language courses</p>
+                <h1 className="text-2xl font-bold">{t('admin.allCourses')}</h1>
+                <p className="text-muted-foreground">{t('admin.manageCourses')}</p>
               </div>
               <Button className="gap-2" asChild>
                 <Link href="/admin-dashboard/courses/add">
                   <IconPlus className="size-4" />
-                  Add New Course
+                  {t('admin.addNewCourse')}
                 </Link>
               </Button>
             </div>

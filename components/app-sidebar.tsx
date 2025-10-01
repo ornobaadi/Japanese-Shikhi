@@ -29,10 +29,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser()
   const pathname = usePathname()
+  const { t } = useLanguage()
   
   // Determine if this is admin or student dashboard based on URL
   const isAdminDashboard = pathname?.startsWith('/admin-dashboard')
