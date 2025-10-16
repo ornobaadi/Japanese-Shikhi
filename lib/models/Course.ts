@@ -21,9 +21,6 @@ export interface ICourse extends Document {
   links: string[];
   whatYoullLearn?: string;
   courseLessonModule?: string;
-  actualPrice?: string;
-  discountedPrice?: string;
-  enrollmentLastDate?: string;
   lessons: mongoose.Types.ObjectId[];
   totalLessons: number;
   averageRating: number;
@@ -150,18 +147,6 @@ const CourseSchema = new Schema<ICourse>({
   courseLessonModule: {
     type: String,
     maxlength: 2000
-  },
-  actualPrice: {
-    type: String,
-    maxlength: 50
-  },
-  discountedPrice: {
-    type: String,
-    maxlength: 50
-  },
-  enrollmentLastDate: {
-    type: String,
-    maxlength: 100
   },
   learningObjectives: {
     type: [String],
