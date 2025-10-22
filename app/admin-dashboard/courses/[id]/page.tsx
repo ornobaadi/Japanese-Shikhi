@@ -567,7 +567,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
               <TabsContent value="curriculum" className="space-y-6 mt-6">
                 {/* Module Tabs */}
                 <Card>
-                  <CardContent className="p-4">
+                  <CardContent className="p-4 py-0">
                     <div className="flex items-center gap-2 overflow-x-auto">
                       {modules.map((module, idx) => (
                         <div key={idx} className="relative group">
