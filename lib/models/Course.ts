@@ -1,5 +1,63 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+interface MCQOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+interface MCQQuestion {
+  question: string;
+  options: MCQOption[];
+  points: number;
+  explanation?: string; // Shown after submission
+}
+
+interface QuizData {
+  quizType: 'mcq' | 'open-ended';
+  timeLimit?: number; // in minutes
+  totalPoints: number;
+  passingScore: number; // percentage
+  allowMultipleAttempts: boolean;
+  showAnswersAfterSubmission: boolean;
+  randomizeQuestions: boolean;
+  randomizeOptions: boolean;
+  // MCQ specific
+  mcqQuestions?: MCQQuestion[];
+  // Open-ended specific
+  openEndedQuestion?: string;
+  openEndedQuestionFile?: string; // PDF file path
+  acceptFileUpload: boolean; // For open-ended answers
+  acceptTextAnswer: boolean; // For open-ended answers
+}
+
+interface CurriculumItem {
+  type: 'live-class' | 'announcement' | 'resource' | 'assignment' | 'quiz';
+  title: string;
+  description?: string;
+  scheduledDate: Date;
+  meetingLink?: string;
+  meetingPlatform?: 'zoom' | 'google-meet' | 'other';
+  duration?: number;
+  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'other';
+  resourceUrl?: string;
+  resourceFile?: string; // File path for uploaded files
+  announcementType?: 'important' | 'cancellation' | 'general';
+  validUntil?: Date;
+  isPinned?: boolean;
+  dueDate?: Date;
+  quizData?: QuizData; // Quiz specific data
+  isPublished: boolean;
+  createdAt: Date;
+}
+
+interface Module {
+  name: string;
+  description: string;
+  items: CurriculumItem[];
+  isPublished: boolean;
+  order: number;
+}
+
 export interface ICourse extends Document {
   title: string;
   titleJp?: string;
@@ -30,6 +88,9 @@ export interface ICourse extends Document {
   courseLanguage: {
     primary: string; // 'japanese'
     secondary: string; // 'english', 'bengali', etc.
+  };
+  curriculum: {
+    modules: Module[];
   };
   metadata: {
     version: string;
@@ -208,6 +269,127 @@ const CourseSchema = new Schema<ICourse>({
       type: String,
       default: 'english'
     }
+  },
+  curriculum: {
+    modules: [{
+      name: {
+        type: String,
+        required: true
+      },
+      description: String,
+      items: [{
+        type: {
+          type: String,
+          enum: ['live-class', 'announcement', 'resource', 'assignment', 'quiz'],
+          required: true
+        },
+        title: {
+          type: String,
+          required: true
+        },
+        description: String,
+        scheduledDate: {
+          type: Date,
+          required: true
+        },
+        meetingLink: String,
+        meetingPlatform: {
+          type: String,
+          enum: ['zoom', 'google-meet', 'other']
+        },
+        duration: Number,
+        resourceType: {
+          type: String,
+          enum: ['pdf', 'video', 'youtube', 'recording', 'other']
+        },
+        resourceUrl: String,
+        resourceFile: String,
+        announcementType: {
+          type: String,
+          enum: ['important', 'cancellation', 'general']
+        },
+        validUntil: Date,
+        isPinned: {
+          type: Boolean,
+          default: false
+        },
+        dueDate: Date,
+        quizData: {
+          quizType: {
+            type: String,
+            enum: ['mcq', 'open-ended']
+          },
+          timeLimit: Number,
+          totalPoints: {
+            type: Number,
+            default: 0
+          },
+          passingScore: {
+            type: Number,
+            default: 60,
+            min: 0,
+            max: 100
+          },
+          allowMultipleAttempts: {
+            type: Boolean,
+            default: false
+          },
+          showAnswersAfterSubmission: {
+            type: Boolean,
+            default: true
+          },
+          randomizeQuestions: {
+            type: Boolean,
+            default: false
+          },
+          randomizeOptions: {
+            type: Boolean,
+            default: false
+          },
+          mcqQuestions: [{
+            question: {
+              type: String,
+              required: function() { return this.quizType === 'mcq'; }
+            },
+            options: [{
+              text: String,
+              isCorrect: Boolean
+            }],
+            points: {
+              type: Number,
+              default: 1
+            },
+            explanation: String
+          }],
+          openEndedQuestion: String,
+          openEndedQuestionFile: String,
+          acceptFileUpload: {
+            type: Boolean,
+            default: true
+          },
+          acceptTextAnswer: {
+            type: Boolean,
+            default: true
+          }
+        },
+        isPublished: {
+          type: Boolean,
+          default: true
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now
+        }
+      }],
+      isPublished: {
+        type: Boolean,
+        default: false
+      },
+      order: {
+        type: Number,
+        required: true
+      }
+    }]
   },
   metadata: {
     version: {
