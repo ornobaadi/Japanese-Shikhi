@@ -1,5 +1,35 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+interface MCQOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+interface MCQQuestion {
+  question: string;
+  options: MCQOption[];
+  points: number;
+  explanation?: string; // Shown after submission
+}
+
+interface QuizData {
+  quizType: 'mcq' | 'open-ended';
+  timeLimit?: number; // in minutes
+  totalPoints: number;
+  passingScore: number; // percentage
+  allowMultipleAttempts: boolean;
+  showAnswersAfterSubmission: boolean;
+  randomizeQuestions: boolean;
+  randomizeOptions: boolean;
+  // MCQ specific
+  mcqQuestions?: MCQQuestion[];
+  // Open-ended specific
+  openEndedQuestion?: string;
+  openEndedQuestionFile?: string; // PDF file path
+  acceptFileUpload: boolean; // For open-ended answers
+  acceptTextAnswer: boolean; // For open-ended answers
+}
+
 interface CurriculumItem {
   type: 'live-class' | 'announcement' | 'resource' | 'assignment' | 'quiz';
   title: string;
@@ -15,6 +45,7 @@ interface CurriculumItem {
   validUntil?: Date;
   isPinned?: boolean;
   dueDate?: Date;
+  quizData?: QuizData; // Quiz specific data
   isPublished: boolean;
   createdAt: Date;
 }
@@ -283,6 +314,64 @@ const CourseSchema = new Schema<ICourse>({
           default: false
         },
         dueDate: Date,
+        quizData: {
+          quizType: {
+            type: String,
+            enum: ['mcq', 'open-ended']
+          },
+          timeLimit: Number,
+          totalPoints: {
+            type: Number,
+            default: 0
+          },
+          passingScore: {
+            type: Number,
+            default: 60,
+            min: 0,
+            max: 100
+          },
+          allowMultipleAttempts: {
+            type: Boolean,
+            default: false
+          },
+          showAnswersAfterSubmission: {
+            type: Boolean,
+            default: true
+          },
+          randomizeQuestions: {
+            type: Boolean,
+            default: false
+          },
+          randomizeOptions: {
+            type: Boolean,
+            default: false
+          },
+          mcqQuestions: [{
+            question: {
+              type: String,
+              required: function() { return this.quizType === 'mcq'; }
+            },
+            options: [{
+              text: String,
+              isCorrect: Boolean
+            }],
+            points: {
+              type: Number,
+              default: 1
+            },
+            explanation: String
+          }],
+          openEndedQuestion: String,
+          openEndedQuestionFile: String,
+          acceptFileUpload: {
+            type: Boolean,
+            default: true
+          },
+          acceptTextAnswer: {
+            type: Boolean,
+            default: true
+          }
+        },
         isPublished: {
           type: Boolean,
           default: true

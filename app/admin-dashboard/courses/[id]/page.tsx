@@ -63,9 +63,39 @@ import {
   IconDownload,
   IconUpload,
   IconPencil,
+  IconCheck,
+  IconSettings,
 } from "@tabler/icons-react";
 
 // Type definitions
+interface MCQOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+interface MCQQuestion {
+  question: string;
+  options: MCQOption[];
+  points: number;
+  explanation?: string;
+}
+
+interface QuizData {
+  quizType: 'mcq' | 'open-ended';
+  timeLimit?: number;
+  totalPoints: number;
+  passingScore: number;
+  allowMultipleAttempts: boolean;
+  showAnswersAfterSubmission: boolean;
+  randomizeQuestions: boolean;
+  randomizeOptions: boolean;
+  mcqQuestions?: MCQQuestion[];
+  openEndedQuestion?: string;
+  openEndedQuestionFile?: string;
+  acceptFileUpload: boolean;
+  acceptTextAnswer: boolean;
+}
+
 interface CurriculumItem {
   _id?: string;
   type: 'live-class' | 'announcement' | 'resource' | 'assignment' | 'quiz';
@@ -82,6 +112,7 @@ interface CurriculumItem {
   validUntil?: Date;
   isPinned?: boolean;
   dueDate?: Date;
+  quizData?: QuizData;
   createdAt: Date;
   isPublished: boolean;
 }
@@ -139,6 +170,40 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     isPinned: false,
     dueDate: '',
     dueTime: '23:59',
+  });
+
+  // Quiz specific states
+  const [quizForm, setQuizForm] = useState({
+    quizType: 'mcq' as 'mcq' | 'open-ended',
+    timeLimit: 30,
+    totalPoints: 0,
+    passingScore: 60,
+    allowMultipleAttempts: false,
+    showAnswersAfterSubmission: true,
+    randomizeQuestions: false,
+    randomizeOptions: false,
+    mcqQuestions: [] as Array<{
+      question: string;
+      options: Array<{ text: string; isCorrect: boolean }>;
+      points: number;
+      explanation: string;
+    }>,
+    openEndedQuestion: '',
+    openEndedQuestionFile: '',
+    acceptFileUpload: true,
+    acceptTextAnswer: true,
+  });
+
+  const [currentQuestion, setCurrentQuestion] = useState({
+    question: '',
+    options: [
+      { text: '', isCorrect: false },
+      { text: '', isCorrect: false },
+      { text: '', isCorrect: false },
+      { text: '', isCorrect: false },
+    ],
+    points: 1,
+    explanation: '',
   });
 
   useEffect(() => {
@@ -294,6 +359,36 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       dueDate: '',
       dueTime: '23:59',
     });
+
+    // Reset quiz form when adding new quiz
+    if (type === 'quiz') {
+      setQuizForm({
+        quizType: 'mcq',
+        timeLimit: 30,
+        totalPoints: 0,
+        passingScore: 60,
+        allowMultipleAttempts: false,
+        showAnswersAfterSubmission: true,
+        randomizeQuestions: false,
+        randomizeOptions: false,
+        mcqQuestions: [],
+        openEndedQuestion: '',
+        openEndedQuestionFile: '',
+        acceptFileUpload: true,
+        acceptTextAnswer: true,
+      });
+      setCurrentQuestion({
+        question: '',
+        options: [
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false },
+        ],
+        points: 1,
+        explanation: '',
+      });
+    }
   };
 
   const handleEditContent = (itemIdx: number) => {
@@ -319,6 +414,27 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       dueDate: item.dueDate ? new Date(item.dueDate).toISOString().split('T')[0] : '',
       dueTime: item.dueDate ? new Date(item.dueDate).toTimeString().slice(0, 5) : '23:59',
     });
+
+    // Load quiz data if editing a quiz
+    if (item.type === 'quiz' && (item as any).quizData) {
+      const quizData = (item as any).quizData;
+      setQuizForm({
+        quizType: quizData.quizType || 'mcq',
+        timeLimit: quizData.timeLimit || 30,
+        totalPoints: quizData.totalPoints || 0,
+        passingScore: quizData.passingScore || 60,
+        allowMultipleAttempts: quizData.allowMultipleAttempts || false,
+        showAnswersAfterSubmission: quizData.showAnswersAfterSubmission !== false,
+        randomizeQuestions: quizData.randomizeQuestions || false,
+        randomizeOptions: quizData.randomizeOptions || false,
+        mcqQuestions: quizData.mcqQuestions || [],
+        openEndedQuestion: quizData.openEndedQuestion || '',
+        openEndedQuestionFile: quizData.openEndedQuestionFile || '',
+        acceptFileUpload: quizData.acceptFileUpload !== false,
+        acceptTextAnswer: quizData.acceptTextAnswer !== false,
+      });
+    }
+
     setShowAddDialog(true);
   };
 
@@ -348,6 +464,38 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       newItem.isPinned = formData.isPinned;
     } else if (selectedType === 'assignment' || selectedType === 'quiz') {
       newItem.dueDate = new Date(`${formData.dueDate}T${formData.dueTime}`);
+    }
+
+    // Add quiz data if it's a quiz
+    if (selectedType === 'quiz') {
+      (newItem as any).quizData = {
+        quizType: quizForm.quizType,
+        timeLimit: quizForm.timeLimit,
+        totalPoints: quizForm.totalPoints,
+        passingScore: quizForm.passingScore,
+        allowMultipleAttempts: quizForm.allowMultipleAttempts,
+        showAnswersAfterSubmission: quizForm.showAnswersAfterSubmission,
+        randomizeQuestions: quizForm.randomizeQuestions,
+        randomizeOptions: quizForm.randomizeOptions,
+        ...(quizForm.quizType === 'mcq' ? {
+          mcqQuestions: quizForm.mcqQuestions
+        } : {
+          openEndedQuestion: quizForm.openEndedQuestion,
+          openEndedQuestionFile: quizForm.openEndedQuestionFile,
+          acceptFileUpload: quizForm.acceptFileUpload,
+          acceptTextAnswer: quizForm.acceptTextAnswer,
+        })
+      };
+
+      // Validate quiz data
+      if (quizForm.quizType === 'mcq' && quizForm.mcqQuestions.length === 0) {
+        toast.error('Please add at least one question to the quiz');
+        return;
+      }
+      if (quizForm.quizType === 'open-ended' && !quizForm.openEndedQuestion && !quizForm.openEndedQuestionFile) {
+        toast.error('Please add a question or upload a question file');
+        return;
+      }
     }
 
     if (editingItemIndex !== null) {
@@ -466,6 +614,95 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       case 'writing': return t('admin.writing');
       default: return category;
     }
+  };
+
+  // Quiz helper functions
+  const handleAddMCQQuestion = () => {
+    if (!currentQuestion.question.trim()) {
+      toast.error('Please enter a question');
+      return;
+    }
+
+    const filledOptions = currentQuestion.options.filter(opt => opt.text.trim());
+    if (filledOptions.length < 2) {
+      toast.error('Please provide at least 2 options');
+      return;
+    }
+
+    const hasCorrectAnswer = currentQuestion.options.some(opt => opt.isCorrect && opt.text.trim());
+    if (!hasCorrectAnswer) {
+      toast.error('Please mark at least one correct answer');
+      return;
+    }
+
+    const newQuestion = {
+      question: currentQuestion.question,
+      options: currentQuestion.options.filter(opt => opt.text.trim()),
+      points: currentQuestion.points,
+      explanation: currentQuestion.explanation,
+    };
+
+    setQuizForm(prev => ({
+      ...prev,
+      mcqQuestions: [...prev.mcqQuestions, newQuestion],
+      totalPoints: prev.totalPoints + currentQuestion.points,
+    }));
+
+    // Reset current question
+    setCurrentQuestion({
+      question: '',
+      options: [
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+      ],
+      points: 1,
+      explanation: '',
+    });
+
+    toast.success('Question added');
+  };
+
+  const handleRemoveMCQQuestion = (index: number) => {
+    const questionPoints = quizForm.mcqQuestions[index].points;
+    setQuizForm(prev => ({
+      ...prev,
+      mcqQuestions: prev.mcqQuestions.filter((_, i) => i !== index),
+      totalPoints: prev.totalPoints - questionPoints,
+    }));
+    toast.success('Question removed');
+  };
+
+  const handleOptionChange = (optionIndex: number, field: 'text' | 'isCorrect', value: string | boolean) => {
+    setCurrentQuestion(prev => ({
+      ...prev,
+      options: prev.options.map((opt, i) => 
+        i === optionIndex ? { ...opt, [field]: value } : opt
+      ),
+    }));
+  };
+
+  const handleAddOption = () => {
+    if (currentQuestion.options.length >= 6) {
+      toast.error('Maximum 6 options allowed');
+      return;
+    }
+    setCurrentQuestion(prev => ({
+      ...prev,
+      options: [...prev.options, { text: '', isCorrect: false }],
+    }));
+  };
+
+  const handleRemoveOption = (index: number) => {
+    if (currentQuestion.options.length <= 2) {
+      toast.error('Minimum 2 options required');
+      return;
+    }
+    setCurrentQuestion(prev => ({
+      ...prev,
+      options: prev.options.filter((_, i) => i !== index),
+    }));
   };
 
   if (loading) {
@@ -779,6 +1016,12 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                                                     </Badge>
                                                   )}
 
+                                                  {item.type === 'quiz' && (item as any).quizData && (
+                                                    <Badge variant="secondary" className="text-xs">
+                                                      {(item as any).quizData.quizType === 'mcq' ? 'MCQ' : 'Open-Ended'}
+                                                    </Badge>
+                                                  )}
+
                                                   {item.type === 'announcement' && item.announcementType !== 'general' && (
                                                     <Badge
                                                       variant={item.announcementType === 'cancellation' ? 'destructive' : 'default'}
@@ -792,6 +1035,17 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
                                               {/* Actions */}
                                               <div className="flex gap-1">
+                                                {item.type === 'quiz' && (item as any).quizData?.quizType === 'open-ended' && (
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    asChild
+                                                  >
+                                                    <Link href={`/admin-dashboard/courses/${courseId}/quiz/${activeModuleId}/${actualItemIdx}/grade`}>
+                                                      <IconClipboardCheck className="size-4" />
+                                                    </Link>
+                                                  </Button>
+                                                )}
                                                 <Button
                                                   variant="ghost"
                                                   size="sm"
@@ -1223,6 +1477,353 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                     onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Quiz Builder */}
+            {selectedType === 'quiz' && (
+              <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <IconSettings className="size-5" />
+                  <h3 className="font-semibold">Quiz Configuration</h3>
+                </div>
+
+                {/* Quiz Type Selection */}
+                <div>
+                  <Label htmlFor="quizType">Quiz Type *</Label>
+                  <select
+                    id="quizType"
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={quizForm.quizType}
+                    onChange={(e) => setQuizForm({ ...quizForm, quizType: e.target.value as 'mcq' | 'open-ended' })}
+                  >
+                    <option value="mcq">Multiple Choice (MCQ)</option>
+                    <option value="open-ended">Open-Ended / Descriptive</option>
+                  </select>
+                </div>
+
+                {/* Quiz Settings */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
+                    <Input
+                      id="timeLimit"
+                      type="number"
+                      min="5"
+                      step="5"
+                      value={quizForm.timeLimit}
+                      onChange={(e) => setQuizForm({ ...quizForm, timeLimit: parseInt(e.target.value) || 30 })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="passingScore">Passing Score (%)</Label>
+                    <Input
+                      id="passingScore"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={quizForm.passingScore}
+                      onChange={(e) => setQuizForm({ ...quizForm, passingScore: parseInt(e.target.value) || 60 })}
+                    />
+                  </div>
+                </div>
+
+                {/* Quiz Options */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="allowMultipleAttempts"
+                      checked={quizForm.allowMultipleAttempts}
+                      onChange={(e) => setQuizForm({ ...quizForm, allowMultipleAttempts: e.target.checked })}
+                      className="rounded"
+                    />
+                    <Label htmlFor="allowMultipleAttempts" className="cursor-pointer">
+                      Allow multiple attempts
+                    </Label>
+                  </div>
+
+                  {quizForm.quizType === 'mcq' && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="showAnswers"
+                          checked={quizForm.showAnswersAfterSubmission}
+                          onChange={(e) => setQuizForm({ ...quizForm, showAnswersAfterSubmission: e.target.checked })}
+                          className="rounded"
+                        />
+                        <Label htmlFor="showAnswers" className="cursor-pointer">
+                          Show correct answers after submission
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="randomizeQuestions"
+                          checked={quizForm.randomizeQuestions}
+                          onChange={(e) => setQuizForm({ ...quizForm, randomizeQuestions: e.target.checked })}
+                          className="rounded"
+                        />
+                        <Label htmlFor="randomizeQuestions" className="cursor-pointer">
+                          Randomize question order
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="randomizeOptions"
+                          checked={quizForm.randomizeOptions}
+                          onChange={(e) => setQuizForm({ ...quizForm, randomizeOptions: e.target.checked })}
+                          className="rounded"
+                        />
+                        <Label htmlFor="randomizeOptions" className="cursor-pointer">
+                          Randomize option order
+                        </Label>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* MCQ Questions Builder */}
+                {quizForm.quizType === 'mcq' && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold">Questions ({quizForm.mcqQuestions.length})</h4>
+                      <Badge variant="secondary">Total Points: {quizForm.totalPoints}</Badge>
+                    </div>
+
+                    {/* Display Added Questions */}
+                    {quizForm.mcqQuestions.length > 0 && (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {quizForm.mcqQuestions.map((q, idx) => (
+                          <Card key={idx} className="p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline" className="text-xs">Q{idx + 1}</Badge>
+                                  <Badge variant="secondary" className="text-xs">{q.points} pts</Badge>
+                                </div>
+                                <p className="text-sm font-medium">{q.question}</p>
+                                <div className="mt-2 space-y-1">
+                                  {q.options.map((opt, optIdx) => (
+                                    <div key={optIdx} className="flex items-center gap-2 text-xs">
+                                      {opt.isCorrect ? (
+                                        <IconCheck className="size-3 text-green-600" />
+                                      ) : (
+                                        <span className="size-3" />
+                                      )}
+                                      <span className={opt.isCorrect ? 'text-green-600 font-medium' : ''}>
+                                        {opt.text}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveMCQQuestion(idx)}
+                              >
+                                <IconTrash className="size-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add New Question Form */}
+                    <Card className="p-4 bg-background">
+                      <div className="space-y-3">
+                        <div>
+                          <Label>Question Text *</Label>
+                          <Textarea
+                            placeholder="Enter your question..."
+                            rows={2}
+                            value={currentQuestion.question}
+                            onChange={(e) => setCurrentQuestion({ ...currentQuestion, question: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>Options (mark correct answer) *</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleAddOption}
+                              disabled={currentQuestion.options.length >= 6}
+                            >
+                              <IconPlus className="size-3 mr-1" />
+                              Add Option
+                            </Button>
+                          </div>
+                          {currentQuestion.options.map((opt, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={opt.isCorrect}
+                                onChange={(e) => handleOptionChange(idx, 'isCorrect', e.target.checked)}
+                                className="rounded"
+                              />
+                              <Input
+                                placeholder={`Option ${idx + 1}`}
+                                value={opt.text}
+                                onChange={(e) => handleOptionChange(idx, 'text', e.target.value)}
+                              />
+                              {currentQuestion.options.length > 2 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveOption(idx)}
+                                >
+                                  <IconX className="size-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label>Points *</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="100"
+                              value={currentQuestion.points}
+                              onChange={(e) => setCurrentQuestion({ ...currentQuestion, points: parseInt(e.target.value) || 1 })}
+                            />
+                          </div>
+                          <div>
+                            <Label>Explanation (optional)</Label>
+                            <Input
+                              placeholder="Why is this the answer?"
+                              value={currentQuestion.explanation}
+                              onChange={(e) => setCurrentQuestion({ ...currentQuestion, explanation: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          onClick={handleAddMCQQuestion}
+                          className="w-full"
+                          variant="outline"
+                        >
+                          <IconPlus className="size-4 mr-2" />
+                          Add Question to Quiz
+                        </Button>
+                      </div>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Open-Ended Question */}
+                {quizForm.quizType === 'open-ended' && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div>
+                      <Label htmlFor="openEndedQuestion">Question / Instructions</Label>
+                      <Textarea
+                        id="openEndedQuestion"
+                        placeholder="Describe the question or instructions for students..."
+                        rows={4}
+                        value={quizForm.openEndedQuestion}
+                        onChange={(e) => setQuizForm({ ...quizForm, openEndedQuestion: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Or Upload Question File (PDF)</Label>
+                      <div className="flex gap-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploading(true);
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              try {
+                                const response = await fetch('/api/admin/upload', {
+                                  method: 'POST',
+                                  body: formData,
+                                });
+                                const data = await response.json();
+                                setQuizForm(prev => ({ ...prev, openEndedQuestionFile: data.url }));
+                                toast.success('File uploaded');
+                              } catch (error) {
+                                toast.error('Failed to upload file');
+                              } finally {
+                                setUploading(false);
+                              }
+                            }
+                          }}
+                          className="hidden"
+                          accept=".pdf"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="flex-1"
+                        >
+                          <IconUpload className="size-4 mr-2" />
+                          {uploading ? 'Uploading...' : quizForm.openEndedQuestionFile ? 'Change File' : 'Upload PDF'}
+                        </Button>
+                        {quizForm.openEndedQuestionFile && (
+                          <Badge variant="secondary" className="self-center">
+                            PDF Uploaded
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Total Points for This Question *</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="1000"
+                        value={quizForm.totalPoints}
+                        onChange={(e) => setQuizForm({ ...quizForm, totalPoints: parseInt(e.target.value) || 100 })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Student Answer Format</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="acceptText"
+                          checked={quizForm.acceptTextAnswer}
+                          onChange={(e) => setQuizForm({ ...quizForm, acceptTextAnswer: e.target.checked })}
+                          className="rounded"
+                        />
+                        <Label htmlFor="acceptText" className="cursor-pointer">
+                          Accept text answer (in textbox)
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="acceptFile"
+                          checked={quizForm.acceptFileUpload}
+                          onChange={(e) => setQuizForm({ ...quizForm, acceptFileUpload: e.target.checked })}
+                          className="rounded"
+                        />
+                        <Label htmlFor="acceptFile" className="cursor-pointer">
+                          Accept file upload (PDF)
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
