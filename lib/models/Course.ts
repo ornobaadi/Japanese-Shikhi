@@ -1,5 +1,32 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+interface CurriculumItem {
+  type: 'live-class' | 'announcement' | 'resource' | 'assignment' | 'quiz';
+  title: string;
+  description?: string;
+  scheduledDate: Date;
+  meetingLink?: string;
+  meetingPlatform?: 'zoom' | 'google-meet' | 'other';
+  duration?: number;
+  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'other';
+  resourceUrl?: string;
+  resourceFile?: string; // File path for uploaded files
+  announcementType?: 'important' | 'cancellation' | 'general';
+  validUntil?: Date;
+  isPinned?: boolean;
+  dueDate?: Date;
+  isPublished: boolean;
+  createdAt: Date;
+}
+
+interface Module {
+  name: string;
+  description: string;
+  items: CurriculumItem[];
+  isPublished: boolean;
+  order: number;
+}
+
 export interface ICourse extends Document {
   title: string;
   titleJp?: string;
@@ -30,6 +57,9 @@ export interface ICourse extends Document {
   courseLanguage: {
     primary: string; // 'japanese'
     secondary: string; // 'english', 'bengali', etc.
+  };
+  curriculum: {
+    modules: Module[];
   };
   metadata: {
     version: string;
@@ -208,6 +238,69 @@ const CourseSchema = new Schema<ICourse>({
       type: String,
       default: 'english'
     }
+  },
+  curriculum: {
+    modules: [{
+      name: {
+        type: String,
+        required: true
+      },
+      description: String,
+      items: [{
+        type: {
+          type: String,
+          enum: ['live-class', 'announcement', 'resource', 'assignment', 'quiz'],
+          required: true
+        },
+        title: {
+          type: String,
+          required: true
+        },
+        description: String,
+        scheduledDate: {
+          type: Date,
+          required: true
+        },
+        meetingLink: String,
+        meetingPlatform: {
+          type: String,
+          enum: ['zoom', 'google-meet', 'other']
+        },
+        duration: Number,
+        resourceType: {
+          type: String,
+          enum: ['pdf', 'video', 'youtube', 'recording', 'other']
+        },
+        resourceUrl: String,
+        resourceFile: String,
+        announcementType: {
+          type: String,
+          enum: ['important', 'cancellation', 'general']
+        },
+        validUntil: Date,
+        isPinned: {
+          type: Boolean,
+          default: false
+        },
+        dueDate: Date,
+        isPublished: {
+          type: Boolean,
+          default: true
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now
+        }
+      }],
+      isPublished: {
+        type: Boolean,
+        default: false
+      },
+      order: {
+        type: Number,
+        required: true
+      }
+    }]
   },
   metadata: {
     version: {
