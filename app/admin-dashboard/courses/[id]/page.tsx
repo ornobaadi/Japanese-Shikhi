@@ -27,6 +27,7 @@ import {
 } from "@tabler/icons-react";
 import AssignmentForm from '@/components/admin/AssignmentForm';
 import AssignmentList from '@/components/admin/AssignmentList';
+import QuizAssignmentForm from '@/components/admin/QuizAssignmentForm';
 import { toast } from 'sonner';
 
 export default function CourseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -39,6 +40,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   const [activeWeek, setActiveWeek] = useState<number>(1);
   const [showCreateMenu, setShowCreateMenu] = useState<boolean>(false);
   const [showAssignmentForm, setShowAssignmentForm] = useState<boolean>(false);
+  const [showQuizForm, setShowQuizForm] = useState<boolean>(false);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   useEffect(() => {
@@ -197,7 +199,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                                 </button>
                               </li>
                               <li>
-                                <button className="w-full text-left p-2 hover:bg-gray-50" onClick={() => { toast.info('🚀 Coming soon!'); setShowCreateMenu(false); }}>
+                                <button className="w-full text-left p-2 hover:bg-gray-50" onClick={() => { setShowQuizForm(true); setShowCreateMenu(false); }}>
                                   Quiz assignment
                                 </button>
                               </li>
@@ -218,7 +220,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                         {showAssignmentForm && (
                           <div className="mt-6">
                             <AssignmentForm
-                              courseId={course?.slug ?? courseId}
+                              courseId={courseId}
                               week={activeWeek}
                               onClose={() => setShowAssignmentForm(false)}
                               onSuccess={() => {
@@ -229,10 +231,25 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                           </div>
                         )}
 
+                        {showQuizForm && (
+                          <div className="mt-6">
+                            <QuizAssignmentForm
+                              courseId={courseId}
+                              courseName={course?.title || 'Course'}
+                              week={activeWeek}
+                              onClose={() => setShowQuizForm(false)}
+                              onSuccess={() => {
+                                setRefreshTrigger(prev => prev + 1);
+                                setShowQuizForm(false);
+                              }}
+                            />
+                          </div>
+                        )}
+
                         {/* Assignments list (show created assignments under create area) */}
                         <div className="mt-6">
                           <AssignmentList
-                            courseId={course?.slug ?? courseId}
+                            courseId={courseId}
                             week={activeWeek}
                             refreshTrigger={refreshTrigger}
                           />
