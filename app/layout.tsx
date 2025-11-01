@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Bengali, Hind_Siliguri } from "next/font/google";
+import { Noto_Sans_Bengali, Hind_Siliguri, Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
@@ -19,6 +19,13 @@ const hindSiliguri = Hind_Siliguri({
   display: "swap",
 });
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Japanese Shikhi - Master Japanese Language Online",
   description: "Transform your Japanese language skills with our comprehensive online courses. From beginner hiragana to advanced conversation - join thousands of successful learners today.",
@@ -32,12 +39,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <head>
-          <style>
-            {`@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,100..900;1,100..900&display=swap');`}
-          </style>
-        </head>
-        <body className={`${notoSansBengali.variable} ${hindSiliguri.variable} antialiased`}>
+        <body className={`${notoSansBengali.variable} ${hindSiliguri.variable} ${inter.variable} antialiased`}>
           <LanguageProvider>
             {children}
             <Toaster richColors position="top-right" />

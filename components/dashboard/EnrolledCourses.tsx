@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -225,8 +226,10 @@ export default function EnrolledCourses() {
                   <Button className="w-full" variant="default">
                     {t('courses.continueStudying')}
                   </Button>
-                  <Button className="w-full" variant="outline">
-                    {t('courses.viewCurriculum')}
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link href={`/dashboard/courses/${course._id}/curriculum`}>
+                      {t('courses.viewCurriculum')}
+                    </Link>
                   </Button>
                 </div>
               </div>
