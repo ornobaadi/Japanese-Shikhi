@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui';
 import { 
   ArrowLeft,
   Clock, 

@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 interface Course {
   _id?: string;
   title: string;
@@ -22,6 +23,7 @@ import {
 export default function Courses() {
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const router = useRouter();
   React.useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -111,11 +113,18 @@ export default function Courses() {
                     </div>
                   </div>
                   <div className="flex flex-col justify-center space-y-3">
-                    <Button className={`bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90`}>
+                    <Button 
+                      className={`bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90`}
+                      onClick={() => router.push(`/courses/${course._id}`)}
+                    >
                       Start Course
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => router.push(`/courses/${course._id}/curriculum`)}
+                    >
                       View Curriculum
                     </Button>
                   </div>

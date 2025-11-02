@@ -152,6 +152,9 @@ export default function AdvancedCourseManagementModal({
             title: '',
             url: '',
             description: '',
+            videoType: 'other',
+            thumbnailUrl: '',
+            isPreview: false,
             createdAt: new Date(),
             updatedAt: new Date()
         };

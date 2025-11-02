@@ -7,6 +7,9 @@ export interface IVideoLink {
   url: string;
   description: string;
   duration?: number; // in seconds
+  videoType: 'youtube' | 'drive' | 'vimeo' | 'direct' | 'other';
+  thumbnailUrl?: string;
+  isPreview?: boolean; // Mark as free preview content
   createdAt: Date;
   updatedAt: Date;
 }
@@ -151,6 +154,13 @@ const VideoLinkSchema = new Schema<IVideoLink>({
   },
   description: { type: String, maxlength: 500 },
   duration: { type: Number, min: 0 },
+  videoType: {
+    type: String,
+    enum: ['youtube', 'drive', 'vimeo', 'direct', 'other'],
+    default: 'other'
+  },
+  thumbnailUrl: { type: String },
+  isPreview: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
