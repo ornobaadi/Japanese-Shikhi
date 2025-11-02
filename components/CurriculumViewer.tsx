@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,8 +78,11 @@ interface Course {
   accessInfo: AccessInfo;
 }
 
-const CurriculumViewer = () => {
-  const params = useParams();
+interface CurriculumViewerProps {
+  courseId: string;
+}
+
+const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
   const router = useRouter();
   const { user } = useUser();
   
@@ -89,11 +92,17 @@ const CurriculumViewer = () => {
 
   useEffect(() => {
     const fetchCourseData = async () => {
-      if (!params?.id) return;
+      if (!courseId) {
+        console.log('No course ID provided');
+        return;
+      }
 
       try {
         setLoading(true);
-        const response = await fetch(`/api/courses/${params.id}/curriculum`);
+        const apiUrl = `/api/courses/${courseId}/curriculum`;
+        console.log('Fetching curriculum for course ID:', courseId);
+        console.log('API URL:', apiUrl);
+        const response = await fetch(apiUrl);
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -105,7 +114,7 @@ const CurriculumViewer = () => {
         
         if (data.success) {
           setCourse({
-            _id: params.id as string,
+            _id: courseId,
             title: data.title || 'Course',
             description: data.description || '',
             curriculum: data.curriculum,
@@ -123,7 +132,7 @@ const CurriculumViewer = () => {
     };
 
     fetchCourseData();
-  }, [params?.id]);
+  }, [courseId]);
 
   const handleEnrollClick = () => {
     if (!user) {
@@ -131,7 +140,7 @@ const CurriculumViewer = () => {
       return;
     }
     // Navigate to enrollment/payment page
-    router.push(`/payment/${params?.id}`);
+    router.push(`/payment/${courseId}`);
   };
 
   const handleItemClick = (item: CurriculumItem) => {
