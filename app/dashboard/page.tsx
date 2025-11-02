@@ -23,7 +23,6 @@ import {
   Clock
 } from "lucide-react";
 import { Loader2 } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Badge } from "@/components/ui/badge";
 
 interface UserStats {
