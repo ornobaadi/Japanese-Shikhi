@@ -33,7 +33,6 @@ import { useLanguage } from "@/contexts/LanguageContext"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser()
-  const { t } = useLanguage()
   const pathname = usePathname()
   const { t } = useLanguage()
   
