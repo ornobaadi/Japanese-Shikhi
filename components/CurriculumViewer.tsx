@@ -96,7 +96,9 @@ const CurriculumViewer = () => {
         const response = await fetch(`/api/courses/${params.id}/curriculum`);
         
         if (!response.ok) {
-          throw new Error('Failed to fetch course data');
+          const errorText = await response.text();
+          console.error('API Error Response:', { status: response.status, error: errorText });
+          throw new Error(`Failed to fetch course data: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();

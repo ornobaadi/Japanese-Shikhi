@@ -76,15 +76,18 @@ export default function CourseList() {
         ...(categoryFilter !== 'all' && { category: categoryFilter }),
       });
 
+      console.log('Fetching courses with params:', params.toString());
       const response = await fetch(`/api/admin/courses?${params}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        console.error('API Error Response:', errorData);
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log('Fetched courses data:', data);
       setCourses(data.courses);
       setPagination(data.pagination);
       setStats(data.stats);

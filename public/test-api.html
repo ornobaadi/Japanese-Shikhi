@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Course API Test</h1>
+    <button onclick="testPublicAPI()">Test Public Courses API</button>
+    <button onclick="testAdminSetup()">Setup Admin Access</button>
+    <button onclick="testAdminAPI()">Test Admin Courses API</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testPublicAPI() {
+            try {
+                const response = await fetch('/api/courses');
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = 'Error: ' + error.message;
+            }
+        }
+
+        async function testAdminSetup() {
+            try {
+                const response = await fetch('/api/admin/setup', { method: 'POST' });
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = 'Error: ' + error.message;
+            }
+        }
+
+        async function testAdminAPI() {
+            try {
+                const response = await fetch('/api/admin/courses');
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

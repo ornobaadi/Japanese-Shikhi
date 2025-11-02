@@ -312,6 +312,7 @@ export default function CourseForm() {
         console.log(`Submitting Course ${index + 1}:`, courseData);
 
         // Here you would make the API call for each course
+        console.log('Sending course data to API:', courseData);
         const response = await fetch('/api/admin/courses', {
           method: 'POST',
           headers: {
@@ -321,6 +322,7 @@ export default function CourseForm() {
         });
 
         const result = await response.json();
+        console.log('API Response:', { status: response.status, data: result });
 
         if (!response.ok) {
           if (result.details && Array.isArray(result.details)) {
