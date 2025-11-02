@@ -982,8 +982,38 @@ export default function CourseForm() {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => {
-                                          toast.info('File upload functionality will be implemented with backend integration');
+                                        onClick={async () => {
+                                          const input = document.createElement('input');
+                                          input.type = 'file';
+                                          input.accept = '.pdf,.doc,.docx,.txt';
+                                          input.onchange = async (e) => {
+                                            const file = (e.target as HTMLInputElement).files?.[0];
+                                            if (!file) return;
+                                            
+                                            const uploadFormData = new FormData();
+                                            uploadFormData.append('file', file);
+                                            
+                                            try {
+                                              const response = await fetch('/api/admin/upload', {
+                                                method: 'POST',
+                                                body: uploadFormData,
+                                              });
+                                              
+                                              const result = await response.json();
+                                              if (result.success) {
+                                                const newWeeklyContent = [...formData.weeklyContent];
+                                                const wIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                                newWeeklyContent[wIndex].documents[docIndex].fileUrl = result.url;
+                                                setFormData({ ...formData, weeklyContent: newWeeklyContent });
+                                                toast.success(`File uploaded successfully!`);
+                                              } else {
+                                                toast.error('Upload failed: ' + result.error);
+                                              }
+                                            } catch (error) {
+                                              toast.error('Upload failed');
+                                            }
+                                          };
+                                          input.click();
                                         }}
                                       >
                                         Upload
@@ -1282,8 +1312,37 @@ export default function CourseForm() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  toast.info('Image upload functionality will be implemented with backend integration');
+                                onClick={async () => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.accept = '.jpg,.jpeg,.png,.gif,.webp';
+                                  input.onchange = async (e) => {
+                                    const file = (e.target as HTMLInputElement).files?.[0];
+                                    if (!file) return;
+                                    
+                                    const uploadFormData = new FormData();
+                                    uploadFormData.append('file', file);
+                                    
+                                    try {
+                                      const response = await fetch('/api/admin/upload', {
+                                        method: 'POST',
+                                        body: uploadFormData,
+                                      });
+                                      
+                                      const result = await response.json();
+                                      if (result.success) {
+                                        const newBlogs = [...(formData.blogPosts || [])];
+                                        newBlogs[index].featuredImage = result.url;
+                                        handleInputChange('blogPosts', newBlogs);
+                                        toast.success(`Image uploaded successfully!`);
+                                      } else {
+                                        toast.error('Upload failed: ' + result.error);
+                                      }
+                                    } catch (error) {
+                                      toast.error('Upload failed');
+                                    }
+                                  };
+                                  input.click();
                                 }}
                               >
                                 Upload
