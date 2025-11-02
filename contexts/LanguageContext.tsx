@@ -909,7 +909,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 export function useLanguage() {
     const context = useContext(LanguageContext);
     if (context === undefined) {
-        throw new Error('useLanguage must be used within a LanguageProvider');
+        // During SSR or if provider is missing, return default values
+        return {
+            language: 'en' as Language,
+            setLanguage: () => {},
+            t: (key: string) => key
+        };
     }
     return context;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,12 @@ export default function EnrolledCourses() {
   }, []);
 
   const getLevelColor = (level: string) => {
-    return 'text-xs';
+    switch (level) {
+      case 'beginner': return 'bg-green-100 text-green-800';
+      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
+      case 'advanced': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const formatDuration = (minutes: number) => {
@@ -113,7 +119,7 @@ export default function EnrolledCourses() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">
               {t('courses.noCourses')}
             </p>
@@ -129,24 +135,24 @@ export default function EnrolledCourses() {
   return (
     <div className="space-y-6">
       {courses.map((course) => (
-        <Card key={course._id} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-200">
+        <Card key={course._id} className="overflow-hidden">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Course Info */}
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-foreground">
+                    <h3 className="text-xl font-semibold text-gray-900">
                       {course.title}
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-600 text-sm">
                       {course.description}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className={getLevelColor(course.level)}>
+                  <Badge className={getLevelColor(course.level)}>
                     {course.level}
                   </Badge>
                   <Badge variant="outline">
@@ -190,17 +196,17 @@ export default function EnrolledCourses() {
               {/* Actions & Next Class */}
               <div className="space-y-4">
                 {course.nextClass && (
-                  <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+                  <Card className="border-blue-200 bg-blue-50">
                     <CardContent className="p-4">
                       <div className="space-y-2">
-                        <div className="flex items-center space-x-2 text-blue-800 dark:text-blue-200">
+                        <div className="flex items-center space-x-2 text-blue-800">
                           <Calendar className="h-4 w-4" />
                           <span className="text-sm font-medium">{t('courses.nextClass')}</span>
                         </div>
-                        <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                        <p className="text-sm text-blue-700 font-medium">
                           {course.nextClass.title}
                         </p>
-                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                        <p className="text-xs text-blue-600">
                           {formatNextClass(course.nextClass.date)}
                         </p>
                         <Button

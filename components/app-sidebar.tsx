@@ -29,12 +29,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useLanguage } from '@/contexts/LanguageContext'
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser()
   const { t } = useLanguage()
   const pathname = usePathname()
+  const { t } = useLanguage()
   
   // Determine if this is admin or student dashboard based on URL
   const isAdminDashboard = pathname?.startsWith('/admin-dashboard')
@@ -43,27 +44,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Admin navigation items
   const adminNavMain = [
     {
-      title: t('admin.dashboard'),
+      title: "Dashboard",
       url: "/admin-dashboard",
       icon: IconDashboard,
     },
     {
-      title: t('admin.allCourses'),
+      title: "All Courses",
       url: "/admin-dashboard/courses",
       icon: IconBook,
     },
     {
-      title: t('admin.addCourse'),
+      title: "Add Course",
       url: "/admin-dashboard/courses/add",
       icon: IconPlus,
     },
     {
-      title: t('admin.users'),
+      title: "Users",
       url: "/admin-dashboard/users",
       icon: IconUsers,
     },
     {
-      title: t('admin.analytics'),
+      title: "Analytics",
       url: "/admin-dashboard/analytics",
       icon: IconChartBar,
     },

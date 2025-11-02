@@ -65,6 +65,48 @@ export async function GET(request: NextRequest) {
       console.log('[me/courses] no courseIds found');
     }
 
+  // Fetch curriculum data for courses to get real meeting links
+    const coursesWithCurriculum = await Course.find({ _id: { $in: courseIds } })
+      .select('_id curriculum');
+    
+    const curriculumData: Record<string, any> = {};
+    coursesWithCurriculum.forEach(course => {
+      curriculumData[course._id.toString()] = course.curriculum;
+    });
+
+    // Helper function to find next live class from curriculum
+    const findNextLiveClass = (curriculum: any) => {
+      if (!curriculum?.modules) return null;
+      
+      const now = new Date();
+      let nextClass = null;
+      let closestTime = Infinity;
+      
+      for (const module of curriculum.modules) {
+        if (!module.isPublished || !module.items) continue;
+        
+        for (const item of module.items) {
+          if (item.type === 'live-class' && item.isPublished && item.meetingLink) {
+            const classTime = new Date(item.scheduledDate);
+            const timeDiff = classTime.getTime() - now.getTime();
+            
+            // Find the next upcoming class (or the most recent if all are past)
+            if (timeDiff > 0 && timeDiff < closestTime) {
+              closestTime = timeDiff;
+              nextClass = {
+                date: item.scheduledDate,
+                meetingLink: item.meetingLink,
+                title: item.title,
+                meetingPlatform: item.meetingPlatform || 'google-meet'
+              };
+            }
+          }
+        }
+      }
+      
+      return nextClass;
+    };
+
   // Transform the data to match the expected format (defensive for empty)
     const sourceEnrollments: any[] = enrollmentArray;
     const enrolledCourses = sourceEnrollments.map((enrollment: any) => {
@@ -74,6 +116,10 @@ export async function GET(request: NextRequest) {
         console.log('[me/courses] missing course data for enrollment courseId', key);
         return null;
       }
+
+      // Get real next class from curriculum
+      const curriculum = curriculumData[key];
+      const nextClass = findNextLiveClass(curriculum);
 
       return {
         _id: course._id,
@@ -93,12 +139,8 @@ export async function GET(request: NextRequest) {
           progressPercentage: enrollment.progress.progressPercentage,
           lastAccessedAt: enrollment.progress.lastAccessedAt,
         },
-        // Add mock next class data for demo (in real app, this would come from a separate collection)
-        nextClass: enrollment.progress.progressPercentage < 100 ? {
-          date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
-          meetingLink: `https://meet.example.com/course-${course._id}`,
-          title: `${course.title} - Next Lesson`,
-        } : null,
+        // Use real curriculum data for next class
+        nextClass: nextClass,
       };
     }).filter(Boolean); // Remove null entries
 
