@@ -38,9 +38,10 @@ interface CurriculumItem {
   meetingLink?: string;
   meetingPlatform?: 'zoom' | 'google-meet' | 'other';
   duration?: number;
-  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'other';
+  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'drive' | 'other';
   resourceUrl?: string;
   resourceFile?: string; // File path for uploaded files
+  isFreePreview?: boolean; // Mark if this item is available for free preview
   announcementType?: 'important' | 'cancellation' | 'general';
   validUntil?: Date;
   isPinned?: boolean;
@@ -73,6 +74,9 @@ export interface ICourse extends Document {
   thumbnailUrl?: string;
   actualPrice?: number;
   discountedPrice?: number;
+  // Free preview settings
+  allowFreePreview: boolean;
+  freePreviewCount: number; // Number of free items accessible
   enrollmentDeadline?: Date;
   instructorNotes?: string;
   learningObjectives: string[];
@@ -188,6 +192,17 @@ const CourseSchema = new Schema<ICourse>({
       message: 'Discounted price cannot be higher than actual price'
     }
   },
+  // Free preview settings
+  allowFreePreview: {
+    type: Boolean,
+    default: true
+  },
+  freePreviewCount: {
+    type: Number,
+    default: 2,
+    min: 0,
+    max: 10
+  },
   enrollmentDeadline: {
     type: Date,
     validate: {
@@ -300,10 +315,14 @@ const CourseSchema = new Schema<ICourse>({
         duration: Number,
         resourceType: {
           type: String,
-          enum: ['pdf', 'video', 'youtube', 'recording', 'other']
+          enum: ['pdf', 'video', 'youtube', 'recording', 'drive', 'other']
         },
         resourceUrl: String,
         resourceFile: String,
+        isFreePreview: {
+          type: Boolean,
+          default: false
+        },
         announcementType: {
           type: String,
           enum: ['important', 'cancellation', 'general']

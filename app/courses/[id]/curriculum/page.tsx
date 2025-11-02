@@ -1,77 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { 
-  ArrowLeft,
-  Clock, 
-  Users, 
-  Calendar,
-  Star,
-  BookOpen,
-  DollarSign,
-  CheckCircle,
-  PlayCircle,
-  Target,
-  Award,
-  Globe
-} from 'lucide-react';
+import React from 'react';
 import { Navbar5 } from '@/components/navbar-5';
-
-interface Lesson {
-  _id: string;
-  title: string;
-  estimatedDuration: number;
-  type: 'video' | 'text' | 'quiz' | 'exercise';
-}
-
-interface Course {
-  _id: string;
-  title: string;
-  titleJp?: string;
-  description: string;
-  descriptionJp?: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
-  category: string;
-  tags: string[];
-  thumbnailUrl?: string;
-  estimatedDuration: number;
-  enrolledStudents: number;
-  averageRating: number;
-  totalRatings: number;
-  totalLessons: number;
-  actualPrice?: number;
-  discountedPrice?: number;
-  enrollmentDeadline?: string;
-  isPremium: boolean;
-  learningObjectives: string[];
-  prerequisites: string[];
-  lessons: Lesson[];
-  formattedDuration: string;
-  difficultyLabel: string;
-  instructorNotes?: string;
-  courseLanguage: {
-    primary: string;
-    secondary: string;
-  };
-}
+import CurriculumViewer from '@/components/CurriculumViewer';
 
 export default function CourseCurriculumPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { isSignedIn } = useUser();
-  const [course, setCourse] = useState<Course | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCourse = async () => {
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar5 />
+      <CurriculumViewer />
+    </div>
+  );
+}
       try {
         const courseId = params?.id;
         if (!courseId) {
