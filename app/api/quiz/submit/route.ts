@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         const studentAnswer = answers.mcqAnswers?.[i];
 
         if (studentAnswer !== undefined && studentAnswer !== null) {
-          const correctOptionIndex = question.options.findIndex(opt => opt.isCorrect);
+          const correctOptionIndex = question.options.findIndex((opt: any) => opt.isCorrect);
           const isCorrect = studentAnswer === correctOptionIndex;
           const pointsEarned = isCorrect ? question.points : 0;
 

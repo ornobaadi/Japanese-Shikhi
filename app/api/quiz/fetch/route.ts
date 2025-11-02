@@ -87,10 +87,10 @@ export async function GET(request: NextRequest) {
 
     if (quizData.quizType === 'mcq') {
       // Remove correct answers from options
-      let questions = quizData.mcqQuestions?.map((q, idx) => ({
+      let questions = quizData.mcqQuestions?.map((q: any, idx: number) => ({
         questionIndex: idx,
         question: q.question,
-        options: q.options.map((opt, optIdx) => ({
+        options: q.options.map((opt: any, optIdx: number) => ({
           optionIndex: optIdx,
           text: opt.text
           // isCorrect is NOT included
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
       if (quizData.randomizeQuestions) {
         questions = shuffleArray(questions);
         // Update questionIndex after shuffling
-        questions = questions.map((q, newIdx) => ({
+        questions = questions.map((q: any, newIdx: number) => ({
           ...q,
           originalIndex: q.questionIndex,
           questionIndex: newIdx
@@ -111,9 +111,9 @@ export async function GET(request: NextRequest) {
 
       // Randomize options if enabled
       if (quizData.randomizeOptions) {
-        questions = questions.map(q => ({
+        questions = questions.map((q: any) => ({
           ...q,
-          options: shuffleArray(q.options).map((opt, newIdx) => ({
+          options: shuffleArray(q.options).map((opt: any, newIdx: number) => ({
             ...opt,
             originalIndex: opt.optionIndex,
             optionIndex: newIdx

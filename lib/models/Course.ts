@@ -349,7 +349,7 @@ const CourseSchema = new Schema<ICourse>({
           mcqQuestions: [{
             question: {
               type: String,
-              required: function() { return this.quizType === 'mcq'; }
+              required: function(this: any) { return this.quizType === 'mcq'; }
             },
             options: [{
               text: String,
