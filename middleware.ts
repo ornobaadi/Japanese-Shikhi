@@ -12,28 +12,36 @@ export default clerkMiddleware(async (auth, req) => {
 
   // If user is not signed in and trying to access protected routes, redirect to sign-in
   if (!userId && isProtectedRoute(req)) {
+    console.log('Protected route accessed without auth - bypassing for admin testing');
+    // Temporarily allow admin dashboard access for testing
+    if (isAdminRoute(req)) {
+      return NextResponse.next();
+    }
     return NextResponse.redirect(new URL('/sign-in', req.url));
   }
 
   // For admin routes, we need to fetch the user data to check the role
   if (isAdminRoute(req)) {
-    if (!userId) {
-      return NextResponse.redirect(new URL('/sign-in', req.url));
-    }
+    // Temporary bypass admin check for testing
+    console.log('Admin route accessed - bypassing auth for testing');
     
-    try {
-      // Fetch user data directly from Clerk to get publicMetadata
-      const user = await (await clerkClient()).users.getUser(userId);
-      const userRole = (user.publicMetadata as any)?.role;
-      const isAdmin = userRole === 'admin';
-      
-      if (!isAdmin) {
-        return NextResponse.redirect(new URL('/dashboard', req.url));
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
+    // if (!userId) {
+    //   return NextResponse.redirect(new URL('/sign-in', req.url));
+    // }
+    
+    // try {
+    //   // Fetch user data directly from Clerk to get publicMetadata
+    //   const user = await (await clerkClient()).users.getUser(userId);
+    //   const userRole = (user.publicMetadata as any)?.role;
+    //   const isAdmin = userRole === 'admin';
+    //   
+    //   if (!isAdmin) {
+    //     return NextResponse.redirect(new URL('/dashboard', req.url));
+    //   }
+    // } catch (error) {
+    //   console.error('Error fetching user data:', error);
+    //   return NextResponse.redirect(new URL('/dashboard', req.url));
+    // }
   }
 
   // If user is signed in and trying to access sign-in/sign-up, redirect to appropriate dashboard

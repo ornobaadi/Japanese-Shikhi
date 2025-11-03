@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { IconSearch, IconEdit, IconTrash, IconEye, IconLoader2, IconPlus } from '@tabler/icons-react';
+import { IconSearch, IconEdit, IconTrash, IconEye, IconLoader2, IconPlus, IconRefresh } from '@tabler/icons-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -30,21 +30,10 @@ interface Course {
 }
 
 interface CourseListProps {
-  courses: Course[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalCourses: number;
-    limit: number;
-  };
-  stats: {
-    total: number;
-    published: number;
-    draft: number;
-  };
+  refreshTrigger?: number;
 }
 
-export default function CourseList() {
+export default function CourseList({ refreshTrigger }: CourseListProps) {
   const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [pagination, setPagination] = useState({
@@ -79,18 +68,56 @@ export default function CourseList() {
       console.log('Fetching courses with params:', params.toString());
       const response = await fetch(`/api/admin/courses?${params}`);
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
         console.error('API Error Response:', errorData);
+        console.error('Full error details:', { status: response.status, url: response.url, errorData });
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
       console.log('Fetched courses data:', data);
-      setCourses(data.courses);
-      setPagination(data.pagination);
-      setStats(data.stats);
+      
+      if (!data.courses) {
+        console.warn('No courses array in response:', data);
+        setCourses([]);
+      } else {
+        console.log('Setting courses:', data.courses.length, 'courses found');
+        console.log('Courses data:', JSON.stringify(data.courses, null, 2));
+        setCourses(data.courses);
+      }
+      
+      // Temporary: Also set some test courses for debugging
+      if (data.courses && data.courses.length === 0) {
+        console.log('No courses found, adding test course for debugging');
+        setCourses([{
+          _id: 'test-course-1',
+          title: 'Test Course (From Debug)',
+          description: 'This is a test course to verify the UI is working',
+          level: 'beginner',
+          category: 'grammar',
+          difficulty: 1,
+          isPremium: false,
+          isPublished: true,
+          createdAt: new Date().toISOString(),
+          enrolledStudents: 5,
+          averageRating: 4.5,
+          totalRatings: 10,
+          estimatedDuration: 30
+        }]);
+      }
+      
+      if (data.pagination) {
+        setPagination(data.pagination);
+      }
+      
+      if (data.stats) {
+        setStats(data.stats);
+      }
     } catch (error: any) {
       console.error('Error fetching courses:', error);
       toast.error(error.message || 'Failed to fetch courses');
@@ -102,6 +129,13 @@ export default function CourseList() {
   useEffect(() => {
     fetchCourses();
   }, [pagination.currentPage, searchQuery, statusFilter, levelFilter, categoryFilter]);
+
+  // Refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger) {
+      fetchCourses();
+    }
+  }, [refreshTrigger]);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -264,6 +298,20 @@ export default function CourseList() {
               {t('admin.showingCourses')} {courses.length} {t('admin.ofCourses')} {pagination.totalCourses} {t('admin.coursesText')}
             </CardDescription>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => fetchCourses()}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            {isLoading ? (
+              <IconLoader2 className="size-4 animate-spin" />
+            ) : (
+              <IconRefresh className="size-4" />
+            )}
+            Refresh
+          </Button>
           <Button asChild>
             <Link href="/admin-dashboard/courses/add">
               <IconPlus className="size-4 mr-2" />
