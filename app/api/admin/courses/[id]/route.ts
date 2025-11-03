@@ -37,6 +37,33 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await connectToDatabase();
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    
+    console.log('🔥 PATCH API called for course:', id);
+    console.log('📦 Received data:', JSON.stringify(body, null, 2));
+    
+    const updatedCourse = await Course.findByIdAndUpdate(
+      id,
+      { ...body, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedCourse) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+    }
+    
+    console.log('✅ Course updated with advanced data');
+    return NextResponse.json({ message: 'Advanced course data saved successfully', course: updatedCourse });
+  } catch (error) {
+    console.error('❌ PATCH Error:', error);
+    return NextResponse.json({ error: 'Failed to update course with advanced data' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await connectToDatabase();
   try {

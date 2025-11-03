@@ -64,7 +64,7 @@ export interface ICourse extends Document {
   description: string;
   descriptionJp?: string;
   level: 'beginner' | 'intermediate' | 'advanced';
-  category: 'vocabulary' | 'grammar' | 'conversation' | 'reading' | 'writing' | 'culture' | 'kanji';
+  category: 'vocabulary' | 'grammar' | 'conversation' | 'reading' | 'writing' | 'culture' | 'kanji' | 'language';
   tags: string[];
   estimatedDuration: number; // in minutes
   difficulty: number; // 1-10 scale
@@ -98,6 +98,7 @@ export interface ICourse extends Document {
     createdBy: string;
     approvedBy?: string;
   };
+  advanced?: any; // Advanced course management data (videos, documents, etc.)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -132,8 +133,9 @@ const CourseSchema = new Schema<ICourse>({
   },
   category: {
     type: String,
-    enum: ['vocabulary', 'grammar', 'conversation', 'reading', 'writing', 'culture', 'kanji'],
-    required: true
+    enum: ['vocabulary', 'grammar', 'conversation', 'reading', 'writing', 'culture', 'kanji', 'language'],
+    required: false,  // Temporarily make optional to fix existing data
+    default: 'language'
   },
   tags: {
     type: [String],
@@ -214,7 +216,9 @@ const CourseSchema = new Schema<ICourse>({
     required: true,
     validate: {
       validator: function(objectives: string[]) {
-        return objectives.length >= 1 && objectives.length <= 10;
+        // Filter out empty strings and validate non-empty objectives
+        const validObjectives = objectives.filter(obj => obj && obj.trim());
+        return validObjectives.length >= 1 && validObjectives.length <= 10;
       },
       message: 'Course must have 1-10 learning objectives'
     }
@@ -405,6 +409,11 @@ const CourseSchema = new Schema<ICourse>({
       required: true
     },
     approvedBy: String
+  },
+  // Advanced course management data
+  advanced: {
+    type: Schema.Types.Mixed,
+    default: {}
   }
 }, {
   timestamps: true,
@@ -475,4 +484,27 @@ CourseSchema.statics.findRecommended = function(userLevel: string, userInterests
   .populate('lessons', 'title estimatedDuration');
 };
 
-export default mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
+// Pre-save hook to clean up arrays
+CourseSchema.pre('save', function(next) {
+  // Clean up learningObjectives - remove empty strings
+  if (this.learningObjectives) {
+    this.learningObjectives = this.learningObjectives.filter((obj: string) => obj && obj.trim());
+  }
+  
+  // Clean up links - remove empty strings
+  if (this.links) {
+    this.links = this.links.filter((link: string) => link && link.trim());
+  }
+  
+  next();
+});
+
+// Force model refresh - delete from both models and connection
+if (mongoose.models.Course) {
+  delete mongoose.models.Course;
+}
+if (mongoose.connection.models.Course) {
+  delete mongoose.connection.models.Course;
+}
+
+export default mongoose.model<ICourse>('Course', CourseSchema);
