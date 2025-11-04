@@ -132,8 +132,19 @@ export async function POST(request: NextRequest) {
       links,
       thumbnailUrl,
       instructorNotes,
-      courseSummary
+      courseSummary,
+      weeklyContent,
+      classLinks,
+      blogPosts,
+      enrolledStudentsInfo
     } = body;
+    
+    console.log('Received advanced course data:', { 
+      weeklyContentCount: weeklyContent?.length || 0,
+      classLinksCount: classLinks?.length || 0,
+      blogPostsCount: blogPosts?.length || 0,
+      enrolledStudentsCount: enrolledStudentsInfo?.length || 0
+    });
 
     console.log('Received course data:', { title, description, level, category, estimatedDuration, difficulty });
 
@@ -205,6 +216,11 @@ export async function POST(request: NextRequest) {
       // Add free preview settings
       allowFreePreview: true,
       freePreviewCount: 2,
+      // Add advanced course management data
+      weeklyContent: weeklyContent || [],
+      classLinks: classLinks || [],
+      blogPosts: blogPosts || [],
+      enrolledStudentsInfo: enrolledStudentsInfo || [],
       metadata: {
         version: '1.0.0',
         lastUpdated: new Date(),

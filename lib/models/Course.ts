@@ -102,7 +102,46 @@ export interface ICourse extends Document {
     createdBy: string;
     approvedBy?: string;
   };
-  advanced?: any; // Advanced course management data (videos, documents, etc.)
+  // Advanced Course Management fields
+  weeklyContent?: Array<{
+    week: number;
+    videoLinks: Array<{
+      title: string;
+      url: string;
+      description: string;
+    }>;
+    documents: Array<{
+      title: string;
+      fileName: string;
+      fileUrl: string;
+      fileType: string;
+    }>;
+    comments: string;
+  }>;
+  classLinks?: Array<{
+    title: string;
+    meetingUrl: string;
+    schedule: Date;
+    description: string;
+  }>;
+  blogPosts?: Array<{
+    title: string;
+    author: string;
+    excerpt: string;
+    content: string;
+    featuredImageUrl: string;
+    publishDate: Date;
+    tags: string[];
+    publishImmediately: boolean;
+  }>;
+  enrolledStudentsInfo?: Array<{
+    name: string;
+    email: string;
+    enrollmentDate: Date;
+    progress: number;
+    status: string;
+  }>;
+  advanced?: any; // Legacy field for backward compatibility
   createdAt: Date;
   updatedAt: Date;
 }
@@ -433,7 +472,49 @@ const CourseSchema = new Schema<ICourse>({
   advanced: {
     type: Schema.Types.Mixed,
     default: {}
-  }
+  },
+  // Weekly Content
+  weeklyContent: [{
+    week: Number,
+    videoLinks: [{
+      title: String,
+      url: String,
+      description: String
+    }],
+    documents: [{
+      title: String,
+      fileName: String,
+      fileUrl: String,
+      fileType: String
+    }],
+    comments: String
+  }],
+  // Class Links
+  classLinks: [{
+    title: String,
+    meetingUrl: String,
+    schedule: Date,
+    description: String
+  }],
+  // Blog Posts
+  blogPosts: [{
+    title: String,
+    author: String,
+    excerpt: String,
+    content: String,
+    featuredImageUrl: String,
+    publishDate: Date,
+    tags: [String],
+    publishImmediately: Boolean
+  }],
+  // Enrolled Students Info
+  enrolledStudentsInfo: [{
+    name: String,
+    email: String,
+    enrollmentDate: Date,
+    progress: Number,
+    status: String
+  }]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
