@@ -267,14 +267,16 @@ const CourseSchema = new Schema<ICourse>({
   },
   learningObjectives: {
     type: [String],
-    required: true,
+    required: false,
+    default: [],
     validate: {
       validator: function(objectives: string[]) {
-        // Filter out empty strings and validate non-empty objectives
+        // Allow empty array or up to 10 non-empty objectives
+        if (!objectives || objectives.length === 0) return true;
         const validObjectives = objectives.filter(obj => obj && obj.trim());
-        return validObjectives.length >= 1 && validObjectives.length <= 10;
+        return validObjectives.length <= 10;
       },
-      message: 'Course must have 1-10 learning objectives'
+      message: 'Course cannot have more than 10 learning objectives'
     }
   },
   links: {
