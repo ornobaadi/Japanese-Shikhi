@@ -287,13 +287,7 @@ export default function CourseForm() {
           return;
         }
 
-        const validObjectives = course.learningObjectives.filter((obj: string) => obj.trim());
-        if (validObjectives.length === 0) {
-          toast.error(`Course ${i + 1}: At least one learning objective is required`);
-          setActiveCourseIndex(i);
-          setFormData(course);
-          return;
-        }
+        // Learning objectives are now optional - no validation required
       }
 
       // Submit all courses
@@ -612,7 +606,7 @@ export default function CourseForm() {
           {/* Learning Objectives */}
           <div className="space-y-4">
             <div>
-              <Label>{t('form.learningObjectives')} *</Label>
+              <Label>{t('form.learningObjectives')} (optional)</Label>
               <p className="text-sm text-muted-foreground mb-3">
                 {t('form.learningObjectivesDesc')}
               </p>
