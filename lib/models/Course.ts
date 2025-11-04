@@ -599,12 +599,7 @@ CourseSchema.pre('save', function(next) {
   next();
 });
 
-// Force model refresh - delete from both models and connection
-if (mongoose.models.Course) {
-  delete mongoose.models.Course;
-}
-if (mongoose.connection.models.Course) {
-  delete mongoose.connection.models.Course;
-}
+// Export the model, checking if it already exists
+const Course = mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
 
-export default mongoose.model<ICourse>('Course', CourseSchema);
+export default Course;
