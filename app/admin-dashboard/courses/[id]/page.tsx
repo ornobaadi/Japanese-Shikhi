@@ -239,20 +239,58 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     fetchData();
   }, [params]);
 
+  const testApiConnection = async () => {
+    try {
+      console.log('Testing API connection...');
+      const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const result = await response.json();
+      console.log('API test result:', result);
+      toast.success('API connection works!');
+    } catch (error) {
+      console.error('API test failed:', error);
+      toast.error('API connection failed');
+    }
+  };
+
   const saveCurriculum = async () => {
     try {
       setSaving(true);
-      const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+      console.log('Saving curriculum for course:', courseId);
+      console.log('Modules to save:', modules);
+
+      const requestBody = { curriculum: { modules } };
+      console.log('Request body:', JSON.stringify(requestBody, null, 2)); const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ curriculum: { modules } }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) throw new Error('Failed to save');
+      if (!response.ok) {
+        console.error('Response not OK. Status:', response.status, 'StatusText:', response.statusText);
+        const responseText = await response.text();
+        console.error('Raw response text:', responseText);
+
+        let errorData = {};
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Failed to parse response as JSON:', e);
+        }
+
+        console.error('Server error response:', errorData);
+        throw new Error((errorData as any)?.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Save successful:', result);
       toast.success('Curriculum saved successfully');
     } catch (error) {
       console.error('Error saving curriculum:', error);
-      toast.error('Failed to save curriculum');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error(`Failed to save curriculum: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -677,7 +715,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   const handleOptionChange = (optionIndex: number, field: 'text' | 'isCorrect', value: string | boolean) => {
     setCurrentQuestion(prev => ({
       ...prev,
-      options: prev.options.map((opt, i) => 
+      options: prev.options.map((opt, i) =>
         i === optionIndex ? { ...opt, [field]: value } : opt
       ),
     }));
@@ -810,11 +848,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                         <div key={idx} className="relative group">
                           <button
                             onClick={() => setActiveModuleId(idx)}
-                            className={`px-4 py-2 rounded-lg border-2 whitespace-nowrap transition-all ${
-                              activeModuleId === idx
-                                ? 'border-primary bg-primary text-primary-foreground'
-                                : 'border-border hover:border-primary/50'
-                            }`}
+                            className={`px-4 py-2 rounded-lg border-2 whitespace-nowrap transition-all ${activeModuleId === idx
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-border hover:border-primary/50'
+                              }`}
                           >
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-sm">{module.name}</span>
@@ -1263,10 +1300,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                 id="title"
                 placeholder={
                   selectedType === 'live-class' ? 'e.g., Introduction to Hiragana' :
-                  selectedType === 'announcement' ? 'e.g., Class Cancelled Today' :
-                  selectedType === 'resource' ? 'e.g., Lecture Notes PDF' :
-                  selectedType === 'assignment' ? 'e.g., Practice Exercise' :
-                  'e.g., Chapter Quiz'
+                    selectedType === 'announcement' ? 'e.g., Class Cancelled Today' :
+                      selectedType === 'resource' ? 'e.g., Lecture Notes PDF' :
+                        selectedType === 'assignment' ? 'e.g., Practice Exercise' :
+                          'e.g., Chapter Quiz'
                 }
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}

@@ -135,6 +135,16 @@ export async function POST(request: NextRequest) {
       courseSummary
     } = body;
 
+    console.log('Received course data:', { title, description, level, category, estimatedDuration, difficulty });
+
+    // Validate category against allowed values
+    const validCategories = ['vocabulary', 'grammar', 'conversation', 'reading', 'writing', 'culture', 'kanji', 'language'];
+    if (category && !validCategories.includes(category)) {
+      return NextResponse.json({ 
+        error: `Invalid category '${category}'. Must be one of: ${validCategories.join(', ')}` 
+      }, { status: 400 });
+    }
+
     // Validation
     if (!title || !description || !level || !category || !estimatedDuration || !difficulty || !learningObjectives) {
       return NextResponse.json({ 

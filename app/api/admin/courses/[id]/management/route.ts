@@ -103,9 +103,12 @@ export async function POST(
 ) {
   try {
     const params = await context.params;
+    console.log('POST /api/admin/courses/[id]/management called with courseId:', params.id);
+    
     // Check authentication
     const { userId } = await auth();
     if (!userId) {
+      console.log('Unauthorized - no userId');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -126,9 +129,13 @@ export async function POST(
 
     // Parse request body
     const managementData: CourseManagementData = await request.json();
+    console.log('🔥 API ENDPOINT CALLED!');
+    console.log('📍 Course ID from params:', params.id);
+    console.log('📦 Received management data:', JSON.stringify(managementData, null, 2));
 
     // Validate required fields
     if (!managementData.courseName) {
+      console.log('Missing course name in request');
       return NextResponse.json(
         { error: 'Course name is required' },
         { status: 400 }

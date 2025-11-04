@@ -134,11 +134,17 @@ export default function AdvancedCourseManagementModal({
     const handleSave = async () => {
         setIsSaving(true);
         try {
+            console.log('🚀 Modal handleSave called!');
+            console.log('📦 About to save data:', JSON.stringify(data, null, 2));
+            console.log('📍 Course ID:', courseId);
+            console.log('📋 Course Name:', courseName);
+            console.log('🔗 onSave function:', onSave);
+
             await onSave(data);
             toast.success('Course management data saved successfully!');
             onClose();
         } catch (error) {
-            console.error('Error saving course data:', error);
+            console.error('❌ Modal Error saving course data:', error);
             toast.error('Failed to save course data. Please try again.');
         } finally {
             setIsSaving(false);
@@ -147,6 +153,7 @@ export default function AdvancedCourseManagementModal({
 
     // Video Link Functions
     const addVideoLink = (week: number) => {
+        console.log(`Adding video link for week ${week}`);
         const newVideo: IVideoLink = {
             id: Date.now().toString(),
             title: '',
@@ -159,17 +166,22 @@ export default function AdvancedCourseManagementModal({
             updatedAt: new Date()
         };
 
-        setData(prev => ({
-            ...prev,
-            weeklyContent: prev.weeklyContent.map(content =>
-                content.week === week
-                    ? { ...content, videoLinks: [...content.videoLinks, newVideo] }
-                    : content
-            )
-        }));
+        setData(prev => {
+            const updated = {
+                ...prev,
+                weeklyContent: prev.weeklyContent.map(content =>
+                    content.week === week
+                        ? { ...content, videoLinks: [...content.videoLinks, newVideo] }
+                        : content
+                )
+            };
+            console.log('Updated data after adding video:', updated);
+            return updated;
+        });
     };
 
     const updateVideoLink = (week: number, videoIndex: number, field: keyof IVideoLink, value: string) => {
+        console.log(`Updating video link - Week: ${week}, Index: ${videoIndex}, Field: ${field}, Value: ${value}`);
         setData(prev => ({
             ...prev,
             weeklyContent: prev.weeklyContent.map(content =>
