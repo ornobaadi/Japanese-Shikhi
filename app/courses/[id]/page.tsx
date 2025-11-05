@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VideoPlayer } from '@/components/video-player';
+import { PaymentForm } from '@/components/PaymentForm';
 import { toast } from 'sonner';
 import { 
   Clock, BookOpen, CheckCircle, Video, FileText, 
@@ -26,6 +27,8 @@ interface Course {
   learningObjectives: string[];
   thumbnailUrl?: string;
   instructorNotes?: string;
+  actualPrice?: number;
+  discountedPrice?: number;
   weeklyContent?: WeeklyContent[];
   classLinks?: ClassLink[];
   blogPosts?: BlogPost[];
@@ -59,6 +62,7 @@ export default function CourseDetailPage() {
   const router = useRouter();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -158,14 +162,22 @@ export default function CourseDetailPage() {
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => {
-                // Handle enrollment
-                toast.success('Enrollment feature coming soon!');
-              }}
+              onClick={() => setShowPaymentForm(true)}
             >
               Enroll Now
             </Button>
           </div>
+
+          {/* Payment Form Modal */}
+          {showPaymentForm && (
+            <PaymentForm
+              open={showPaymentForm}
+              onOpenChange={setShowPaymentForm}
+              courseId={course._id}
+              courseTitle={course.title}
+              coursePrice={course.discountedPrice || course.actualPrice || 0}
+            />
+          )}
         </div>
 
         {/* Tabs for Additional Content */}
