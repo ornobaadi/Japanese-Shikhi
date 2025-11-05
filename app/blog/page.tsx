@@ -29,10 +29,22 @@ export default function BlogPage() {
     const [selectedTag, setSelectedTag] = useState('');
     const [isLoading, setIsLoading] = useState(true);
 
-    // Load blog posts from localStorage or API
+    // Load blog posts from API and localStorage
     useEffect(() => {
-        const loadBlogs = () => {
+        const loadBlogs = async () => {
             try {
+                // Load from API first
+                const response = await fetch('/api/blogs');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && Array.isArray(data.data)) {
+                        setBlogPosts(data.data);
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+                
+                // Fallback to localStorage if API fails
                 const savedBlogs = localStorage.getItem('publishedBlogs');
                 if (savedBlogs) {
                     const blogs = JSON.parse(savedBlogs);
@@ -40,6 +52,16 @@ export default function BlogPage() {
                 }
             } catch (error) {
                 console.error('Error loading blogs:', error);
+                // Try localStorage as fallback
+                try {
+                    const savedBlogs = localStorage.getItem('publishedBlogs');
+                    if (savedBlogs) {
+                        const blogs = JSON.parse(savedBlogs);
+                        setBlogPosts(blogs.filter((blog: BlogPost) => blog.isPublished));
+                    }
+                } catch (e) {
+                    console.error('Error loading from localStorage:', e);
+                }
             } finally {
                 setIsLoading(false);
             }

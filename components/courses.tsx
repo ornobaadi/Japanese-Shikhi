@@ -24,46 +24,61 @@ export default function Courses() {
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [loading, setLoading] = React.useState(true);
   const router = useRouter();
-  React.useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const res = await fetch('/api/courses');
+  
+  const fetchCourses = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/courses');
 
-        // Check if response is ok
-        if (!res.ok) {
-          console.error('API response not ok:', res.status, res.statusText);
-          // Try to get error message from response
-          const errorText = await res.text();
-          console.error('Error response body:', errorText);
-          throw new Error(`API error: ${res.status} ${res.statusText}`);
-        }
-
-        // Check content type
-        const contentType = res.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
-          const responseText = await res.text();
-          console.error('Non-JSON response:', responseText);
-          throw new Error(`API did not return JSON. Content-Type: ${contentType}`);
-        }
-
-        const json = await res.json();
-        console.log('API response:', json);
-
-        if (json.success && Array.isArray(json.data)) {
-          setCourses(json.data);
-        } else {
-          console.warn('Unexpected API response structure:', json);
-          setCourses([]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch courses:', err);
-        setCourses([]);
-      } finally {
-        setLoading(false);
+      // Check if response is ok
+      if (!res.ok) {
+        console.error('API response not ok:', res.status, res.statusText);
+        // Try to get error message from response
+        const errorText = await res.text();
+        console.error('Error response body:', errorText);
+        throw new Error(`API error: ${res.status} ${res.statusText}`);
       }
-    };
-    fetchCourses();
+
+      // Check content type
+      const contentType = res.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        const responseText = await res.text();
+        console.error('Non-JSON response:', responseText);
+        throw new Error(`API did not return JSON. Content-Type: ${contentType}`);
+      }
+
+      const json = await res.json();
+      console.log('API response:', json);
+
+      if (json.success && Array.isArray(json.data)) {
+        setCourses(json.data);
+      } else {
+        console.warn('Unexpected API response structure:', json);
+        setCourses([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch courses:', err);
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  React.useEffect(() => {
+    fetchCourses();
+    
+    // Listen for course creation events to auto-refresh
+    const handleCourseCreated = () => {
+      console.log('Course created event received, refreshing courses...');
+      fetchCourses();
+    };
+    
+    window.addEventListener('courseCreated', handleCourseCreated);
+    
+    return () => {
+      window.removeEventListener('courseCreated', handleCourseCreated);
+    };
+  }, [fetchCourses]);
 
   return (
     <section id="courses" className="py-20 bg-gray-50">

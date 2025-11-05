@@ -136,7 +136,10 @@ export async function POST(request: NextRequest) {
       weeklyContent,
       classLinks,
       blogPosts,
-      enrolledStudentsInfo
+      enrolledStudentsInfo,
+      curriculum,
+      allowFreePreview,
+      freePreviewCount
     } = body;
     
     console.log('Received advanced course data:', { 
@@ -189,8 +192,8 @@ export async function POST(request: NextRequest) {
         primary: 'japanese',
         secondary: 'english'
       },
-      // Add proper curriculum structure
-      curriculum: {
+      // Use curriculum from frontend if provided, otherwise create default
+      curriculum: curriculum || {
         modules: [
           {
             _id: new ObjectId(),
@@ -213,9 +216,9 @@ export async function POST(request: NextRequest) {
           }
         ]
       },
-      // Add free preview settings
-      allowFreePreview: true,
-      freePreviewCount: 2,
+      // Add free preview settings from frontend
+      allowFreePreview: allowFreePreview !== undefined ? allowFreePreview : true,
+      freePreviewCount: freePreviewCount || 2,
       // Add advanced course management data
       weeklyContent: weeklyContent || [],
       classLinks: classLinks || [],
