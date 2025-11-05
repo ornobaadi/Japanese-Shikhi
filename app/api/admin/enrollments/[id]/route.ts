@@ -15,10 +15,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if admin
-    const dbUser = await User.findOne({ clerkId: user.id });
-    if (!dbUser || dbUser.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    // Check if admin - check both Clerk metadata and MongoDB
+    const isAdmin = user.publicMetadata?.role === 'admin' || user.privateMetadata?.role === 'admin';
+    if (!isAdmin) {
+      // Also check MongoDB as fallback
+      const dbUser = await User.findOne({ clerkUserId: user.id });
+      if (!dbUser || dbUser.role !== 'admin') {
+        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      }
     }
 
     await connectToDatabase();
@@ -59,18 +63,60 @@ export async function PATCH(
 
     // If approved, add course to user's enrolled courses
     if (status === 'approved') {
+      // First, ensure the user exists in MongoDB
+      let dbUser = await User.findOne({ clerkUserId: enrollmentRequest.userId });
+      
+      if (!dbUser) {
+        // Create user if doesn't exist
+        dbUser = await User.create({
+          clerkUserId: enrollmentRequest.userId,
+          email: enrollmentRequest.userEmail,
+          username: enrollmentRequest.userName,
+          firstName: enrollmentRequest.userName.split(' ')[0],
+          lastName: enrollmentRequest.userName.split(' ')[1] || '',
+          nativeLanguage: 'Bengali',
+          learningGoals: [],
+          currentLevel: 'beginner',
+          subscriptionStatus: 'free',
+          learningStreak: 0,
+          lastActiveDate: new Date(),
+          totalStudyTime: 0,
+          enrolledCourses: [],
+          preferences: {
+            dailyGoal: 30,
+            notifications: true,
+            preferredScript: 'hiragana',
+            difficultyPreference: 'gradual'
+          },
+          statistics: {
+            wordsLearned: 0,
+            lessonsCompleted: 0,
+            quizzesCompleted: 0,
+            accuracyRate: 0
+          }
+        });
+        console.log('✅ Created new user in MongoDB:', dbUser.clerkUserId);
+      }
+
+      // Now add the course to enrolled courses
       await User.findOneAndUpdate(
-        { clerkId: enrollmentRequest.userId },
+        { clerkUserId: enrollmentRequest.userId },
         { 
           $addToSet: { 
             enrolledCourses: {
               courseId: enrollmentRequest.courseId,
               enrolledAt: new Date(),
-              progress: 0
+              progress: {
+                completedLessons: 0,
+                totalLessons: 0,
+                progressPercentage: 0,
+                lastAccessedAt: new Date()
+              }
             }
           }
         }
       );
+      console.log('✅ Added course to user enrolledCourses');
     }
 
     console.log(`✅ Enrollment ${status}:`, enrollmentRequest._id);

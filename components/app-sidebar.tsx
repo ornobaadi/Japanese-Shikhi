@@ -58,6 +58,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: IconPlus,
     },
     {
+      title: "Enrollments",
+      url: "/admin-dashboard/enrollments",
+      icon: IconUsers,
+    },
+    {
       title: "Users",
       url: "/admin-dashboard/users",
       icon: IconUsers,

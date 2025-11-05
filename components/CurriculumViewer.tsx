@@ -89,6 +89,7 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -99,6 +100,11 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
 
       try {
         setLoading(true);
+        
+        // Check if user is admin
+        const adminCheck = user?.publicMetadata?.role === 'admin';
+        setIsAdmin(!!adminCheck);
+        
         const apiUrl = `/api/courses/${courseId}/curriculum`;
         console.log('Fetching curriculum for course ID:', courseId);
         console.log('API URL:', apiUrl);
@@ -132,7 +138,7 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
     };
 
     fetchCourseData();
-  }, [courseId]);
+  }, [courseId, user]);
 
   const handleEnrollClick = () => {
     if (!user) {
@@ -231,10 +237,17 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
           Back to Course
         </Button>
         
-        <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
+        <div className="flex items-center gap-3 mb-4">
+          <h1 className="text-3xl font-bold">{course.title}</h1>
+          {isAdmin && (
+            <Badge className="bg-purple-100 text-purple-800 border-purple-300">
+              👑 Admin Access - Full Course Access
+            </Badge>
+          )}
+        </div>
         
         {/* Access Status */}
-        {!course.accessInfo.isEnrolled && course.accessInfo.canPreview && (
+        {!isAdmin && !course.accessInfo.isEnrolled && course.accessInfo.canPreview && (
           <Alert className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -342,7 +355,37 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
 
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          {!course.accessInfo.isEnrolled && (
+          {isAdmin ? (
+            <Card className="sticky top-4">
+              <CardHeader>
+                <CardTitle>👑 Admin Preview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center text-sm text-purple-700">
+                    <CheckCircle className="h-4 w-4 text-purple-500 mr-2" />
+                    Full course access as admin
+                  </div>
+                  <div className="flex items-center text-sm text-purple-700">
+                    <CheckCircle className="h-4 w-4 text-purple-500 mr-2" />
+                    View all content without enrollment
+                  </div>
+                  <div className="flex items-center text-sm text-purple-700">
+                    <CheckCircle className="h-4 w-4 text-purple-500 mr-2" />
+                    Manage course settings
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={() => router.push(`/admin-dashboard/courses/${courseId}`)}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  size="lg"
+                >
+                  Edit Course
+                </Button>
+              </CardContent>
+            </Card>
+          ) : !course.accessInfo.isEnrolled && (
             <Card className="sticky top-4">
               <CardHeader>
                 <CardTitle>Get Full Access</CardTitle>

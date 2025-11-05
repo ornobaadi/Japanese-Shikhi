@@ -63,6 +63,8 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -81,8 +83,40 @@ export default function CourseDetailPage() {
       }
     };
 
+    const checkEnrollmentStatus = async () => {
+      try {
+        // Check if user is enrolled (from My Courses)
+        const coursesRes = await fetch('/api/users/me/courses');
+        if (coursesRes.ok) {
+          const coursesData = await coursesRes.json();
+          const enrolled = coursesData.data?.some((c: any) => c._id === params?.id);
+          if (enrolled) {
+            setIsEnrolled(true);
+            setEnrollmentStatus('approved');
+            return;
+          }
+        }
+
+        // Check enrollment requests
+        const enrollRes = await fetch('/api/enrollments');
+        if (enrollRes.ok) {
+          const enrollData = await enrollRes.json();
+          const request = enrollData.data?.find((req: any) => req.courseId === params?.id || req.courseId._id === params?.id);
+          if (request) {
+            setEnrollmentStatus(request.status);
+            if (request.status === 'approved') {
+              setIsEnrolled(true);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking enrollment:', error);
+      }
+    };
+
     if (params?.id) {
       fetchCourse();
+      checkEnrollmentStatus();
     }
   }, [params?.id]);
 
@@ -152,20 +186,54 @@ export default function CourseDetailPage() {
           </div>
 
           <div className="mt-6 flex space-x-4">
-            <Button 
-              size="lg"
-              className="bg-gradient-to-r from-green-500 to-teal-500"
-              onClick={() => router.push(`/courses/${course._id}/curriculum`)}
-            >
-              Start Learning
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => setShowPaymentForm(true)}
-            >
-              Enroll Now
-            </Button>
+            {isEnrolled ? (
+              <>
+                <Button 
+                  size="lg"
+                  className="bg-gradient-to-r from-green-500 to-teal-500"
+                  onClick={() => router.push(`/courses/${course._id}/curriculum`)}
+                >
+                  Start Learning
+                </Button>
+                <Badge className="text-lg px-4 py-2 bg-green-100 text-green-800">
+                  ✓ Enrolled
+                </Badge>
+              </>
+            ) : enrollmentStatus === 'pending' ? (
+              <Badge className="text-lg px-4 py-2 bg-yellow-100 text-yellow-800">
+                ⏳ Enrollment Pending Approval
+              </Badge>
+            ) : enrollmentStatus === 'rejected' ? (
+              <>
+                <Badge className="text-lg px-4 py-2 bg-red-100 text-red-800">
+                  ✗ Enrollment Rejected
+                </Badge>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={() => setShowPaymentForm(true)}
+                >
+                  Try Again
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  size="lg"
+                  className="bg-gradient-to-r from-green-500 to-teal-500"
+                  onClick={() => router.push(`/courses/${course._id}/curriculum`)}
+                >
+                  Preview Course
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={() => setShowPaymentForm(true)}
+                >
+                  Enroll Now
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Payment Form Modal */}

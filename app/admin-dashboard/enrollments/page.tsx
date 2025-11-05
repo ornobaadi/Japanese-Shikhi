@@ -36,6 +36,7 @@ interface EnrollmentRequest {
 
 export default function EnrollmentManagementPage() {
   const [requests, setRequests] = useState<EnrollmentRequest[]>([]);
+  const [allRequests, setAllRequests] = useState<EnrollmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedRequest, setSelectedRequest] = useState<EnrollmentRequest | null>(null);
@@ -46,11 +47,19 @@ export default function EnrollmentManagementPage() {
   const fetchRequests = async (status: string = 'all') => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/enrollments?status=${status}`);
-      const data = await response.json();
+      // Always fetch ALL requests for accurate counts
+      const allResponse = await fetch(`/api/admin/enrollments?status=all`);
+      const allData = await allResponse.json();
       
-      if (data.success) {
-        setRequests(data.data);
+      if (allData.success) {
+        setAllRequests(allData.data);
+        
+        // Filter for current tab
+        if (status === 'all') {
+          setRequests(allData.data);
+        } else {
+          setRequests(allData.data.filter((r: EnrollmentRequest) => r.status === status));
+        }
       }
     } catch (error) {
       toast.error('Failed to fetch enrollment requests');
@@ -89,6 +98,32 @@ export default function EnrollmentManagementPage() {
       }
     } catch (error) {
       toast.error('Failed to approve enrollment');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleUnenroll = async (requestId: string, userId: string, courseId: any) => {
+    if (!confirm('Remove this student from the course? This will delete their enrollment and progress.')) return;
+
+    setProcessing(true);
+    try {
+      const response = await fetch(`/api/admin/enrollments/${requestId}/unenroll`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, courseId })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Student unenrolled successfully');
+        fetchRequests(activeTab);
+      } else {
+        toast.error(data.error || 'Failed to unenroll');
+      }
+    } catch (error) {
+      toast.error('Failed to unenroll student');
     } finally {
       setProcessing(false);
     }
@@ -139,10 +174,8 @@ export default function EnrollmentManagementPage() {
     }
   };
 
-  const filteredRequests = requests.filter(req => {
-    if (activeTab === 'all') return true;
-    return req.status === activeTab;
-  });
+  // Use requests directly as they're already filtered
+  const filteredRequests = requests;
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -160,16 +193,16 @@ export default function EnrollmentManagementPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pending">
-            Pending ({requests.filter(r => r.status === 'pending').length})
+            Pending ({allRequests.filter(r => r.status === 'pending').length})
           </TabsTrigger>
           <TabsTrigger value="approved">
-            Approved ({requests.filter(r => r.status === 'approved').length})
+            Approved ({allRequests.filter(r => r.status === 'approved').length})
           </TabsTrigger>
           <TabsTrigger value="rejected">
-            Rejected ({requests.filter(r => r.status === 'rejected').length})
+            Rejected ({allRequests.filter(r => r.status === 'rejected').length})
           </TabsTrigger>
           <TabsTrigger value="all">
-            All ({requests.length})
+            All ({allRequests.length})
           </TabsTrigger>
         </TabsList>
 
@@ -256,14 +289,60 @@ export default function EnrollmentManagementPage() {
                         <Button 
                           size="sm" 
                           variant="destructive"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setShowDetails(true);
+                          onClick={async () => {
+                            const reason = prompt('Please provide a reason for rejection:');
+                            if (!reason || !reason.trim()) {
+                              toast.error('Rejection reason is required');
+                              return;
+                            }
+                            
+                            if (!confirm('Reject this enrollment request?')) return;
+
+                            setProcessing(true);
+                            try {
+                              const response = await fetch(`/api/admin/enrollments/${request._id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                  status: 'rejected',
+                                  rejectionReason: reason.trim()
+                                })
+                              });
+
+                              const data = await response.json();
+
+                              if (data.success) {
+                                toast.success('Enrollment rejected');
+                                fetchRequests(activeTab);
+                              } else {
+                                toast.error(data.error || 'Failed to reject');
+                              }
+                            } catch (error) {
+                              toast.error('Failed to reject enrollment');
+                            } finally {
+                              setProcessing(false);
+                            }
                           }}
                           disabled={processing}
                         >
                           <X className="w-4 h-4 mr-2" />
                           Reject
+                        </Button>
+                      </div>
+                    )}
+
+                    {request.status === 'approved' && (
+                      <div className="mt-4 flex gap-2">
+                        <Badge className="bg-green-100 text-green-800">
+                          ✓ Approved on {new Date(request.approvedAt!).toLocaleDateString()}
+                        </Badge>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => handleUnenroll(request._id, request.userId, request.courseId)}
+                          disabled={processing}
+                        >
+                          Remove Enrollment
                         </Button>
                       </div>
                     )}
@@ -377,6 +456,32 @@ export default function EnrollmentManagementPage() {
                     </Button>
                   </div>
                 </>
+              )}
+
+              {selectedRequest.status === 'approved' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm font-medium text-green-800">
+                      ✓ Approved on {new Date(selectedRequest.approvedAt!).toLocaleDateString()}
+                    </p>
+                    {selectedRequest.approvedBy && (
+                      <p className="text-sm text-green-600 mt-1">
+                        Approved by: {selectedRequest.approvedBy}
+                      </p>
+                    )}
+                  </div>
+                  <Button 
+                    className="w-full"
+                    variant="destructive"
+                    onClick={() => {
+                      setShowDetails(false);
+                      handleUnenroll(selectedRequest._id, selectedRequest.userId, selectedRequest.courseId);
+                    }}
+                    disabled={processing}
+                  >
+                    Remove Student from Course
+                  </Button>
+                </div>
               )}
 
               {selectedRequest.status === 'rejected' && selectedRequest.rejectionReason && (

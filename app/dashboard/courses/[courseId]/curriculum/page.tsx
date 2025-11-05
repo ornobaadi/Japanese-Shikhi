@@ -106,6 +106,7 @@ export default function StudentCurriculumPage() {
     const [quizResults, setQuizResults] = useState<{ [quizId: string]: any }>({});
     const [savingQuiz, setSavingQuiz] = useState(false);
     const [completedQuizzes, setCompletedQuizzes] = useState<Set<string>>(new Set());
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const handleAnswerSelect = (questionIndex: number, optionIndex: number) => {
         setSelectedAnswers(prev => ({
@@ -229,13 +230,17 @@ export default function StudentCurriculumPage() {
             if (!params?.courseId) return;
 
             try {
+                // Check if user is admin
+                const adminCheck = user?.publicMetadata?.role === 'admin';
+                setIsAdmin(!!adminCheck);
+
                 // Fetch course details
                 const courseResponse = await fetch(`/api/courses/${params.courseId}`);
                 if (!courseResponse.ok) throw new Error('Course not found');
                 const courseData = await courseResponse.json();
                 const course = courseData.data || courseData.course;
 
-                // Fetch curriculum (using admin endpoint for now)
+                // Fetch curriculum (admin can access all, students only enrolled)
                 const curriculumResponse = await fetch(`/api/admin/courses/${params.courseId}/curriculum`);
                 if (curriculumResponse.ok) {
                     const curriculumData = await curriculumResponse.json();
@@ -257,7 +262,7 @@ export default function StudentCurriculumPage() {
         };
 
         fetchCourseAndCurriculum();
-    }, [params?.courseId]);
+    }, [params?.courseId, user]);
 
     // Load completed quizzes from localStorage
     useEffect(() => {
@@ -478,7 +483,14 @@ export default function StudentCurriculumPage() {
                                     Back to Dashboard
                                 </Button>
                                 <div>
-                                    <h1 className="text-2xl font-bold">{course.title}</h1>
+                                    <div className="flex items-center gap-2">
+                                        <h1 className="text-2xl font-bold">{course.title}</h1>
+                                        {isAdmin && (
+                                            <Badge className="bg-purple-100 text-purple-800 border-purple-300">
+                                                👑 Admin Access
+                                            </Badge>
+                                        )}
+                                    </div>
                                     <p className="text-muted-foreground">Course Curriculum</p>
                                 </div>
                             </div>
