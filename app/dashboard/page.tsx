@@ -71,21 +71,31 @@ export default function DashboardPage() {
       if (!isSignedIn) return;
 
       try {
-        const response = await fetch('/api/users/me');
-        if (response.ok) {
-          const result = await response.json();
-          const userData = result.data || result; // Handle both response formats
-          console.log('User data from API:', userData);
-          console.log('Enrolled courses:', userData.enrolledCourses);
-          setUserStats({
-            totalCourses: userData.enrolledCourses?.length || 0,
-            completedLessons: userData.statistics?.lessonsCompleted || 0,
-            studyStreak: userData.learningStreak || 0,
-            studyTime: userData.totalStudyTime || 0,
-            level: userData.currentLevel || 'beginner',
-            wordsLearned: userData.statistics?.wordsLearned || 0
-          });
+        // Fetch user profile data
+        const profileResponse = await fetch('/api/users/me');
+        let userData = null;
+        if (profileResponse.ok) {
+          const result = await profileResponse.json();
+          userData = result.data || result;
         }
+
+        // Fetch actual enrolled courses (this filters out invalid enrollments)
+        const coursesResponse = await fetch('/api/users/me/courses');
+        let enrolledCoursesCount = 0;
+        if (coursesResponse.ok) {
+          const coursesResult = await coursesResponse.json();
+          enrolledCoursesCount = coursesResult.data?.length || 0;
+          console.log('Enrolled courses count:', enrolledCoursesCount);
+        }
+
+        setUserStats({
+          totalCourses: enrolledCoursesCount, // Use actual enrolled courses count
+          completedLessons: userData?.statistics?.lessonsCompleted || 0,
+          studyStreak: userData?.learningStreak || 0,
+          studyTime: userData?.totalStudyTime || 0,
+          level: userData?.currentLevel || 'beginner',
+          wordsLearned: userData?.statistics?.wordsLearned || 0
+        });
       } catch (error) {
         console.error('Error fetching user data:', error);
       } finally {
