@@ -21,6 +21,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json();
+    
+    console.log('📝 Updating course:', id);
+    console.log('📦 Blog posts in update:', body.blogPosts?.length || 0);
+    
     const updatedCourse = await Course.findByIdAndUpdate(
       id,
       { ...body, updatedAt: new Date() },
@@ -31,8 +35,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
     
+    console.log('✅ Course updated with', updatedCourse.blogPosts?.length || 0, 'blog posts');
+    
     return NextResponse.json({ message: 'Course updated successfully', course: updatedCourse });
   } catch (error) {
+    console.error('❌ Update error:', error);
     return NextResponse.json({ error: 'Failed to update course' }, { status: 500 });
   }
 }

@@ -206,9 +206,17 @@ export default function BlogPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredBlogs.map((blog) => (
+                        {filteredBlogs.map((blog) => {
+                            // Validate image URL
+                            const isValidImageUrl = blog.featuredImage && (
+                                blog.featuredImage.startsWith('http://') || 
+                                blog.featuredImage.startsWith('https://') ||
+                                blog.featuredImage.startsWith('/')
+                            );
+
+                            return (
                             <Card key={blog.id} className="group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden bg-white/90 backdrop-blur-sm border-0 shadow-lg rounded-2xl">
-                                {blog.featuredImage && (
+                                {isValidImageUrl && (
                                     <div className="relative h-96 w-full overflow-hidden rounded-t-2xl">
                                         <Image
                                             src={blog.featuredImage}
@@ -281,7 +289,8 @@ export default function BlogPage() {
                                     </div>
                                 </CardContent>
                             </Card>
-                        ))}
+                        );
+                        })}
                     </div>
                 )}
             </div>

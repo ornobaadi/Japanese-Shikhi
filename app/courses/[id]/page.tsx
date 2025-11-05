@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { VideoPlayer } from '@/components/video-player';
 import { toast } from 'sonner';
 import { 
   Clock, BookOpen, CheckCircle, Video, FileText, 
@@ -221,23 +222,14 @@ export default function CourseDetailPage() {
                               <Video className="w-4 h-4 mr-2" />
                               Videos ({week.videoLinks.length})
                             </h4>
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                               {week.videoLinks.map((video, vIndex) => (
-                                <div key={vIndex} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                  <div>
-                                    <p className="font-medium">{video.title}</p>
-                                    {video.description && (
-                                      <p className="text-sm text-gray-600">{video.description}</p>
-                                    )}
-                                  </div>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    onClick={() => window.open(video.url, '_blank')}
-                                  >
-                                    Watch
-                                  </Button>
-                                </div>
+                                <VideoPlayer
+                                  key={vIndex}
+                                  title={video.title}
+                                  url={video.url}
+                                  description={video.description}
+                                />
                               ))}
                             </div>
                           </div>
