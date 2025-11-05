@@ -78,6 +78,7 @@ export interface ICourse extends Document {
   allowFreePreview: boolean;
   freePreviewCount: number; // Number of free items accessible
   enrollmentDeadline?: Date;
+  enrollmentLastDate?: string; // Alternative field name for enrollment deadline
   instructorNotes?: string;
   learningObjectives: string[];
   links: string[];
@@ -252,6 +253,10 @@ const CourseSchema = new Schema<ICourse>({
       },
       message: 'Enrollment deadline must be in the future'
     }
+  },
+  enrollmentLastDate: {
+    type: String,
+    maxlength: 100
   },
   instructorNotes: {
     type: String,

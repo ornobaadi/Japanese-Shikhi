@@ -139,7 +139,12 @@ export async function POST(request: NextRequest) {
       enrolledStudentsInfo,
       curriculum,
       allowFreePreview,
-      freePreviewCount
+      freePreviewCount,
+      whatYoullLearn,
+      courseLessonModule,
+      actualPrice,
+      discountedPrice,
+      enrollmentLastDate
     } = body;
     
     console.log('Received advanced course data:', { 
@@ -182,6 +187,11 @@ export async function POST(request: NextRequest) {
       thumbnailUrl: thumbnailUrl || '',
       instructorNotes: instructorNotes || '',
       courseSummary: courseSummary || '',
+      whatYoullLearn: whatYoullLearn || '',
+      courseLessonModule: courseLessonModule || '',
+      actualPrice: actualPrice ? parseFloat(actualPrice) : undefined,
+      discountedPrice: discountedPrice ? parseFloat(discountedPrice) : undefined,
+      enrollmentLastDate: enrollmentLastDate || '',
       lessons: [],
       totalLessons: 0,
       averageRating: 0,

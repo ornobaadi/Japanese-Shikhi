@@ -68,6 +68,17 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         const data = await res.json();
         const courseData = data.course;
 
+        console.log('📚 Loaded course data:', courseData);
+        console.log('📝 Course fields:', {
+          title: courseData.title,
+          description: courseData.description,
+          learningObjectives: courseData.learningObjectives,
+          links: courseData.links,
+          weeklyContent: courseData.weeklyContent,
+          classLinks: courseData.classLinks,
+          blogPosts: courseData.blogPosts
+        });
+
         setCourse(courseData);
         setFormData({
           title: courseData.title || '',
