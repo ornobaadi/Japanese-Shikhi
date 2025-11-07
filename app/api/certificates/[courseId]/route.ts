@@ -5,6 +5,8 @@ import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import Course from '@/lib/models/Course';
 import { nanoid } from 'nanoid';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export async function GET(
   request: NextRequest,
@@ -88,10 +90,71 @@ export async function GET(
       borderWidth: 1,
     });
 
+    // Draw logo circle at top center
+    const logoX = width / 2;
+    const logoY = height - 80;
+    const logoRadius = 35;
+    
+    // Outer circle (red border)
+    page.drawCircle({
+      x: logoX,
+      y: logoY,
+      size: logoRadius,
+      borderColor: rgb(0.86, 0.15, 0.15), // Red color
+      borderWidth: 3,
+      color: rgb(1, 1, 1), // White fill
+    });
+
+    // Japanese text "日本語" in logo
+    page.drawText('日本語', {
+      x: logoX - 25,
+      y: logoY + 15,
+      size: 14,
+      font: timesRomanBoldFont,
+      color: rgb(0.86, 0.15, 0.15),
+    });
+
+    // Mount Fuji shape (simplified as triangle)
+    page.drawLine({
+      start: { x: logoX - 20, y: logoY - 5 },
+      end: { x: logoX, y: logoY - 25 },
+      thickness: 2,
+      color: rgb(0.86, 0.15, 0.15),
+    });
+    page.drawLine({
+      start: { x: logoX, y: logoY - 25 },
+      end: { x: logoX + 20, y: logoY - 5 },
+      thickness: 2,
+      color: rgb(0.86, 0.15, 0.15),
+    });
+    page.drawLine({
+      start: { x: logoX - 20, y: logoY - 5 },
+      end: { x: logoX + 20, y: logoY - 5 },
+      thickness: 2,
+      color: rgb(0.86, 0.15, 0.15),
+    });
+
+    // Sun (circle)
+    page.drawCircle({
+      x: logoX + 15,
+      y: logoY - 10,
+      size: 7,
+      color: rgb(0.86, 0.15, 0.15),
+    });
+
+    // Platform name below logo
+    page.drawText('Japanese Shikhi', {
+      x: logoX - 55,
+      y: logoY - 50,
+      size: 14,
+      font: timesRomanBoldFont,
+      color: rgb(0.2, 0.2, 0.6),
+    });
+
     // Title
     page.drawText('CERTIFICATE OF COMPLETION', {
       x: width / 2 - 220,
-      y: height - 120,
+      y: height - 160,
       size: 32,
       font: timesRomanBoldFont,
       color: rgb(0.2, 0.2, 0.6),
@@ -100,7 +163,7 @@ export async function GET(
     // Subtitle
     page.drawText('This is to certify that', {
       x: width / 2 - 100,
-      y: height - 180,
+      y: height - 220,
       size: 16,
       font: timesRomanFont,
       color: rgb(0.3, 0.3, 0.3),
@@ -111,7 +174,7 @@ export async function GET(
     const nameWidth = timesRomanBoldFont.widthOfTextAtSize(studentName, 28);
     page.drawText(studentName, {
       x: width / 2 - nameWidth / 2,
-      y: height - 230,
+      y: height - 270,
       size: 28,
       font: timesRomanBoldFont,
       color: rgb(0.1, 0.1, 0.1),
@@ -119,8 +182,8 @@ export async function GET(
 
     // Name underline
     page.drawLine({
-      start: { x: width / 2 - nameWidth / 2 - 20, y: height - 240 },
-      end: { x: width / 2 + nameWidth / 2 + 20, y: height - 240 },
+      start: { x: width / 2 - nameWidth / 2 - 20, y: height - 280 },
+      end: { x: width / 2 + nameWidth / 2 + 20, y: height - 280 },
       thickness: 1,
       color: rgb(0.3, 0.3, 0.3),
     });
@@ -128,7 +191,7 @@ export async function GET(
     // Completion text
     page.drawText('has successfully completed the course', {
       x: width / 2 - 145,
-      y: height - 280,
+      y: height - 320,
       size: 16,
       font: timesRomanFont,
       color: rgb(0.3, 0.3, 0.3),
@@ -138,7 +201,7 @@ export async function GET(
     const courseNameWidth = timesRomanBoldFont.widthOfTextAtSize(course.title, 22);
     page.drawText(course.title, {
       x: width / 2 - courseNameWidth / 2,
-      y: height - 320,
+      y: height - 360,
       size: 22,
       font: timesRomanBoldFont,
       color: rgb(0.2, 0.2, 0.6),
