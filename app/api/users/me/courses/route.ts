@@ -139,6 +139,8 @@ export async function GET(request: NextRequest) {
           progressPercentage: enrollment.progress.progressPercentage,
           lastAccessedAt: enrollment.progress.lastAccessedAt,
         },
+        completedAt: enrollment.completedAt,
+        certificateId: enrollment.certificateId,
         // Use real curriculum data for next class
         nextClass: nextClass,
       };

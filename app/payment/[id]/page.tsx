@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentForm } from '@/components/PaymentForm';
 import { ArrowLeft, Clock, Users, BookOpen, CheckCircle } from 'lucide-react';
-import { Navbar5 } from '@/components/navbar-5';
 
 interface Course {
   _id: string;
@@ -60,37 +62,56 @@ export default function PaymentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-        <Navbar5 />
-        <div className="container mx-auto px-4 py-8">
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col min-h-screen">
+            <div className="container mx-auto px-4 py-8">
+              <Skeleton className="h-96 w-full" />
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
   if (error || !course) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-        <Navbar5 />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
-          <Card className="border-red-200">
-            <CardContent className="py-12 text-center">
-              <p className="text-red-600 mb-4">{error || 'Course not found'}</p>
-              <Button onClick={() => router.back()}>Go Back</Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col min-h-screen">
+            <div className="container mx-auto px-4 py-8 max-w-2xl">
+              <Card className="border-red-200">
+                <CardContent className="py-12 text-center">
+                  <p className="text-red-600 mb-4">{error || 'Course not found'}</p>
+                  <Button onClick={() => router.back()}>Go Back</Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      <Navbar5 />
-      
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+          <div className="container mx-auto px-4 py-8 max-w-6xl">
+            <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Course
         </Button>
@@ -214,17 +235,19 @@ export default function PaymentPage() {
             </Card>
           </div>
         </div>
-      </div>
 
-      {showPaymentForm && (
-        <PaymentForm
-          open={showPaymentForm}
-          onOpenChange={setShowPaymentForm}
-          courseId={course._id}
-          courseTitle={course.title}
-          coursePrice={finalPrice}
-        />
-      )}
-    </div>
+        {showPaymentForm && (
+          <PaymentForm
+            open={showPaymentForm}
+            onOpenChange={setShowPaymentForm}
+            courseId={course._id}
+            courseTitle={course.title}
+            coursePrice={finalPrice}
+          />
+        )}
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
