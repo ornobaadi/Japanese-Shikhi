@@ -2,31 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import Course from '@/lib/models/Course';
-import { ObjectId } from 'mongodb';
 
 export async function GET(request: NextRequest) {
   try {
-    // Temporary bypass authentication for testing
-    console.log('Admin courses API accessed - bypassing auth for testing');
-    
-    // const { userId } = await auth();
+    const { userId } = await auth();
 
-    // if (!userId) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // // Check if user is admin by fetching user data directly
-    // try {
-    //   const user = await (await clerkClient()).users.getUser(userId);
-    //   const isAdmin = (user.publicMetadata as any)?.role === 'admin';
-    //   
-    //   if (!isAdmin) {
-    //     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    //   }
-    // } catch (error) {
-    //   console.error('Error fetching user data in API:', error);
-    //   return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    // }
+    // Check if user is admin by fetching user data directly
+    try {
+      const user = await (await clerkClient()).users.getUser(userId);
+      const isAdmin = (user.publicMetadata as any)?.role === 'admin';
+      
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      }
+    } catch (error) {
+      console.error('Error fetching user data in API:', error);
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
 
     await connectToDatabase();
 
@@ -95,28 +91,24 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Temporary bypass authentication for testing
-    console.log('Admin courses POST API accessed - bypassing auth for testing');
-    const userId = 'temp-admin-user'; // temporary user ID
-    
-    // const { userId } = await auth();
+    const { userId } = await auth();
 
-    // if (!userId) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // // Check if user is admin by fetching user data directly
-    // try {
-    //   const user = await (await clerkClient()).users.getUser(userId);
-    //   const isAdmin = (user.publicMetadata as any)?.role === 'admin';
-    //   
-    //   if (!isAdmin) {
-    //     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    //   }
-    // } catch (error) {
-    //   console.error('Error fetching user data in API:', error);
-    //   return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    // }
+    // Check if user is admin by fetching user data directly
+    try {
+      const user = await (await clerkClient()).users.getUser(userId);
+      const isAdmin = (user.publicMetadata as any)?.role === 'admin';
+      
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      }
+    } catch (error) {
+      console.error('Error fetching user data in API:', error);
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
 
     const body = await request.json();
     const { 
@@ -132,27 +124,8 @@ export async function POST(request: NextRequest) {
       links,
       thumbnailUrl,
       instructorNotes,
-      courseSummary,
-      weeklyContent,
-      classLinks,
-      blogPosts,
-      enrolledStudentsInfo,
-      curriculum,
-      allowFreePreview,
-      freePreviewCount,
-      whatYoullLearn,
-      courseLessonModule,
-      actualPrice,
-      discountedPrice,
-      enrollmentLastDate
+      courseSummary
     } = body;
-    
-    console.log('Received advanced course data:', { 
-      weeklyContentCount: weeklyContent?.length || 0,
-      classLinksCount: classLinks?.length || 0,
-      blogPostsCount: blogPosts?.length || 0,
-      enrolledStudentsCount: enrolledStudentsInfo?.length || 0
-    });
 
     console.log('Received course data:', { title, description, level, category, estimatedDuration, difficulty });
 
@@ -187,11 +160,6 @@ export async function POST(request: NextRequest) {
       thumbnailUrl: thumbnailUrl || '',
       instructorNotes: instructorNotes || '',
       courseSummary: courseSummary || '',
-      whatYoullLearn: whatYoullLearn || '',
-      courseLessonModule: courseLessonModule || '',
-      actualPrice: actualPrice ? parseFloat(actualPrice) : undefined,
-      discountedPrice: discountedPrice ? parseFloat(discountedPrice) : undefined,
-      enrollmentLastDate: enrollmentLastDate || '',
       lessons: [],
       totalLessons: 0,
       averageRating: 0,
@@ -202,38 +170,6 @@ export async function POST(request: NextRequest) {
         primary: 'japanese',
         secondary: 'english'
       },
-      // Use curriculum from frontend if provided, otherwise create default
-      curriculum: curriculum || {
-        modules: [
-          {
-            _id: new ObjectId(),
-            name: 'Introduction',
-            description: 'Course introduction and basics',
-            order: 1,
-            isPublished: true,
-            items: [
-              {
-                _id: new ObjectId(),
-                type: 'resource',
-                title: 'Welcome to the Course',
-                description: 'Get started with this comprehensive course',
-                scheduledDate: new Date(),
-                resourceType: 'other',
-                isPublished: true,
-                isFreePreview: true
-              }
-            ]
-          }
-        ]
-      },
-      // Add free preview settings from frontend
-      allowFreePreview: allowFreePreview !== undefined ? allowFreePreview : true,
-      freePreviewCount: freePreviewCount || 2,
-      // Add advanced course management data
-      weeklyContent: weeklyContent || [],
-      classLinks: classLinks || [],
-      blogPosts: blogPosts || [],
-      enrolledStudentsInfo: enrolledStudentsInfo || [],
       metadata: {
         version: '1.0.0',
         lastUpdated: new Date(),

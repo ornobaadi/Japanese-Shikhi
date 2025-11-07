@@ -1,7 +1,5 @@
 "use client";
 import React from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 interface Course {
   _id?: string;
   title: string;
@@ -24,97 +22,46 @@ import {
 export default function Courses() {
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [enrolledCourseIds, setEnrolledCourseIds] = React.useState<string[]>([]);
-  const [pendingCourseIds, setPendingCourseIds] = React.useState<string[]>([]);
-  const { isSignedIn, user } = useUser();
-  const [isAdmin, setIsAdmin] = React.useState(false);
-  const router = useRouter();
-  
-  const fetchCourses = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/courses');
-
-      // Check if response is ok
-      if (!res.ok) {
-        console.error('API response not ok:', res.status, res.statusText);
-        // Try to get error message from response
-        const errorText = await res.text();
-        console.error('Error response body:', errorText);
-        throw new Error(`API error: ${res.status} ${res.statusText}`);
-      }
-
-      // Check content type
-      const contentType = res.headers.get('content-type');
-      if (!contentType?.includes('application/json')) {
-        const responseText = await res.text();
-        console.error('Non-JSON response:', responseText);
-        throw new Error(`API did not return JSON. Content-Type: ${contentType}`);
-      }
-
-      const json = await res.json();
-      console.log('API response:', json);
-
-      if (json.success && Array.isArray(json.data)) {
-        setCourses(json.data);
-      } else {
-        console.warn('Unexpected API response structure:', json);
-        setCourses([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch courses:', err);
-      setCourses([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchEnrollmentStatus = React.useCallback(async () => {
-    if (!isSignedIn) return;
-
-    // Check if user is admin
-    const adminCheck = user?.publicMetadata?.role === 'admin';
-    setIsAdmin(!!adminCheck);
-
-    try {
-      // Check enrolled courses
-      const coursesRes = await fetch('/api/users/me/courses');
-      if (coursesRes.ok) {
-        const coursesData = await coursesRes.json();
-        const enrolled = coursesData.data?.map((c: any) => c._id) || [];
-        setEnrolledCourseIds(enrolled);
-      }
-
-      // Check pending enrollments
-      const enrollRes = await fetch('/api/enrollments');
-      if (enrollRes.ok) {
-        const enrollData = await enrollRes.json();
-        const pending = enrollData.data
-          ?.filter((req: any) => req.status === 'pending')
-          .map((req: any) => req.courseId?._id || req.courseId) || [];
-        setPendingCourseIds(pending);
-      }
-    } catch (error) {
-      console.error('Failed to fetch enrollment status:', error);
-    }
-  }, [isSignedIn, user]);
-
   React.useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch('/api/courses');
+
+        // Check if response is ok
+        if (!res.ok) {
+          console.error('API response not ok:', res.status, res.statusText);
+          // Try to get error message from response
+          const errorText = await res.text();
+          console.error('Error response body:', errorText);
+          throw new Error(`API error: ${res.status} ${res.statusText}`);
+        }
+
+        // Check content type
+        const contentType = res.headers.get('content-type');
+        if (!contentType?.includes('application/json')) {
+          const responseText = await res.text();
+          console.error('Non-JSON response:', responseText);
+          throw new Error(`API did not return JSON. Content-Type: ${contentType}`);
+        }
+
+        const json = await res.json();
+        console.log('API response:', json);
+
+        if (json.success && Array.isArray(json.data)) {
+          setCourses(json.data);
+        } else {
+          console.warn('Unexpected API response structure:', json);
+          setCourses([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch courses:', err);
+        setCourses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchCourses();
-    fetchEnrollmentStatus();
-    
-    // Listen for course creation events to auto-refresh
-    const handleCourseCreated = () => {
-      console.log('Course created event received, refreshing courses...');
-      fetchCourses();
-    };
-    
-    window.addEventListener('courseCreated', handleCourseCreated);
-    
-    return () => {
-      window.removeEventListener('courseCreated', handleCourseCreated);
-    };
-  }, [fetchCourses, fetchEnrollmentStatus]);
+  }, []);
 
   return (
     <section id="courses" className="py-20 bg-gray-50">
@@ -164,63 +111,13 @@ export default function Courses() {
                     </div>
                   </div>
                   <div className="flex flex-col justify-center space-y-3">
-                    {isAdmin ? (
-                      <>
-                        <Badge className="text-center py-2 bg-purple-100 text-purple-800">
-                          👑 Admin
-                        </Badge>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => router.push(`/courses/${course._id}/curriculum`)}
-                        >
-                          View Curriculum
-                        </Button>
-                      </>
-                    ) : enrolledCourseIds.includes(course._id || '') ? (
-                      <>
-                        <Badge className="text-center py-2 bg-green-100 text-green-800">
-                          ✓ Enrolled
-                        </Badge>
-                        <Button 
-                          className={`bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90`}
-                          onClick={() => router.push(`/dashboard/courses/${course._id}/curriculum`)}
-                        >
-                          Continue Learning
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                      </>
-                    ) : pendingCourseIds.includes(course._id || '') ? (
-                      <>
-                        <Badge className="text-center py-2 bg-yellow-100 text-yellow-800">
-                          ⏳ Pending Approval
-                        </Badge>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => router.push(`/courses/${course._id}`)}
-                        >
-                          View Details
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button 
-                          className={`bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90`}
-                          onClick={() => router.push(`/courses/${course._id}`)}
-                        >
-                          Start Course
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => router.push(`/courses/${course._id}/curriculum`)}
-                        >
-                          View Curriculum
-                        </Button>
-                      </>
-                    )}
+                    <Button className={`bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90`}>
+                      Start Course
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      View Curriculum
+                    </Button>
                   </div>
                 </div>
               </Card>

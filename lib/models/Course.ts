@@ -38,10 +38,9 @@ interface CurriculumItem {
   meetingLink?: string;
   meetingPlatform?: 'zoom' | 'google-meet' | 'other';
   duration?: number;
-  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'drive' | 'other';
+  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'other';
   resourceUrl?: string;
   resourceFile?: string; // File path for uploaded files
-  isFreePreview?: boolean; // Mark if this item is available for free preview
   announcementType?: 'important' | 'cancellation' | 'general';
   validUntil?: Date;
   isPinned?: boolean;
@@ -74,11 +73,7 @@ export interface ICourse extends Document {
   thumbnailUrl?: string;
   actualPrice?: number;
   discountedPrice?: number;
-  // Free preview settings
-  allowFreePreview: boolean;
-  freePreviewCount: number; // Number of free items accessible
   enrollmentDeadline?: Date;
-  enrollmentLastDate?: string; // Alternative field name for enrollment deadline
   instructorNotes?: string;
   learningObjectives: string[];
   links: string[];
@@ -103,46 +98,7 @@ export interface ICourse extends Document {
     createdBy: string;
     approvedBy?: string;
   };
-  // Advanced Course Management fields
-  weeklyContent?: Array<{
-    week: number;
-    videoLinks: Array<{
-      title: string;
-      url: string;
-      description: string;
-    }>;
-    documents: Array<{
-      title: string;
-      fileName: string;
-      fileUrl: string;
-      fileType: string;
-    }>;
-    comments: string;
-  }>;
-  classLinks?: Array<{
-    title: string;
-    meetingUrl: string;
-    schedule: Date;
-    description: string;
-  }>;
-  blogPosts?: Array<{
-    title: string;
-    author: string;
-    excerpt: string;
-    content: string;
-    featuredImageUrl: string;
-    publishDate: Date;
-    tags: string[];
-    publishImmediately: boolean;
-  }>;
-  enrolledStudentsInfo?: Array<{
-    name: string;
-    email: string;
-    enrollmentDate: Date;
-    progress: number;
-    status: string;
-  }>;
-  advanced?: any; // Legacy field for backward compatibility
+  advanced?: any; // Advanced course management data (videos, documents, etc.)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -234,17 +190,6 @@ const CourseSchema = new Schema<ICourse>({
       message: 'Discounted price cannot be higher than actual price'
     }
   },
-  // Free preview settings
-  allowFreePreview: {
-    type: Boolean,
-    default: true
-  },
-  freePreviewCount: {
-    type: Number,
-    default: 2,
-    min: 0,
-    max: 10
-  },
   enrollmentDeadline: {
     type: Date,
     validate: {
@@ -253,10 +198,6 @@ const CourseSchema = new Schema<ICourse>({
       },
       message: 'Enrollment deadline must be in the future'
     }
-  },
-  enrollmentLastDate: {
-    type: String,
-    maxlength: 100
   },
   instructorNotes: {
     type: String,
@@ -272,16 +213,14 @@ const CourseSchema = new Schema<ICourse>({
   },
   learningObjectives: {
     type: [String],
-    required: false,
-    default: [],
+    required: true,
     validate: {
       validator: function(objectives: string[]) {
-        // Allow empty array or up to 10 non-empty objectives
-        if (!objectives || objectives.length === 0) return true;
+        // Filter out empty strings and validate non-empty objectives
         const validObjectives = objectives.filter(obj => obj && obj.trim());
-        return validObjectives.length <= 10;
+        return validObjectives.length >= 1 && validObjectives.length <= 10;
       },
-      message: 'Course cannot have more than 10 learning objectives'
+      message: 'Course must have 1-10 learning objectives'
     }
   },
   links: {
@@ -365,14 +304,10 @@ const CourseSchema = new Schema<ICourse>({
         duration: Number,
         resourceType: {
           type: String,
-          enum: ['pdf', 'video', 'youtube', 'recording', 'drive', 'other']
+          enum: ['pdf', 'video', 'youtube', 'recording', 'other']
         },
         resourceUrl: String,
         resourceFile: String,
-        isFreePreview: {
-          type: Boolean,
-          default: false
-        },
         announcementType: {
           type: String,
           enum: ['important', 'cancellation', 'general']
@@ -418,7 +353,7 @@ const CourseSchema = new Schema<ICourse>({
           mcqQuestions: [{
             question: {
               type: String,
-              required: function(this: any) { return this.quizType === 'mcq'; }
+              required: function() { return this.quizType === 'mcq'; }
             },
             options: [{
               text: String,
@@ -479,49 +414,7 @@ const CourseSchema = new Schema<ICourse>({
   advanced: {
     type: Schema.Types.Mixed,
     default: {}
-  },
-  // Weekly Content
-  weeklyContent: [{
-    week: Number,
-    videoLinks: [{
-      title: String,
-      url: String,
-      description: String
-    }],
-    documents: [{
-      title: String,
-      fileName: String,
-      fileUrl: String,
-      fileType: String
-    }],
-    comments: String
-  }],
-  // Class Links
-  classLinks: [{
-    title: String,
-    meetingUrl: String,
-    schedule: Date,
-    description: String
-  }],
-  // Blog Posts
-  blogPosts: [{
-    title: String,
-    author: String,
-    excerpt: String,
-    content: String,
-    featuredImageUrl: String,
-    publishDate: Date,
-    tags: [String],
-    publishImmediately: Boolean
-  }],
-  // Enrolled Students Info
-  enrolledStudentsInfo: [{
-    name: String,
-    email: String,
-    enrollmentDate: Date,
-    progress: Number,
-    status: String
-  }]
+  }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -606,7 +499,12 @@ CourseSchema.pre('save', function(next) {
   next();
 });
 
-// Export the model, checking if it already exists
-const Course = mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
+// Force model refresh - delete from both models and connection
+if (mongoose.models.Course) {
+  delete mongoose.models.Course;
+}
+if (mongoose.connection.models.Course) {
+  delete mongoose.connection.models.Course;
+}
 
-export default Course;
+export default mongoose.model<ICourse>('Course', CourseSchema);

@@ -45,7 +45,6 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
-  const [pendingCourseIds, setPendingCourseIds] = useState<string[]>([]);
   const { isSignedIn, user } = useUser();
   const router = useRouter();
 
@@ -67,45 +66,36 @@ export default function CoursesPage() {
     fetchCourses();
   }, []);
 
-  // Fetch user's enrolled courses and pending enrollments
+  // Fetch user's enrolled courses
   useEffect(() => {
-    const fetchEnrollmentStatus = async () => {
+    const fetchEnrolledCourses = async () => {
       if (!isSignedIn || !user) return;
 
       try {
-        // Check enrolled courses from My Courses API
-        const coursesRes = await fetch('/api/users/me/courses');
-        if (coursesRes.ok) {
-          const coursesData = await coursesRes.json();
-          const enrolled = coursesData.data?.map((c: any) => c._id) || [];
-          setEnrolledCourseIds(enrolled);
-          console.log('Enrolled course IDs:', enrolled);
-        }
-
-        // Check pending enrollment requests
-        const enrollRes = await fetch('/api/enrollments');
-        if (enrollRes.ok) {
-          const enrollData = await enrollRes.json();
-          const pending = enrollData.data
-            ?.filter((req: any) => req.status === 'pending')
-            .map((req: any) => req.courseId?._id || req.courseId) || [];
-          setPendingCourseIds(pending);
-          console.log('Pending course IDs:', pending);
+        const res = await fetch('/api/users/me');
+        if (res.ok) {
+          const result = await res.json();
+          const userData = result.data || result; // Handle both response formats
+          console.log('User data from API:', userData);
+          const enrolledIds = userData.enrolledCourses?.map((c: any) => {
+            // Handle both string IDs and ObjectId objects
+            const id = c.courseId?._id || c.courseId?.toString() || c.courseId || c._id;
+            console.log('Processing enrolled course:', c, 'extracted ID:', id);
+            return id;
+          }) || [];
+          setEnrolledCourseIds(enrolledIds);
+          console.log('Final enrolled course IDs:', enrolledIds);
         }
       } catch (error) {
-        console.error('Failed to fetch enrollment status:', error);
+        console.error('Failed to fetch enrolled courses:', error);
       }
     };
 
-    fetchEnrollmentStatus();
+    fetchEnrolledCourses();
   }, [isSignedIn, user]);
 
   const isEnrolled = (courseId: string) => {
     return enrolledCourseIds.includes(courseId);
-  };
-
-  const isPending = (courseId: string) => {
-    return pendingCourseIds.includes(courseId);
   };
 
   const handleEnrollClick = (courseId: string) => {
@@ -243,14 +233,6 @@ export default function CoursesPage() {
                   View Curriculum
                 </Button>
               </>
-            ) : isPending(course._id) ? (
-              <Button
-                disabled
-                className="flex-1"
-                variant="outline"
-              >
-                ⏳ Enrollment Pending
-              </Button>
             ) : (
               <>
                 <Button
@@ -368,13 +350,6 @@ export default function CoursesPage() {
                     View Curriculum
                   </Button>
                 </>
-              ) : isPending(course._id) ? (
-                <Button
-                  disabled
-                  variant="outline"
-                >
-                  ⏳ Enrollment Pending
-                </Button>
               ) : (
                 <>
                   <Button
