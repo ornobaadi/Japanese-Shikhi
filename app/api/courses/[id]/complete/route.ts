@@ -6,11 +6,11 @@ import Course from '@/lib/models/Course';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ courseId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
-    const { courseId } = await params;
+    const { id } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -23,14 +23,14 @@ export async function POST(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findById(id);
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
 
     // Find the enrollment
     const enrollment = user.enrolledCourses.find(
-      (ec: any) => ec.courseId.toString() === courseId
+      (ec: any) => ec.courseId.toString() === id
     );
 
     if (!enrollment) {
@@ -58,9 +58,9 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { 
-        error: 'Course not yet completed', 
-        progress: enrollment.progress.progressPercentage 
+      {
+        error: 'Course not yet completed',
+        progress: enrollment.progress.progressPercentage
       },
       { status: 400 }
     );

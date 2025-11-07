@@ -10,11 +10,11 @@ import { join } from 'path';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ courseId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
-    const { courseId } = await params;
+    const { id } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -28,14 +28,14 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findById(id);
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
 
     // Check if user has completed the course
     const enrollment = user.enrolledCourses.find(
-      (ec: any) => ec.courseId.toString() === courseId
+      (ec: any) => ec.id.toString() === id
     );
 
     if (!enrollment) {
@@ -280,3 +280,4 @@ export async function GET(
     );
   }
 }
+
