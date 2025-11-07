@@ -24,6 +24,8 @@ export interface IUser extends Document {
       progressPercentage: number;
       lastAccessedAt: Date;
     };
+    completedAt?: Date;
+    certificateId?: string;
   }[];
   preferences: {
     dailyGoal: number; // minutes per day
@@ -122,6 +124,12 @@ const UserSchema = new Schema<IUser>({
           totalLessons: { type: Number, default: 0, min: 0 },
           progressPercentage: { type: Number, default: 0, min: 0, max: 100 },
           lastAccessedAt: { type: Date, default: Date.now }
+        },
+        completedAt: {
+          type: Date
+        },
+        certificateId: {
+          type: String
         }
       }
     ],
