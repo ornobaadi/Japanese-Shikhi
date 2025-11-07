@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +21,6 @@ import {
   DollarSign
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Navbar5 } from '@/components/navbar-5';
 
 interface Course {
   _id: string;
@@ -414,70 +416,77 @@ export default function CoursesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navbar */}
-      <Navbar5 />
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col min-h-screen bg-background">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            {/* Page Header */}
+            <div className="p-4 md:p-6">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h1 className="text-3xl font-bold text-foreground">All Courses</h1>
+                    <p className="mt-2 text-lg text-muted-foreground">
+                      Discover the perfect course to advance your Japanese learning journey
+                    </p>
+                  </div>
 
-      {/* Top spacing for floating navbar */}
-      <div className="h-24" />
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground">View:</span>
+                    <ToggleGroup
+                      type="single"
+                      value={viewMode}
+                      onValueChange={(value) => value && setViewMode(value as 'grid' | 'list')}
+                      className="border rounded-lg p-1"
+                    >
+                      <ToggleGroupItem value="grid" aria-label="Grid view">
+                        <Grid3X3 className="h-4 w-4" />
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="list" aria-label="List view">
+                        <List className="h-4 w-4" />
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+                </div>
 
-      {/* Page Header */}
-      <div className="">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">All Courses</h1>
-              <p className="mt-2 text-lg text-muted-foreground">
-                Discover the perfect course to advance your Japanese learning journey
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">View:</span>
-              <ToggleGroup
-                type="single"
-                value={viewMode}
-                onValueChange={(value) => value && setViewMode(value as 'grid' | 'list')}
-                className="border rounded-lg p-1"
-              >
-                <ToggleGroupItem value="grid" aria-label="Grid view">
-                  <Grid3X3 className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="list" aria-label="List view">
-                  <List className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
+                {/* Courses Content */}
+                {loading ? (
+                  <LoadingSkeleton />
+                ) : courses.length === 0 ? (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No courses found</h3>
+                    <p className="text-muted-foreground">Check back later for new courses!</p>
+                  </div>
+                ) : (
+                  <div className={
+                    viewMode === 'grid'
+                      ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                      : 'space-y-6'
+                  }>
+                    {courses.map((course) => (
+                      viewMode === 'grid' ? (
+                        <CourseCard key={course._id} course={course} />
+                      ) : (
+                        <CourseListItem key={course._id} course={course} />
+                      )
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Courses Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
-          <LoadingSkeleton />
-        ) : courses.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">No courses found</h3>
-            <p className="text-muted-foreground">Check back later for new courses!</p>
-          </div>
-        ) : (
-          <div className={
-            viewMode === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-              : 'space-y-6'
-          }>
-            {courses.map((course) => (
-              viewMode === 'grid' ? (
-                <CourseCard key={course._id} course={course} />
-              ) : (
-                <CourseListItem key={course._id} course={course} />
-              )
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
