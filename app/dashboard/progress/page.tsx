@@ -21,6 +21,9 @@ interface UserStats {
   studyTime: number;
   level: string;
   wordsLearned: number;
+  quizzesTaken: number;
+  averageScore: number;
+  accuracyRate: number;
 }
 
 export default function DashboardProgressPage() {
@@ -45,18 +48,42 @@ export default function DashboardProgressPage() {
       if (!isSignedIn) return;
       
       try {
-        const response = await fetch('/api/users/me');
-        if (response.ok) {
-          const userData = await response.json();
-          setUserStats({
-            totalCourses: userData.enrolledCourses?.length || 0,
-            completedLessons: userData.statistics?.lessonsCompleted || 0,
-            studyStreak: userData.learningStreak || 0,
-            studyTime: userData.totalStudyTime || 0,
-            level: userData.currentLevel || 'beginner',
-            wordsLearned: userData.statistics?.wordsLearned || 0
-          });
+        // Fetch user data
+        const userResponse = await fetch('/api/users/me');
+        if (!userResponse.ok) throw new Error('Failed to fetch user data');
+        const userData = await userResponse.json();
+        
+        // Fetch quiz submissions for accuracy rate
+        const quizResponse = await fetch('/api/quizzes/submissions');
+        let quizStats = {
+          quizzesTaken: 0,
+          averageScore: 0,
+          accuracyRate: 0
+        };
+        
+        if (quizResponse.ok) {
+          const quizData = await quizResponse.json();
+          const submissions = quizData.submissions || [];
+          
+          if (submissions.length > 0) {
+            const totalScore = submissions.reduce((sum: number, sub: any) => sum + (sub.percentage || 0), 0);
+            quizStats = {
+              quizzesTaken: submissions.length,
+              averageScore: Math.round(totalScore / submissions.length),
+              accuracyRate: Math.round(totalScore / submissions.length)
+            };
+          }
         }
+        
+        setUserStats({
+          totalCourses: userData.enrolledCourses?.length || 0,
+          completedLessons: userData.statistics?.lessonsCompleted || 0,
+          studyStreak: userData.learningStreak || 0,
+          studyTime: userData.totalStudyTime || 0,
+          level: userData.currentLevel || 'beginner',
+          wordsLearned: userData.statistics?.wordsLearned || 0,
+          ...quizStats
+        });
       } catch (error) {
         console.error('Error fetching user data:', error);
       } finally {
@@ -141,7 +168,25 @@ export default function DashboardProgressPage() {
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span>Accuracy Rate</span>
-                              <span>--% (Coming Soon)</span>
+                              <span className="font-semibold text-green-600">
+                                {userStats?.accuracyRate ? `${userStats.accuracyRate}%` : '--% (No quizzes yet)'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>Quizzes Taken</span>
+                              <span className="font-semibold">{userStats?.quizzesTaken || 0}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>Average Score</span>
+                              <span className="font-semibold">
+                                {userStats?.averageScore ? `${userStats.averageScore}%` : '--'}
+                              </span>
                             </div>
                           </div>
                         </div>

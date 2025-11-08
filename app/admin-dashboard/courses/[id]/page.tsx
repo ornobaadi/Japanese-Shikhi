@@ -656,20 +656,24 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
   // Quiz helper functions
   const handleAddMCQQuestion = () => {
+    console.log('Current Question State:', currentQuestion);
+    
     if (!currentQuestion.question.trim()) {
       toast.error('Please enter a question');
       return;
     }
 
     const filledOptions = currentQuestion.options.filter(opt => opt.text.trim());
+    console.log('Filled Options:', filledOptions);
+    
     if (filledOptions.length < 2) {
-      toast.error('Please provide at least 2 options');
+      toast.error(`Please fill in text for at least 2 options. Currently have ${filledOptions.length} filled options.`);
       return;
     }
 
-    const hasCorrectAnswer = currentQuestion.options.some(opt => opt.isCorrect && opt.text.trim());
+    const hasCorrectAnswer = filledOptions.some(opt => opt.isCorrect);
     if (!hasCorrectAnswer) {
-      toast.error('Please mark at least one correct answer');
+      toast.error('Please mark at least one correct answer with filled text');
       return;
     }
 
@@ -713,12 +717,17 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   };
 
   const handleOptionChange = (optionIndex: number, field: 'text' | 'isCorrect', value: string | boolean) => {
-    setCurrentQuestion(prev => ({
-      ...prev,
-      options: prev.options.map((opt, i) =>
-        i === optionIndex ? { ...opt, [field]: value } : opt
-      ),
-    }));
+    console.log(`Option ${optionIndex} ${field} changed to:`, value);
+    setCurrentQuestion(prev => {
+      const updated = {
+        ...prev,
+        options: prev.options.map((opt, i) =>
+          i === optionIndex ? { ...opt, [field]: value } : opt
+        ),
+      };
+      console.log('Updated currentQuestion:', updated);
+      return updated;
+    });
   };
 
   const handleAddOption = () => {
@@ -1705,10 +1714,12 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                                 onChange={(e) => handleOptionChange(idx, 'isCorrect', e.target.checked)}
                                 className="rounded"
                               />
-                              <Input
+                              <input
+                                type="text"
                                 placeholder={`Option ${idx + 1}`}
                                 value={opt.text}
                                 onChange={(e) => handleOptionChange(idx, 'text', e.target.value)}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                               />
                               {currentQuestion.options.length > 2 && (
                                 <Button

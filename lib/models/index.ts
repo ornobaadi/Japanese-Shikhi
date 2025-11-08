@@ -5,6 +5,9 @@ export { default as Lesson, type ILesson, type IContentBlock, type ILessonObject
 export { default as Vocabulary, type IVocabulary } from './Vocabulary';
 export { default as UserProgress, type IUserProgress } from './UserProgress';
 export { default as Assignment, type IAssignment } from './Assignment';
+export { default as AssignmentSubmission, type IAssignmentSubmission } from './AssignmentSubmission';
+export { default as QuizSubmission, type IQuizSubmission } from './QuizSubmission';
+export { default as Message, type IMessage } from './Message';
 export { 
   default as CourseManagement, 
   type ICourseManagement,

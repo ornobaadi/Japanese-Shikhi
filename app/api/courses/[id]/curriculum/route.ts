@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Course from '@/lib/models/Course';
-import { auth } from '@clerk/nextjs/server';
+import User from '@/lib/models/User';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 
 // GET /api/courses/[id]/curriculum - get curriculum with access control
 export async function GET(
@@ -14,7 +15,7 @@ export async function GET(
     await connectToDatabase();
     const { id } = await params;
 
-    const course = await Course.findById(id).select('curriculum title isPublished allowFreePreview freePreviewCount enrolledStudents');
+    const course = await Course.findById(id).select('curriculum title description isPublished allowFreePreview freePreviewCount enrolledStudents');
 
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
@@ -25,18 +26,40 @@ export async function GET(
       return NextResponse.json({ error: 'Course not available' }, { status: 403 });
     }
 
-    // Check if user is enrolled (only if user is logged in)
+    // Check if user is admin
+    let isAdmin = false;
+    if (userId) {
+      try {
+        const client = await clerkClient();
+        const clerkUser = await client.users.getUser(userId);
+        isAdmin = clerkUser.publicMetadata?.role === 'admin';
+      } catch (e) {
+        console.error('Error checking admin status:', e);
+      }
+    }
+
+    // Check if user is enrolled (only if user is logged in and not admin)
     let isEnrolled = false;
-    if (userId && course.enrolledStudents) {
-      isEnrolled = course.enrolledStudents.some((student: any) => 
-        student.userId && student.userId.toString() === userId
-      );
+    if (userId && !isAdmin) {
+      const user = await User.findOne({ clerkUserId: userId });
+      if (user) {
+        isEnrolled = user.enrolledCourses.some((ec: any) => 
+          ec.courseId && ec.courseId.toString() === id
+        );
+      }
+    }
+
+    // Admins have full access
+    if (isAdmin) {
+      isEnrolled = true;
     }
 
     // Initialize curriculum if it doesn't exist
     if (!course.curriculum) {
       return NextResponse.json({
         success: true,
+        title: course.title,
+        description: course.description || '',
         curriculum: {
           modules: []
         },
@@ -84,6 +107,8 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
+      title: course.title,
+      description: course.description || '',
       curriculum: filteredCurriculum,
       accessInfo: {
         isEnrolled,

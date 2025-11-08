@@ -19,6 +19,7 @@ export function NavMain({
     title: string
     url: string
     icon?: Icon
+    badge?: number
   }[]
 }) {
   const pathname = usePathname() || "/"
@@ -42,7 +43,7 @@ export function NavMain({
             }
             
             return (
-              <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem key={`${item.title}-${item.url}`}>
                 <SidebarMenuButton 
                   asChild 
                   className={`
@@ -56,6 +57,11 @@ export function NavMain({
                   <Link href={item.url} className="flex items-center gap-3">
                     {item.icon && <item.icon className="size-5 flex-shrink-0" />}
                     <span className="text-sm font-medium">{item.title}</span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white">
+                        {item.badge > 9 ? '9+' : item.badge}
+                      </span>
+                    )}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
