@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -14,6 +15,21 @@ import { useLanguage } from "@/contexts/LanguageContext"
 
 export default function CoursesPage() {
   const { t } = useLanguage();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Listen for course creation events
+  useEffect(() => {
+    const handleCourseCreated = () => {
+      setRefreshTrigger(prev => prev + 1);
+    };
+
+    // Listen for custom events
+    window.addEventListener('courseCreated', handleCourseCreated);
+
+    return () => {
+      window.removeEventListener('courseCreated', handleCourseCreated);
+    };
+  }, []);
 
   return (
     <SidebarProvider
@@ -43,7 +59,7 @@ export default function CoursesPage() {
               </Button>
             </div>
 
-            <CourseList />
+            <CourseList refreshTrigger={refreshTrigger} />
           </div>
         </div>
       </SidebarInset>

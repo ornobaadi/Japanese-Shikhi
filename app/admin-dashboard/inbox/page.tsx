@@ -1,0 +1,463 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { 
+  IconInbox, 
+  IconSend, 
+  IconMail, 
+  IconClock,
+  IconCheck,
+  IconSearch,
+  IconFilter
+} from '@tabler/icons-react';
+
+interface Message {
+  _id: string;
+  senderId: string;
+  senderName: string;
+  senderEmail: string;
+  receiverId: string;
+  receiverName: string;
+  subject: string;
+  message: string;
+  contextType?: string;
+  isRead: boolean;
+  readAt?: string;
+  sentAt: string;
+  threadId?: string;
+  replyToId?: string;
+}
+
+export default function AdminInboxPage() {
+  const [inboxMessages, setInboxMessages] = useState<Message[]>([]);
+  const [sentMessages, setSentMessages] = useState<Message[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('inbox');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [showReplyDialog, setShowReplyDialog] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [sending, setSending] = useState(false);
+  
+  const [replyForm, setReplyForm] = useState({
+    message: ''
+  });
+
+  useEffect(() => {
+    fetchMessages();
+  }, [activeTab]);
+
+  const fetchMessages = async () => {
+    setLoading(true);
+    try {
+      const type = activeTab === 'inbox' ? 'inbox' : 'sent';
+      const response = await fetch(`/api/messages?type=${type}`);
+      if (!response.ok) throw new Error('Failed to fetch messages');
+      
+      const data = await response.json();
+      
+      if (activeTab === 'inbox') {
+        setInboxMessages(data.messages || []);
+        setUnreadCount(data.unreadCount || 0);
+      } else {
+        setSentMessages(data.messages || []);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast.error('Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const viewMessage = async (message: Message) => {
+    setSelectedMessage(message);
+    setShowMessageDialog(true);
+
+    // Mark as read if unread and in inbox
+    if (activeTab === 'inbox' && !message.isRead) {
+      try {
+        await fetch('/api/messages', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messageId: message._id })
+        });
+        fetchMessages(); // Refresh to update read status
+      } catch (error) {
+        console.error('Error marking message as read:', error);
+      }
+    }
+  };
+
+  const openReplyDialog = () => {
+    setReplyForm({ message: '' });
+    setShowMessageDialog(false);
+    setShowReplyDialog(true);
+  };
+
+  const sendReply = async () => {
+    if (!selectedMessage || !replyForm.message) {
+      toast.error('Please enter a message');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverId: selectedMessage.senderId,
+          subject: `Re: ${selectedMessage.subject}`,
+          message: replyForm.message,
+          contextType: selectedMessage.contextType,
+          replyToId: selectedMessage._id
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to send reply');
+
+      toast.success('Reply sent successfully!');
+      setShowReplyDialog(false);
+      setReplyForm({ message: '' });
+      fetchMessages();
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      toast.error('Failed to send reply');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const getFilteredMessages = () => {
+    const messages = activeTab === 'inbox' ? inboxMessages : sentMessages;
+    
+    return messages.filter(msg => {
+      const matchesSearch = 
+        msg.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.senderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.message.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesFilter = 
+        filterType === 'all' || 
+        msg.contextType === filterType ||
+        (filterType === 'unread' && !msg.isRead);
+      
+      return matchesSearch && matchesFilter;
+    });
+  };
+
+  const renderMessagesList = () => {
+    const filteredMessages = getFilteredMessages();
+
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      );
+    }
+
+    if (filteredMessages.length === 0) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          <IconMail className="h-16 w-16 mx-auto mb-4 opacity-50" />
+          <p className="text-lg font-medium">No messages found</p>
+          <p className="text-sm">
+            {activeTab === 'inbox' 
+              ? "You don't have any messages yet" 
+              : "You haven't sent any messages yet"
+            }
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        {filteredMessages.map((message) => (
+          <div
+            key={message._id}
+            onClick={() => viewMessage(message)}
+            className={`p-4 border rounded-lg cursor-pointer hover:bg-accent transition-colors ${
+              activeTab === 'inbox' && !message.isRead ? 'bg-blue-50 dark:bg-blue-950 border-blue-200' : ''
+            }`}
+          >
+            <div className="flex items-start gap-4">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>
+                  {activeTab === 'inbox' ? message.senderName.charAt(0) : message.receiverName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold">
+                      {activeTab === 'inbox' ? message.senderName : message.receiverName}
+                    </span>
+                    {activeTab === 'inbox' && !message.isRead && (
+                      <Badge variant="default" className="text-xs">New</Badge>
+                    )}
+                    {message.contextType && message.contextType !== 'general' && (
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {message.contextType}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+                    <IconClock className="h-3 w-3" />
+                    {new Date(message.sentAt).toLocaleDateString()}
+                  </div>
+                </div>
+                
+                <p className="text-sm font-medium mb-1">{message.subject}</p>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {message.message}
+                </p>
+                
+                {activeTab === 'inbox' && (
+                  <div className="flex items-center gap-2 mt-2 text-xs">
+                    <span className="text-muted-foreground">To: {message.receiverName}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="container mx-auto p-6 space-y-6">
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Admin Inbox</h1>
+            <p className="text-muted-foreground">
+              Manage messages from students
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Unread Messages</CardTitle>
+                <IconInbox className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{unreadCount}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Inbox</CardTitle>
+                <IconMail className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{inboxMessages.length}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Sent Messages</CardTitle>
+                <IconSend className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{sentMessages.length}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Search & Filter</CardTitle>
+            </CardHeader>
+            <CardContent className="flex gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <IconSearch className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search messages..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Messages</SelectItem>
+                  <SelectItem value="unread">Unread Only</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="course">Course Related</SelectItem>
+                  <SelectItem value="assignment">Assignment</SelectItem>
+                  <SelectItem value="quiz">Quiz Related</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          {/* Messages */}
+          <Card>
+            <CardHeader>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+                  <TabsTrigger value="inbox" className="relative">
+                    Inbox
+                    {unreadCount > 0 && (
+                      <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        {unreadCount}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="sent">Sent</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </CardHeader>
+            <CardContent>
+              {renderMessagesList()}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* View Message Dialog */}
+        <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{selectedMessage?.subject}</DialogTitle>
+              <DialogDescription>
+                {activeTab === 'inbox' ? 'From' : 'To'}: {activeTab === 'inbox' ? selectedMessage?.senderName : selectedMessage?.receiverName}
+                {selectedMessage?.senderEmail && ` (${selectedMessage.senderEmail})`}
+                {' • '}
+                {selectedMessage?.sentAt && new Date(selectedMessage.sentAt).toLocaleString()}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedMessage && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  {selectedMessage.contextType && selectedMessage.contextType !== 'general' && (
+                    <Badge variant="outline" className="capitalize">
+                      {selectedMessage.contextType}
+                    </Badge>
+                  )}
+                  {activeTab === 'inbox' && selectedMessage.isRead && (
+                    <Badge variant="secondary" className="text-xs">
+                      <IconCheck className="h-3 w-3 mr-1" />
+                      Read
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-wrap text-sm">
+                  {selectedMessage.message}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button variant="outline" onClick={() => setShowMessageDialog(false)}>
+                    Close
+                  </Button>
+                  {activeTab === 'inbox' && (
+                    <Button onClick={openReplyDialog}>
+                      <IconSend className="h-4 w-4 mr-2" />
+                      Reply to Student
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Reply Dialog */}
+        <Dialog open={showReplyDialog} onOpenChange={setShowReplyDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reply to {selectedMessage?.senderName}</DialogTitle>
+              <DialogDescription>
+                Re: {selectedMessage?.subject}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Show original message */}
+              <div className="p-3 rounded-lg bg-muted/30 border-l-4 border-muted-foreground/30">
+                <p className="text-xs text-muted-foreground mb-2">Original message:</p>
+                <p className="text-sm line-clamp-3">{selectedMessage?.message}</p>
+              </div>
+
+              <div>
+                <Label htmlFor="reply-message">Your Reply *</Label>
+                <Textarea
+                  id="reply-message"
+                  placeholder="Type your reply here..."
+                  value={replyForm.message}
+                  onChange={(e) => setReplyForm({ message: e.target.value })}
+                  rows={6}
+                  maxLength={5000}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {replyForm.message.length}/5000 characters
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowReplyDialog(false)}
+                  disabled={sending}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={sendReply} disabled={sending}>
+                  {sending ? 'Sending...' : 'Send Reply'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}

@@ -78,19 +78,44 @@ export default function UserProfile({ userStats }: UserProfileProps) {
   const handleSave = async () => {
     setLoading(true);
     try {
+      // Filter out empty required fields
+      const dataToSend = {
+        ...userProfile,
+        firstName: userProfile.firstName?.trim() || undefined,
+        lastName: userProfile.lastName?.trim() || undefined,
+        nativeLanguage: userProfile.nativeLanguage || undefined,
+        currentLevel: userProfile.currentLevel,
+        preferences: {
+          dailyGoal: userProfile.dailyGoal,
+          preferredScript: userProfile.preferredScript,
+        }
+      };
+
       const response = await fetch('/api/users/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(userProfile),
+        body: JSON.stringify(dataToSend),
       });
+
+      const result = await response.json();
 
       if (response.ok) {
         setIsEditing(false);
+        alert('Profile updated successfully!');
+      } else {
+        // Show validation errors
+        if (result.details && Array.isArray(result.details)) {
+          const errorMessages = result.details.map((err: any) => err.message).join('\n');
+          alert(`Validation error:\n${errorMessages}`);
+        } else {
+          alert(result.error || 'Failed to update profile');
+        }
       }
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -13,16 +13,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
-import { IconArrowLeft, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconArrowLeft, IconPlus, IconTrash, IconSettings } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useLanguage } from '@/contexts/LanguageContext';
+import AdvancedCourseEditor from '@/components/admin/AdvancedCourseEditor';
 
 export default function EditCoursePage({ params }: { params: Promise<{ id: string }> }) {
   const { t } = useLanguage();
   const [courseId, setCourseId] = useState<string>('');
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     title: '',
     description: '',
     level: 'beginner',
@@ -39,8 +40,13 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
     discountedPrice: '',
     enrollmentLastDate: '',
     isPremium: false,
-    isPublished: false
+    isPublished: false,
+    weeklyContent: [],
+    classLinks: [],
+    blogPosts: [],
+    enrolledStudentsInfo: []
   });
+  const [showAdvancedModal, setShowAdvancedModal] = useState(false);
 
   useEffect(() => {
     async function getParams() {
@@ -63,6 +69,17 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         const data = await res.json();
         const courseData = data.course;
 
+        console.log('📚 Loaded course data:', courseData);
+        console.log('📝 Course fields:', {
+          title: courseData.title,
+          description: courseData.description,
+          learningObjectives: courseData.learningObjectives,
+          links: courseData.links,
+          weeklyContent: courseData.weeklyContent,
+          classLinks: courseData.classLinks,
+          blogPosts: courseData.blogPosts
+        });
+
         setCourse(courseData);
         setFormData({
           title: courseData.title || '',
@@ -81,7 +98,11 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
           discountedPrice: courseData.discountedPrice || '',
           enrollmentLastDate: courseData.enrollmentLastDate || '',
           isPremium: courseData.isPremium || false,
-          isPublished: courseData.isPublished || false
+          isPublished: courseData.isPublished || false,
+          weeklyContent: courseData.weeklyContent || [],
+          classLinks: courseData.classLinks || [],
+          blogPosts: courseData.blogPosts || [],
+          enrolledStudentsInfo: courseData.enrolledStudentsInfo || []
         });
       } catch (error) {
         console.error('Error loading course:', error);
@@ -94,47 +115,47 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
   }, [courseId]);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
   };
 
   const addObjective = () => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       learningObjectives: [...prev.learningObjectives, '']
     }));
   };
 
   const removeObjective = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
-      learningObjectives: prev.learningObjectives.filter((_, i) => i !== index)
+      learningObjectives: prev.learningObjectives.filter((_: string, i: number) => i !== index)
     }));
   };
 
   const updateObjective = (index: number, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
-      learningObjectives: prev.learningObjectives.map((obj, i) => i === index ? value : obj)
+      learningObjectives: prev.learningObjectives.map((obj: string, i: number) => i === index ? value : obj)
     }));
   };
 
   // Helper functions for other array fields
   const addArrayItem = (field: string) => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       [field]: [...(prev as any)[field], '']
     }));
   };
 
   const removeArrayItem = (field: string, index: number) => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       [field]: (prev as any)[field].filter((_: any, i: number) => i !== index)
     }));
   };
 
   const updateArrayItem = (field: string, index: number, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       [field]: (prev as any)[field].map((item: string, i: number) => i === index ? value : item)
     }));
@@ -148,8 +169,8 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
         body: JSON.stringify({
           ...formData,
           isPublished,
-          learningObjectives: formData.learningObjectives.filter(obj => obj.trim() !== ''),
-          links: formData.links.filter(link => link.trim() !== '')
+          learningObjectives: formData.learningObjectives.filter((obj: string) => obj.trim() !== ''),
+          links: formData.links.filter((link: string) => link.trim() !== '')
         })
       });
 
@@ -165,23 +186,23 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
 
   // Helper functions for Links
   const addLink = () => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       links: [...prev.links, '']
     }));
   };
 
   const removeLink = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
-      links: prev.links.filter((_, i) => i !== index)
+      links: prev.links.filter((_: string, i: number) => i !== index)
     }));
   };
 
   const updateLink = (index: number, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
-      links: prev.links.map((link, i) => i === index ? value : link)
+      links: prev.links.map((link: string, i: number) => i === index ? value : link)
     }));
   };
 
@@ -368,7 +389,7 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                   <Label>{t('admin.learningObjectives')} *</Label>
                   <p className="text-sm text-muted-foreground mb-2">{t('admin.learningObjectivesDesc')}</p>
                   <div className="space-y-2">
-                    {formData.learningObjectives.map((objective, index) => (
+                    {formData.learningObjectives.map((objective: string, index: number) => (
                       <div key={index} className="flex gap-2">
                         <Input
                           placeholder={`${t('admin.learningObjectivePlaceholder')} ${index + 1}`}
@@ -404,7 +425,7 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                   <Label>{t('admin.links')}</Label>
                   <p className="text-sm text-muted-foreground mb-2">{t('admin.linksDesc')}</p>
                   <div className="space-y-2">
-                    {formData.links.map((link, index) => (
+                    {formData.links.map((link: string, index: number) => (
                       <div key={index} className="flex gap-2">
                         <Input
                           placeholder={`Link ${index + 1}`}
@@ -467,6 +488,22 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                   <Label htmlFor="premium">{t('admin.premiumCourse')}</Label>
                 </div>
 
+                {/* Advanced Course Management Button */}
+                <div className="border-t pt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowAdvancedModal(true)}
+                  >
+                    <IconSettings className="size-4 mr-2" />
+                    Advanced Course Management
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2 text-center">
+                    Manage weekly content, class links, blog posts, and enrolled students
+                  </p>
+                </div>
+
                 {/* Action Buttons */}
                 <div className="flex gap-4 pt-4">
                   <Button
@@ -487,6 +524,24 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
             </Card>
           </div>
         </div>
+
+        {/* Advanced Course Management Modal */}
+        <AdvancedCourseEditor
+          isOpen={showAdvancedModal}
+          onClose={() => setShowAdvancedModal(false)}
+          weeklyContent={formData.weeklyContent || []}
+          classLinks={formData.classLinks || []}
+          blogPosts={formData.blogPosts || []}
+          onSave={(data: any) => {
+            setFormData((prev: typeof formData) => ({
+              ...prev,
+              weeklyContent: data.weeklyContent,
+              classLinks: data.classLinks,
+              blogPosts: data.blogPosts
+            }));
+          }}
+        />
+
       </SidebarInset>
     </SidebarProvider>
   );

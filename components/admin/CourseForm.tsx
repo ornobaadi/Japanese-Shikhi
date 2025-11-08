@@ -287,18 +287,44 @@ export default function CourseForm() {
           return;
         }
 
-        const validObjectives = course.learningObjectives.filter((obj: string) => obj.trim());
-        if (validObjectives.length === 0) {
-          toast.error(`Course ${i + 1}: At least one learning objective is required`);
-          setActiveCourseIndex(i);
-          setFormData(course);
-          return;
-        }
+        // Learning objectives are now optional - no validation required
       }
 
       // Submit all courses
       const submissions = courses.map(async (course, index) => {
         const validObjectives = course.learningObjectives.filter((obj: string) => obj.trim());
+
+        // Convert weekly content to curriculum structure
+        const curriculumModules = course.weeklyContent.map((weekContent: any, weekIndex: number) => ({
+          name: `Week ${weekContent.week}`,
+          description: weekContent.comments || `Week ${weekContent.week} content`,
+          order: weekIndex + 1,
+          isPublished: true,
+          items: [
+            // Add video links as curriculum items
+            ...weekContent.videoLinks.map((video: any) => ({
+              type: 'resource',
+              title: video.title,
+              description: video.description,
+              scheduledDate: new Date(),
+              resourceType: video.url.includes('youtube.com') || video.url.includes('youtu.be') ? 'youtube' : 'video',
+              resourceUrl: video.url,
+              isPublished: true,
+              isFreePreview: weekIndex < 2 // First 2 weeks are free
+            })),
+            // Add documents as curriculum items
+            ...weekContent.documents.map((doc: any) => ({
+              type: 'resource',
+              title: doc.title,
+              description: `Document: ${doc.fileName}`,
+              scheduledDate: new Date(),
+              resourceType: doc.fileType === 'pdf' ? 'pdf' : 'other',
+              resourceUrl: doc.fileUrl,
+              isPublished: true,
+              isFreePreview: weekIndex < 2 // First 2 weeks are free
+            }))
+          ]
+        }));
 
         const courseData = {
           ...course,
@@ -306,12 +332,20 @@ export default function CourseForm() {
           learningObjectives: validObjectives,
           links: course.links.filter((link: string) => link.trim()),
           estimatedDuration: parseInt(course.estimatedDuration),
-          difficulty: parseInt(course.difficulty)
+          difficulty: parseInt(course.difficulty),
+          // Add curriculum structure
+          curriculum: {
+            modules: curriculumModules
+          },
+          // Add free preview settings
+          allowFreePreview: true,
+          freePreviewCount: 2
         };
 
         console.log(`Submitting Course ${index + 1}:`, courseData);
 
         // Here you would make the API call for each course
+        console.log('Sending course data to API:', courseData);
         const response = await fetch('/api/admin/courses', {
           method: 'POST',
           headers: {
@@ -321,6 +355,7 @@ export default function CourseForm() {
         });
 
         const result = await response.json();
+        console.log('API Response:', { status: response.status, data: result });
 
         if (!response.ok) {
           if (result.details && Array.isArray(result.details)) {
@@ -365,6 +400,11 @@ export default function CourseForm() {
       }
 
       toast.success(`Successfully ${publishImmediately ? 'published' : 'saved'} ${courses.length} course${courses.length > 1 ? 's' : ''}!`);
+
+      // Dispatch custom event to refresh course list
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('courseCreated', { detail: { count: courses.length } }));
+      }
 
       // Reset to single course after successful submission
       const newCourse = getInitialCourseData();
@@ -566,7 +606,7 @@ export default function CourseForm() {
           {/* Learning Objectives */}
           <div className="space-y-4">
             <div>
-              <Label>{t('form.learningObjectives')} *</Label>
+              <Label>{t('form.learningObjectives')} (optional)</Label>
               <p className="text-sm text-muted-foreground mb-3">
                 {t('form.learningObjectivesDesc')}
               </p>
@@ -819,17 +859,64 @@ export default function CourseForm() {
                                     </div>
                                     <div>
                                       <Label>Video URL</Label>
-                                      <Input
-                                        type="url"
-                                        value={video.url}
-                                        onChange={(e) => {
-                                          const newWeeklyContent = [...formData.weeklyContent];
-                                          const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
-                                          newWeeklyContent[weekIndex].videoLinks[videoIndex].url = e.target.value;
-                                          handleInputChange('weeklyContent', newWeeklyContent);
-                                        }}
-                                        placeholder="https://youtube.com/watch?v=... or upload link"
-                                      />
+                                      <div className="flex gap-2">
+                                        <Input
+                                          type="url"
+                                          value={video.url}
+                                          onChange={(e) => {
+                                            const newWeeklyContent = [...formData.weeklyContent];
+                                            const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                            newWeeklyContent[weekIndex].videoLinks[videoIndex].url = e.target.value;
+                                            handleInputChange('weeklyContent', newWeeklyContent);
+                                          }}
+                                          placeholder="https://youtube.com/watch?v=... or upload link"
+                                          className="flex-1"
+                                        />
+                                        <div>
+                                          <Input
+                                            type="file"
+                                            accept="video/*"
+                                            className="hidden"
+                                            id={`video-upload-${video.id}`}
+                                            onChange={async (e) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                const uploadFormData = new FormData();
+                                                uploadFormData.append('file', file);
+                                                
+                                                try {
+                                                  const response = await fetch('/api/admin/upload', {
+                                                    method: 'POST',
+                                                    body: uploadFormData,
+                                                  });
+                                                  
+                                                  if (response.ok) {
+                                                    const result = await response.json();
+                                                    const newWeeklyContent = [...formData.weeklyContent];
+                                                    const weekIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                                    newWeeklyContent[weekIndex].videoLinks[videoIndex].url = result.fileUrl;
+                                                    handleInputChange('weeklyContent', newWeeklyContent);
+                                                    toast.success('Video uploaded successfully!');
+                                                  } else {
+                                                    toast.error('Failed to upload video');
+                                                  }
+                                                } catch (error) {
+                                                  console.error('Upload error:', error);
+                                                  toast.error('Error uploading video');
+                                                }
+                                              }
+                                            }}
+                                          />
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => document.getElementById(`video-upload-${video.id}`)?.click()}
+                                          >
+                                            Upload Video
+                                          </Button>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                   <div>
@@ -982,8 +1069,38 @@ export default function CourseForm() {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => {
-                                          toast.info('File upload functionality will be implemented with backend integration');
+                                        onClick={async () => {
+                                          const input = document.createElement('input');
+                                          input.type = 'file';
+                                          input.accept = '.pdf,.doc,.docx,.txt';
+                                          input.onchange = async (e) => {
+                                            const file = (e.target as HTMLInputElement).files?.[0];
+                                            if (!file) return;
+                                            
+                                            const uploadFormData = new FormData();
+                                            uploadFormData.append('file', file);
+                                            
+                                            try {
+                                              const response = await fetch('/api/admin/upload', {
+                                                method: 'POST',
+                                                body: uploadFormData,
+                                              });
+                                              
+                                              const result = await response.json();
+                                              if (result.success) {
+                                                const newWeeklyContent = [...formData.weeklyContent];
+                                                const wIndex = newWeeklyContent.findIndex(w => w.week === weekContent.week);
+                                                newWeeklyContent[wIndex].documents[docIndex].fileUrl = result.url;
+                                                setFormData({ ...formData, weeklyContent: newWeeklyContent });
+                                                toast.success(`File uploaded successfully!`);
+                                              } else {
+                                                toast.error('Upload failed: ' + result.error);
+                                              }
+                                            } catch (error) {
+                                              toast.error('Upload failed');
+                                            }
+                                          };
+                                          input.click();
                                         }}
                                       >
                                         Upload
@@ -1282,8 +1399,37 @@ export default function CourseForm() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  toast.info('Image upload functionality will be implemented with backend integration');
+                                onClick={async () => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.accept = '.jpg,.jpeg,.png,.gif,.webp';
+                                  input.onchange = async (e) => {
+                                    const file = (e.target as HTMLInputElement).files?.[0];
+                                    if (!file) return;
+                                    
+                                    const uploadFormData = new FormData();
+                                    uploadFormData.append('file', file);
+                                    
+                                    try {
+                                      const response = await fetch('/api/admin/upload', {
+                                        method: 'POST',
+                                        body: uploadFormData,
+                                      });
+                                      
+                                      const result = await response.json();
+                                      if (result.success) {
+                                        const newBlogs = [...(formData.blogPosts || [])];
+                                        newBlogs[index].featuredImage = result.url;
+                                        handleInputChange('blogPosts', newBlogs);
+                                        toast.success(`Image uploaded successfully!`);
+                                      } else {
+                                        toast.error('Upload failed: ' + result.error);
+                                      }
+                                    } catch (error) {
+                                      toast.error('Upload failed');
+                                    }
+                                  };
+                                  input.click();
                                 }}
                               >
                                 Upload

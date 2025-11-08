@@ -1,26 +1,89 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+interface MCQOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+interface MCQQuestion {
+  question: string;
+  options: MCQOption[];
+  points: number;
+  explanation?: string; // Shown after submission
+}
+
+interface QuizData {
+  quizType: 'mcq' | 'open-ended';
+  timeLimit?: number; // in minutes
+  totalPoints: number;
+  passingScore: number; // percentage
+  allowMultipleAttempts: boolean;
+  showAnswersAfterSubmission: boolean;
+  randomizeQuestions: boolean;
+  randomizeOptions: boolean;
+  // MCQ specific
+  mcqQuestions?: MCQQuestion[];
+  // Open-ended specific
+  openEndedQuestion?: string;
+  openEndedQuestionFile?: string; // PDF file path
+  acceptFileUpload: boolean; // For open-ended answers
+  acceptTextAnswer: boolean; // For open-ended answers
+}
+
+interface CurriculumItem {
+  type: 'live-class' | 'announcement' | 'resource' | 'assignment' | 'quiz';
+  title: string;
+  description?: string;
+  scheduledDate: Date;
+  meetingLink?: string;
+  meetingPlatform?: 'zoom' | 'google-meet' | 'other';
+  duration?: number;
+  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'drive' | 'other';
+  resourceUrl?: string;
+  resourceFile?: string; // File path for uploaded files
+  isFreePreview?: boolean; // Mark if this item is available for free preview
+  announcementType?: 'important' | 'cancellation' | 'general';
+  validUntil?: Date;
+  isPinned?: boolean;
+  dueDate?: Date;
+  quizData?: QuizData; // Quiz specific data
+  isPublished: boolean;
+  createdAt: Date;
+}
+
+interface Module {
+  name: string;
+  description: string;
+  items: CurriculumItem[];
+  isPublished: boolean;
+  order: number;
+}
+
 export interface ICourse extends Document {
   title: string;
   titleJp?: string;
   description: string;
   descriptionJp?: string;
   level: 'beginner' | 'intermediate' | 'advanced';
-  category: 'vocabulary' | 'grammar' | 'conversation' | 'reading' | 'writing' | 'culture' | 'kanji';
+  category: 'vocabulary' | 'grammar' | 'conversation' | 'reading' | 'writing' | 'culture' | 'kanji' | 'language';
   tags: string[];
   estimatedDuration: number; // in minutes
   difficulty: number; // 1-10 scale
   isPremium: boolean;
   isPublished: boolean;
   thumbnailUrl?: string;
+  actualPrice?: number;
+  discountedPrice?: number;
+  // Free preview settings
+  allowFreePreview: boolean;
+  freePreviewCount: number; // Number of free items accessible
+  enrollmentDeadline?: Date;
+  enrollmentLastDate?: string; // Alternative field name for enrollment deadline
   instructorNotes?: string;
   learningObjectives: string[];
   links: string[];
   whatYoullLearn?: string;
   courseLessonModule?: string;
-  actualPrice?: string;
-  discountedPrice?: string;
-  enrollmentLastDate?: string;
   lessons: mongoose.Types.ObjectId[];
   totalLessons: number;
   averageRating: number;
@@ -31,12 +94,55 @@ export interface ICourse extends Document {
     primary: string; // 'japanese'
     secondary: string; // 'english', 'bengali', etc.
   };
+  curriculum: {
+    modules: Module[];
+  };
   metadata: {
     version: string;
     lastUpdated: Date;
     createdBy: string;
     approvedBy?: string;
   };
+  // Advanced Course Management fields
+  weeklyContent?: Array<{
+    week: number;
+    videoLinks: Array<{
+      title: string;
+      url: string;
+      description: string;
+    }>;
+    documents: Array<{
+      title: string;
+      fileName: string;
+      fileUrl: string;
+      fileType: string;
+    }>;
+    comments: string;
+  }>;
+  classLinks?: Array<{
+    title: string;
+    meetingUrl: string;
+    schedule: Date;
+    description: string;
+  }>;
+  blogPosts?: Array<{
+    title: string;
+    author: string;
+    excerpt: string;
+    content: string;
+    featuredImageUrl: string;
+    publishDate: Date;
+    tags: string[];
+    publishImmediately: boolean;
+  }>;
+  enrolledStudentsInfo?: Array<{
+    name: string;
+    email: string;
+    enrollmentDate: Date;
+    progress: number;
+    status: string;
+  }>;
+  advanced?: any; // Legacy field for backward compatibility
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,8 +177,9 @@ const CourseSchema = new Schema<ICourse>({
   },
   category: {
     type: String,
-    enum: ['vocabulary', 'grammar', 'conversation', 'reading', 'writing', 'culture', 'kanji'],
-    required: true
+    enum: ['vocabulary', 'grammar', 'conversation', 'reading', 'writing', 'culture', 'kanji', 'language'],
+    required: false,  // Temporarily make optional to fix existing data
+    default: 'language'
   },
   tags: {
     type: [String],
@@ -107,6 +214,50 @@ const CourseSchema = new Schema<ICourse>({
     index: true
   },
   thumbnailUrl: String,
+  actualPrice: {
+    type: Number,
+    min: 0,
+    validate: {
+      validator: function(price: number) {
+        return !this.isPremium || price > 0;
+      },
+      message: 'Premium courses must have a price'
+    }
+  },
+  discountedPrice: {
+    type: Number,
+    min: 0,
+    validate: {
+      validator: function(discountPrice: number) {
+        return !this.actualPrice || discountPrice <= this.actualPrice;
+      },
+      message: 'Discounted price cannot be higher than actual price'
+    }
+  },
+  // Free preview settings
+  allowFreePreview: {
+    type: Boolean,
+    default: true
+  },
+  freePreviewCount: {
+    type: Number,
+    default: 2,
+    min: 0,
+    max: 10
+  },
+  enrollmentDeadline: {
+    type: Date,
+    validate: {
+      validator: function(deadline: Date) {
+        return !deadline || deadline > new Date();
+      },
+      message: 'Enrollment deadline must be in the future'
+    }
+  },
+  enrollmentLastDate: {
+    type: String,
+    maxlength: 100
+  },
   instructorNotes: {
     type: String,
     maxlength: 1000
@@ -119,26 +270,18 @@ const CourseSchema = new Schema<ICourse>({
     type: String,
     maxlength: 2000
   },
-  actualPrice: {
-    type: String,
-    maxlength: 50
-  },
-  discountedPrice: {
-    type: String,
-    maxlength: 50
-  },
-  enrollmentLastDate: {
-    type: String,
-    maxlength: 100
-  },
   learningObjectives: {
     type: [String],
-    required: true,
+    required: false,
+    default: [],
     validate: {
       validator: function(objectives: string[]) {
-        return objectives.length >= 1 && objectives.length <= 10;
+        // Allow empty array or up to 10 non-empty objectives
+        if (!objectives || objectives.length === 0) return true;
+        const validObjectives = objectives.filter(obj => obj && obj.trim());
+        return validObjectives.length <= 10;
       },
-      message: 'Course must have 1-10 learning objectives'
+      message: 'Course cannot have more than 10 learning objectives'
     }
   },
   links: {
@@ -192,6 +335,131 @@ const CourseSchema = new Schema<ICourse>({
       default: 'english'
     }
   },
+  curriculum: {
+    modules: [{
+      name: {
+        type: String,
+        required: true
+      },
+      description: String,
+      items: [{
+        type: {
+          type: String,
+          enum: ['live-class', 'announcement', 'resource', 'assignment', 'quiz'],
+          required: true
+        },
+        title: {
+          type: String,
+          required: true
+        },
+        description: String,
+        scheduledDate: {
+          type: Date,
+          required: true
+        },
+        meetingLink: String,
+        meetingPlatform: {
+          type: String,
+          enum: ['zoom', 'google-meet', 'other']
+        },
+        duration: Number,
+        resourceType: {
+          type: String,
+          enum: ['pdf', 'video', 'youtube', 'recording', 'drive', 'other']
+        },
+        resourceUrl: String,
+        resourceFile: String,
+        isFreePreview: {
+          type: Boolean,
+          default: false
+        },
+        announcementType: {
+          type: String,
+          enum: ['important', 'cancellation', 'general']
+        },
+        validUntil: Date,
+        isPinned: {
+          type: Boolean,
+          default: false
+        },
+        dueDate: Date,
+        quizData: {
+          quizType: {
+            type: String,
+            enum: ['mcq', 'open-ended']
+          },
+          timeLimit: Number,
+          totalPoints: {
+            type: Number,
+            default: 0
+          },
+          passingScore: {
+            type: Number,
+            default: 60,
+            min: 0,
+            max: 100
+          },
+          allowMultipleAttempts: {
+            type: Boolean,
+            default: false
+          },
+          showAnswersAfterSubmission: {
+            type: Boolean,
+            default: true
+          },
+          randomizeQuestions: {
+            type: Boolean,
+            default: false
+          },
+          randomizeOptions: {
+            type: Boolean,
+            default: false
+          },
+          mcqQuestions: [{
+            question: {
+              type: String,
+              required: function(this: any) { return this.quizType === 'mcq'; }
+            },
+            options: [{
+              text: String,
+              isCorrect: Boolean
+            }],
+            points: {
+              type: Number,
+              default: 1
+            },
+            explanation: String
+          }],
+          openEndedQuestion: String,
+          openEndedQuestionFile: String,
+          acceptFileUpload: {
+            type: Boolean,
+            default: true
+          },
+          acceptTextAnswer: {
+            type: Boolean,
+            default: true
+          }
+        },
+        isPublished: {
+          type: Boolean,
+          default: true
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now
+        }
+      }],
+      isPublished: {
+        type: Boolean,
+        default: false
+      },
+      order: {
+        type: Number,
+        required: true
+      }
+    }]
+  },
   metadata: {
     version: {
       type: String,
@@ -206,7 +474,54 @@ const CourseSchema = new Schema<ICourse>({
       required: true
     },
     approvedBy: String
-  }
+  },
+  // Advanced course management data
+  advanced: {
+    type: Schema.Types.Mixed,
+    default: {}
+  },
+  // Weekly Content
+  weeklyContent: [{
+    week: Number,
+    videoLinks: [{
+      title: String,
+      url: String,
+      description: String
+    }],
+    documents: [{
+      title: String,
+      fileName: String,
+      fileUrl: String,
+      fileType: String
+    }],
+    comments: String
+  }],
+  // Class Links
+  classLinks: [{
+    title: String,
+    meetingUrl: String,
+    schedule: Date,
+    description: String
+  }],
+  // Blog Posts
+  blogPosts: [{
+    title: String,
+    author: String,
+    excerpt: String,
+    content: String,
+    featuredImageUrl: String,
+    publishDate: Date,
+    tags: [String],
+    publishImmediately: Boolean
+  }],
+  // Enrolled Students Info
+  enrolledStudentsInfo: [{
+    name: String,
+    email: String,
+    enrollmentDate: Date,
+    progress: Number,
+    status: String
+  }]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -276,4 +591,22 @@ CourseSchema.statics.findRecommended = function(userLevel: string, userInterests
   .populate('lessons', 'title estimatedDuration');
 };
 
-export default mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
+// Pre-save hook to clean up arrays
+CourseSchema.pre('save', function(next) {
+  // Clean up learningObjectives - remove empty strings
+  if (this.learningObjectives) {
+    this.learningObjectives = this.learningObjectives.filter((obj: string) => obj && obj.trim());
+  }
+  
+  // Clean up links - remove empty strings
+  if (this.links) {
+    this.links = this.links.filter((link: string) => link && link.trim());
+  }
+  
+  next();
+});
+
+// Export the model, checking if it already exists
+const Course = mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
+
+export default Course;

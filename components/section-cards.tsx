@@ -21,6 +21,7 @@ export function SectionCards() {
     totalStudents: 0,
     totalRevenue: 0,
     courseCompletion: 0,
+    pendingEnrollments: 0,
     loading: true
   });
 
@@ -29,10 +30,14 @@ export function SectionCards() {
       try {
         const courseRes = await fetch('/api/admin/courses');
         const userRes = await fetch('/api/admin/users');
+        const enrollmentRes = await fetch('/api/admin/enrollments?status=pending');
+        
         let totalCourses = 0;
         let totalStudents = 0;
         let totalRevenue = 0;
         let courseCompletion = 0;
+        let pendingEnrollments = 0;
+        
         if (courseRes.ok) {
           const courseJson = await courseRes.json();
           totalCourses = courseJson.stats?.total || courseJson.pagination?.totalCourses || 0;
@@ -42,12 +47,17 @@ export function SectionCards() {
           const userJson = await userRes.json();
           totalStudents = userJson.total || userJson.totalUsers || 0;
         }
-        // Revenue logic can be added here if available from API
+        if (enrollmentRes.ok) {
+          const enrollmentJson = await enrollmentRes.json();
+          pendingEnrollments = enrollmentJson.count || 0;
+        }
+        
         setStats({
           totalCourses,
           totalStudents,
           totalRevenue,
           courseCompletion,
+          pendingEnrollments,
           loading: false
         });
       } catch (err) {
@@ -96,15 +106,15 @@ export function SectionCards() {
           <div className="text-muted-foreground">{stats.loading ? t('common.loading') : (stats.totalRevenue === 0 ? t('admin.noRevenue') : `Revenue: ৳${stats.totalRevenue.toFixed(2)}`)}</div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
+      <Card className="@container/card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => window.location.href = '/admin-dashboard/enrollments'}>
         <CardHeader>
-          <CardDescription>{t('admin.courseCompletion')}</CardDescription>
+          <CardDescription>Pending Enrollments</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {stats.loading ? '...' : stats.courseCompletion}
+            {stats.loading ? '...' : stats.pendingEnrollments}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="text-muted-foreground">{stats.loading ? t('common.loading') : (stats.courseCompletion === 0 ? t('admin.noCompletions') : `${stats.courseCompletion} completions`)}</div>
+          <div className="text-muted-foreground">{stats.loading ? 'Loading...' : (stats.pendingEnrollments === 0 ? 'No pending requests' : 'Awaiting admin approval')}</div>
         </CardFooter>
       </Card>
     </div>

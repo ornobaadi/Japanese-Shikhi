@@ -18,20 +18,32 @@ import { toast } from 'sonner';
 
 interface User {
   id: string;
+  clerkId: string;
   name: string;
   email: string;
+  profilePicture?: string;
   isActive: boolean;
   isPremium: boolean;
+  isAdmin: boolean;
+  role: 'admin' | 'student';
   createdAt: string;
+  lastLoginAt?: string;
   totalSpent: number;
   enrolledCourses: any[];
+  coursesEnrolled: number;
+  statistics?: any;
 }
 
 export default function UsersPage() {
   const { t } = useLanguage();
   const [users, setUsers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);  // Store all users for filtering
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [subscriptionFilter, setSubscriptionFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -46,14 +58,31 @@ export default function UsersPage() {
         setLoading(true);
         const response = await fetch('/api/admin/users');
         if (response.ok) {
-          const data: { users: User[] } = await response.json();
-          setUsers(data.users || []);
-          setStats({
-            totalUsers: data.users?.length || 0,
-            activeUsers: data.users?.filter((user: User) => user.isActive)?.length || 0,
-            premiumUsers: data.users?.filter((user: User) => user.isPremium)?.length || 0,
-            totalRevenue: data.users?.reduce((sum: number, user: User) => sum + (user.totalSpent || 0), 0) || 0
-          });
+          const data = await response.json();
+          console.log('Fetched users data:', data);
+          const fetchedUsers = data.users || [];
+          setAllUsers(fetchedUsers); // Store all users for filtering
+          setUsers(fetchedUsers); // Initially show all users
+
+          // Use stats from API if available, otherwise calculate from users data
+          if (data.stats) {
+            setStats({
+              totalUsers: data.stats.total,
+              activeUsers: data.stats.activeUsers,
+              premiumUsers: data.stats.premiumUsers,
+              totalRevenue: data.stats.totalRevenue
+            });
+          } else {
+            setStats({
+              totalUsers: data.users?.length || 0,
+              activeUsers: data.users?.filter((user: User) => user.isActive)?.length || 0,
+              premiumUsers: data.users?.filter((user: User) => user.isPremium)?.length || 0,
+              totalRevenue: data.users?.reduce((sum: number, user: User) => sum + (user.totalSpent || 0), 0) || 0
+            });
+          }
+        } else {
+          console.error('Failed to fetch users:', response.status, response.statusText);
+          toast.error('Failed to fetch users data');
         }
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -66,6 +95,45 @@ export default function UsersPage() {
     fetchUsers();
   }, [t]);
 
+  // Filter users based on search and filter criteria
+  useEffect(() => {
+    let filteredUsers = [...allUsers];
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filteredUsers = filteredUsers.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.clerkId.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'active') {
+        filteredUsers = filteredUsers.filter(user => user.isActive);
+      } else if (statusFilter === 'inactive') {
+        filteredUsers = filteredUsers.filter(user => !user.isActive);
+      }
+    }
+
+    // Apply subscription filter
+    if (subscriptionFilter !== 'all') {
+      if (subscriptionFilter === 'premium') {
+        filteredUsers = filteredUsers.filter(user => user.isPremium);
+      } else if (subscriptionFilter === 'free') {
+        filteredUsers = filteredUsers.filter(user => !user.isPremium);
+      }
+    }
+
+    // Apply role filter
+    if (roleFilter !== 'all') {
+      filteredUsers = filteredUsers.filter(user => user.role === roleFilter);
+    }
+
+    setUsers(filteredUsers);
+  }, [allUsers, searchTerm, statusFilter, subscriptionFilter, roleFilter]);
+
   // Export data functionality
   const handleExportData = async () => {
     try {
@@ -74,11 +142,14 @@ export default function UsersPage() {
       // Create CSV data
       const csvHeaders = [
         'ID',
+        'Clerk ID',
         'Name',
         'Email',
+        'Role',
         'Status',
         'Subscription',
         'Registration Date',
+        'Last Login',
         'Total Spent',
         'Courses Enrolled'
       ];
@@ -89,13 +160,16 @@ export default function UsersPage() {
         // Export actual user data
         csvData = users.map(user => [
           user.id || 'N/A',
+          user.clerkId || 'N/A',
           user.name || 'N/A',
           user.email || 'N/A',
+          user.role || 'student',
           user.isActive ? 'Active' : 'Inactive',
           user.isPremium ? 'Premium' : 'Free',
           user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
+          user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never',
           user.totalSpent || '0',
-          user.enrolledCourses?.length || '0'
+          user.coursesEnrolled || '0'
         ]);
       } else {
         // Export empty template with headers only
@@ -235,23 +309,49 @@ export default function UsersPage() {
               </Card>
             </div>
 
-            {/* Filters */}
+            {/* Users List */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t('users.searchAndFilter')}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <div>
+                  <CardTitle>{t('users.allUsers')}</CardTitle>
+                  <CardDescription>{t('users.enrollmentTracking')}</CardDescription>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Showing {users.length} of {allUsers.length} users
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col md:flex-row gap-4">
+                {/* Filters Section */}
+                <div className="mb-6 flex flex-wrap items-end gap-4 rounded-lg border bg-card p-4">
                   <div className="flex-1">
                     <Label htmlFor="search">{t('users.searchUsers')}</Label>
                     <div className="relative">
                       <IconSearch className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                      <Input id="search" placeholder={t('users.searchPlaceholder')} className="pl-10" />
+                      <Input
+                        id="search"
+                        placeholder={t('users.searchPlaceholder')}
+                        className="pl-10"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div>
+                    <Label>Role</Label>
+                    <Select value={roleFilter} onValueChange={setRoleFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="All Roles" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="student">Student</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label>{t('users.status')}</Label>
-                    <Select>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder={t('users.allStatus')} />
                       </SelectTrigger>
@@ -264,7 +364,7 @@ export default function UsersPage() {
                   </div>
                   <div>
                     <Label>{t('users.subscription')}</Label>
-                    <Select>
+                    <Select value={subscriptionFilter} onValueChange={setSubscriptionFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder={t('users.allTypes')} />
                       </SelectTrigger>
@@ -275,25 +375,103 @@ export default function UsersPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <Button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setRoleFilter('all');
+                      setStatusFilter('all');
+                      setSubscriptionFilter('all');
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Clear Filters
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Empty State */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('users.allUsers')}</CardTitle>
-                <CardDescription>{t('users.enrollmentTracking')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <div className="text-muted-foreground">
-                    {t('users.noUsersFound')}
+                {loading ? (
+                  <div className="text-center py-12">
+                    <IconLoader2 className="size-8 animate-spin mx-auto mb-4" />
+                    <div className="text-muted-foreground">{t('common.loading')}</div>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {t('users.willAppearHere')}
-                  </p>
-                </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-muted-foreground">
+                      {t('users.noUsersFound')}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {t('users.willAppearHere')}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {users.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {user.profilePicture ? (
+                            <img
+                              src={user.profilePicture}
+                              alt={user.name}
+                              className="size-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="size-10 rounded-full bg-muted flex items-center justify-center">
+                              <IconUser className="size-5 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">{user.name}</h3>
+                              {user.isAdmin && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                  Admin
+                                </span>
+                              )}
+                              {user.isPremium && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                  <IconTrophy className="size-3 mr-1" />
+                                  Premium
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                              <span>Courses: {user.coursesEnrolled}</span>
+                              <span>Role: {user.role}</span>
+                              <span>
+                                Status: {user.isActive ? (
+                                  <span className="text-green-600">Active</span>
+                                ) : (
+                                  <span className="text-red-600">Inactive</span>
+                                )}
+                              </span>
+                              <span>
+                                Joined: {new Date(user.createdAt).toLocaleDateString()}
+                              </span>
+                              {user.lastLoginAt && (
+                                <span>
+                                  Last login: {new Date(user.lastLoginAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm">
+                            View Profile
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <IconMail className="size-4 mr-1" />
+                            Message
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

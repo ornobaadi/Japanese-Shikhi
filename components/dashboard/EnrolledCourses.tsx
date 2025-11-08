@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,9 @@ import {
   Calendar,
   ExternalLink,
   Play,
-  MoreVertical
+  MoreVertical,
+  Award,
+  Download
 } from "lucide-react";
 
 interface Course {
@@ -30,6 +33,8 @@ interface Course {
     completedLessons: number;
     progressPercentage: number;
   };
+  completedAt?: string;
+  certificateId?: string;
   nextClass?: {
     date: string;
     meetingLink: string;
@@ -41,6 +46,7 @@ export default function EnrolledCourses() {
   const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingCert, setDownloadingCert] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
@@ -61,6 +67,34 @@ export default function EnrolledCourses() {
     };
     fetchEnrolledCourses();
   }, []);
+
+  const handleDownloadCertificate = async (courseId: string) => {
+    try {
+      setDownloadingCert(courseId);
+      const response = await fetch(`/api/certificates/${courseId}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || 'Failed to download certificate');
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `certificate-${courseId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading certificate:', error);
+      alert('Failed to download certificate');
+    } finally {
+      setDownloadingCert(null);
+    }
+  };
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -225,9 +259,30 @@ export default function EnrolledCourses() {
                   <Button className="w-full" variant="default">
                     {t('courses.continueStudying')}
                   </Button>
-                  <Button className="w-full" variant="outline">
-                    {t('courses.viewCurriculum')}
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link href={`/dashboard/courses/${course._id}/curriculum`}>
+                      {t('courses.viewCurriculum')}
+                    </Link>
                   </Button>
+                  {course.progress && course.progress.progressPercentage === 100 && (
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700" 
+                      onClick={() => handleDownloadCertificate(course._id)}
+                      disabled={downloadingCert === course._id}
+                    >
+                      {downloadingCert === course._id ? (
+                        <>
+                          <Download className="h-4 w-4 mr-2 animate-pulse" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Award className="h-4 w-4 mr-2" />
+                          Download Certificate
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
