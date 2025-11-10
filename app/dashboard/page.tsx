@@ -24,6 +24,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Badge } from "@/components/ui/badge";
+import StudentMessaging from "@/components/dashboard/StudentMessaging";
 
 interface UserStats {
   totalCourses: number;
@@ -462,6 +463,11 @@ export default function DashboardPage() {
                     )}
                   </CardContent>
                 </Card>
+              </div>
+
+              {/* Messages Section */}
+              <div className="px-4 lg:px-6">
+                <StudentMessaging />
               </div>
             </div>
           </div>

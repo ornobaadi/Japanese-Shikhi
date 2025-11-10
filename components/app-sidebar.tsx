@@ -12,6 +12,8 @@ import {
   IconCalendar,
   IconUser,
   IconTrendingUp,
+  IconInbox,
+  IconMail,
 } from "@tabler/icons-react"
 import { useUser } from "@clerk/nextjs"
 import { usePathname } from "next/navigation"
@@ -35,10 +37,61 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useUser()
   const pathname = usePathname()
   const { t } = useLanguage()
+  const [mounted, setMounted] = React.useState(false)
+  const [unreadCount, setUnreadCount] = React.useState(0)
+  const [adminUnreadCount, setAdminUnreadCount] = React.useState(0)
+  
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  // Fetch unread message count for students
+  React.useEffect(() => {
+    if (mounted && user && pathname?.startsWith('/dashboard')) {
+      const fetchUnreadCount = async () => {
+        try {
+          const response = await fetch('/api/messages')
+          if (response.ok) {
+            const data = await response.json()
+            const unread = data.messages?.filter((msg: any) => !msg.isRead && msg.receiverId === user.id).length || 0
+            setUnreadCount(unread)
+          }
+        } catch (error) {
+          console.error('Failed to fetch unread count:', error)
+        }
+      }
+      fetchUnreadCount()
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [mounted, user, pathname])
+  
+  // Fetch unread message count for admins
+  React.useEffect(() => {
+    if (mounted && user && pathname?.startsWith('/admin-dashboard')) {
+      const fetchAdminUnreadCount = async () => {
+        try {
+          const response = await fetch('/api/messages')
+          if (response.ok) {
+            const data = await response.json()
+            const unread = data.messages?.filter((msg: any) => !msg.isRead && msg.receiverId === user.id).length || 0
+            setAdminUnreadCount(unread)
+          }
+        } catch (error) {
+          console.error('Failed to fetch admin unread count:', error)
+        }
+      }
+      fetchAdminUnreadCount()
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchAdminUnreadCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [mounted, user, pathname])
   
   // Determine if this is admin or student dashboard based on URL
-  const isAdminDashboard = pathname?.startsWith('/admin-dashboard')
-  const isStudentDashboard = pathname?.startsWith('/dashboard')
+  const isAdminDashboard = mounted && pathname?.startsWith('/admin-dashboard')
+  const isStudentDashboard = mounted && pathname?.startsWith('/dashboard')
 
   // Admin navigation items
   const adminNavMain = [
@@ -46,6 +99,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Dashboard",
       url: "/admin-dashboard",
       icon: IconDashboard,
+    },
+    {
+      title: "Inbox",
+      url: "/admin-dashboard/inbox",
+      icon: IconInbox,
+      badge: adminUnreadCount,
+    },
+    {
+      title: "Student Progress",
+      url: "/admin-dashboard/students/progress",
+      icon: IconChartBar,
     },
     {
       title: "All Courses",
@@ -87,6 +151,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: IconBook,
     },
     {
+      title: "Messages",
+      url: "/dashboard/messages",
+      icon: IconMail,
+      badge: unreadCount,
+    },
+    {
       title: "Schedule",
       url: "/dashboard/schedule",
       icon: IconCalendar,
@@ -112,6 +182,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     name: user?.fullName || user?.firstName || (isAdminDashboard ? "Admin" : "Student"),
     email: user?.primaryEmailAddress?.emailAddress || (isAdminDashboard ? "admin@japanese-shikhi.com" : "student@japanese-shikhi.com"),
     avatar: user?.imageUrl || "/avatars/user.jpg",
+  }
+
+  // Prevent hydration mismatch by not rendering dynamic content until mounted
+  if (!mounted) {
+    return (
+      <Sidebar collapsible="offcanvas" {...props} className="">
+        <SidebarHeader className="border-b border-border/40">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton className="h-12 px-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <IconInnerShadowTop className="size-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold">Japanese Shikhi</span>
+                  </div>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent className="px-0 py-4" />
+        <SidebarFooter className="border-t border-border/40 p-4" />
+      </Sidebar>
+    )
   }
 
   return (
