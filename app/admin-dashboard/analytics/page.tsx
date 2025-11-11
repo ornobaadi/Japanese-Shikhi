@@ -83,6 +83,28 @@ interface AnalyticsData {
         passed: number;
         failed: number;
     }>;
+    topStudents: Array<{
+        studentId: string;
+        name: string;
+        email: string;
+        profileImage?: string;
+        totalCourses: number;
+        quizStats: {
+            total: number;
+            passed: number;
+            failed: number;
+            averageScore: number;
+        };
+        assignmentStats: {
+            total: number;
+            submitted: number;
+            graded: number;
+            pending: number;
+            late: number;
+            averageGrade: number;
+        };
+        overallPerformance: number;
+    }>;
 }
 
 export default function AnalyticsPage() {
@@ -104,11 +126,12 @@ export default function AnalyticsPage() {
             console.log('Fetching analytics data...');
 
             // Fetch all analytics data from API endpoints
-            const [usersRes, coursesRes, enrollmentsRes, progressRes] = await Promise.all([
+            const [usersRes, coursesRes, enrollmentsRes, progressRes, studentsProgressRes] = await Promise.all([
                 fetch('/api/admin/users').catch(() => ({ ok: false, json: () => Promise.resolve([]) })),
                 fetch('/api/admin/courses').catch(() => ({ ok: false, json: () => Promise.resolve([]) })),
                 fetch('/api/courses').catch(() => ({ ok: false, json: () => Promise.resolve([]) })),
-                fetch('/api/admin/students/progress').catch(() => ({ ok: false, json: () => Promise.resolve([]) }))
+                fetch('/api/admin/students/progress').catch(() => ({ ok: false, json: () => Promise.resolve([]) })),
+                fetch('/api/admin/students/progress').catch(() => ({ ok: false, json: () => Promise.resolve({ students: [] }) }))
             ]);
 
             // Parse responses with error handling
@@ -116,6 +139,7 @@ export default function AnalyticsPage() {
             const courses = coursesRes.ok ? await coursesRes.json() : [];
             const enrollments = enrollmentsRes.ok ? await enrollmentsRes.json() : [];
             const progressResponse = progressRes.ok ? await progressRes.json() : [];
+            const studentsProgressResponse = studentsProgressRes.ok ? await studentsProgressRes.json() : { students: [], summary: {} };
 
             // Debug: Log the received data structure
             console.log('API Responses:', {
@@ -225,13 +249,32 @@ export default function AnalyticsPage() {
                 { date: '2024-06', completed: 94, passed: 85, failed: 9 }
             ];
 
+            // Process student performance data
+            const studentsData = studentsProgressResponse.students || [];
+            const topStudents = studentsData.slice(0, 10).map((student: any) => {
+                const overallPerformance = Math.round(
+                    (student.quizStats.averageScore + student.assignmentStats.averageGrade) / 2
+                );
+                
+                return {
+                    studentId: student.studentId,
+                    name: student.name,
+                    email: student.email,
+                    profileImage: student.profileImage,
+                    totalCourses: student.totalCourses,
+                    quizStats: student.quizStats,
+                    assignmentStats: student.assignmentStats,
+                    overallPerformance
+                };
+            });
+
             const analyticsData: AnalyticsData = {
                 overview: {
                     totalUsers,
                     totalCourses,
                     totalEnrollments,
-                    totalQuizzes: Math.floor(totalCourses * 3), // Estimate 3 quizzes per course
-                    totalAssignments: Math.floor(totalCourses * 2), // Estimate 2 assignments per course
+                    totalQuizzes: studentsProgressResponse.summary?.totalQuizzes || Math.floor(totalCourses * 3),
+                    totalAssignments: studentsProgressResponse.summary?.totalAssignments || Math.floor(totalCourses * 2),
                     avgCompletionRate,
                     activeUsers,
                     monthlyGrowth: 15.3 // This could be calculated from actual data
@@ -241,7 +284,8 @@ export default function AnalyticsPage() {
                 userEngagement,
                 recentActivity,
                 topCourses,
-                quizPerformance
+                quizPerformance,
+                topStudents
             };
 
             setData(analyticsData);
@@ -543,6 +587,121 @@ export default function AnalyticsPage() {
                                         <Progress value={course.completion} className="h-2" />
                                     </div>
                                 ))}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Student Performance Section */}
+                    <div className="mt-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <IconUsers className="h-5 w-5" />
+                                    Student Performance Overview
+                                </CardTitle>
+                                <CardDescription>
+                                    Top performing students based on course completion, quiz scores, and assignment grades
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {data.topStudents && data.topStudents.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {data.topStudents.map((student, index) => (
+                                            <div key={student.studentId} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <Badge variant="secondary" className="h-8 w-8 rounded-full flex items-center justify-center">
+                                                            #{index + 1}
+                                                        </Badge>
+                                                        {student.profileImage ? (
+                                                            <img 
+                                                                src={student.profileImage} 
+                                                                alt={student.name}
+                                                                className="h-10 w-10 rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                <IconUsers className="h-5 w-5 text-primary" />
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <p className="font-semibold">{student.name}</p>
+                                                            <p className="text-sm text-muted-foreground">{student.email}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                            <IconStar className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                                            <span className="font-bold text-lg">{student.overallPerformance}%</span>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground">Overall Performance</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Course Stats */}
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                                                    <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <IconBook className="h-4 w-4 text-blue-600" />
+                                                            <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Courses</span>
+                                                        </div>
+                                                        <p className="text-2xl font-bold text-blue-600">{student.totalCourses}</p>
+                                                        <p className="text-xs text-muted-foreground">Enrolled</p>
+                                                    </div>
+                                                    
+                                                    <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <IconTrophy className="h-4 w-4 text-green-600" />
+                                                            <span className="text-sm font-medium text-green-900 dark:text-green-100">Quizzes</span>
+                                                        </div>
+                                                        <p className="text-2xl font-bold text-green-600">{student.quizStats.total}</p>
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <span className="text-green-600">✓ {student.quizStats.passed}</span>
+                                                            <span className="text-red-600">✗ {student.quizStats.failed}</span>
+                                                            <span className="text-muted-foreground">Avg: {student.quizStats.averageScore}%</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <IconClipboard className="h-4 w-4 text-purple-600" />
+                                                            <span className="text-sm font-medium text-purple-900 dark:text-purple-100">Assignments</span>
+                                                        </div>
+                                                        <p className="text-2xl font-bold text-purple-600">{student.assignmentStats.total}</p>
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <span className="text-green-600">✓ {student.assignmentStats.graded}</span>
+                                                            <span className="text-yellow-600">⏳ {student.assignmentStats.pending}</span>
+                                                            <span className="text-muted-foreground">Avg: {student.assignmentStats.averageGrade}%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Performance Progress Bar */}
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">Performance Score</span>
+                                                        <span className="font-medium">{student.overallPerformance}%</span>
+                                                    </div>
+                                                    <Progress value={student.overallPerformance} className="h-2" />
+                                                </div>
+
+                                                {/* Late Submissions Warning */}
+                                                {student.assignmentStats.late > 0 && (
+                                                    <div className="mt-3 flex items-center gap-2 text-sm text-orange-600 bg-orange-50 dark:bg-orange-950/20 rounded p-2">
+                                                        <IconClock className="h-4 w-4" />
+                                                        <span>{student.assignmentStats.late} late submission{student.assignmentStats.late > 1 ? 's' : ''}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        <IconUsers className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                        <p>No student performance data available yet</p>
+                                        <p className="text-sm">Students will appear here once they start completing courses</p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
