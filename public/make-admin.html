@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Make Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 15px 30px; font-size: 16px; cursor: pointer; background: #0070f3; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #0051cc; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Make Current User Admin</h1>
+    <p>Click the button below to grant admin access to your account:</p>
+    <button onclick="makeAdmin()">Make Me Admin</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function makeAdmin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Processing...';
+            
+            try {
+                const response = await fetch('/api/admin/make-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>Success! ✅</h3>
+                        <p>${data.message}</p>
+                        <p><strong>User:</strong> ${data.user.name} (${data.user.email})</p>
+                        <p><strong>Status:</strong> ${data.user.subscriptionStatus}</p>
+                        <p><strong>Next:</strong> Please refresh the Student Progress page to try again.</p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>Error ❌</h3>
+                        <p>${data.error}</p>
+                        ${data.details ? `<p><strong>Details:</strong> ${data.details}</p>` : ''}
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>Network Error ❌</h3>
+                    <p>Failed to connect to the API: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
