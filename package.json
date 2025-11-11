@@ -33,6 +33,8 @@
     "@tabler/icons-react": "^3.35.0",
     "@tanstack/react-table": "^8.21.3",
     "@types/mongoose": "^5.11.96",
+    "agora-rtc-sdk-ng": "^4.24.0",
+    "agora-token": "^2.0.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cobe": "^0.6.4",

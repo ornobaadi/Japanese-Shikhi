@@ -18,6 +18,7 @@ import {
   IconFile
 } from '@tabler/icons-react';
 import { toast } from "sonner";
+import { CallDialog } from './CallDialog';
 
 interface Message {
   _id: string;
@@ -59,6 +60,8 @@ export function ChatInterface({
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [showCallDialog, setShowCallDialog] = useState(false);
+  const [callType, setCallType] = useState<'audio' | 'video'>('audio');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -253,6 +256,17 @@ export function ChatInterface({
     );
   };
 
+  const startCall = (type: 'audio' | 'video') => {
+    setCallType(type);
+    setShowCallDialog(true);
+  };
+
+  const getChannelName = () => {
+    // Create a unique channel name based on user IDs
+    const ids = [currentUserId, recipientId].sort();
+    return `call_${ids[0]}_${ids[1]}`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -282,10 +296,10 @@ export function ChatInterface({
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" title="Voice Call (Coming Soon)" disabled>
+          <Button variant="ghost" size="sm" onClick={() => startCall('audio')} title="Voice Call">
             <IconPhone className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" title="Video Call (Coming Soon)" disabled>
+          <Button variant="ghost" size="sm" onClick={() => startCall('video')} title="Video Call">
             <IconVideo className="h-4 w-4" />
           </Button>
         </div>
@@ -426,6 +440,18 @@ export function ChatInterface({
           </Button>
         </div>
       </div>
+
+      {/* Call Dialog */}
+      {showCallDialog && (
+        <CallDialog
+          isOpen={showCallDialog}
+          onClose={() => setShowCallDialog(false)}
+          callType={callType}
+          recipientName={recipientName}
+          recipientImage={recipientImage}
+          channelName={getChannelName()}
+        />
+      )}
     </div>
   );
 }
