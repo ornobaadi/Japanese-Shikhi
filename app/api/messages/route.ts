@@ -57,6 +57,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Check if sender is admin
+    const isAdmin = senderUser.subscriptionStatus === 'lifetime';
+
+    // If sender is not admin and receiverId is not 'admin', block student-to-student messaging
+    if (!isAdmin && receiverId !== 'admin') {
+      const receiver = await User.findOne({ clerkUserId: receiverId });
+      if (receiver && receiver.subscriptionStatus !== 'lifetime') {
+        console.error('Student-to-student messaging not allowed');
+        return NextResponse.json({ 
+          error: 'Students can only message admins' 
+        }, { status: 403 });
+      }
+    }
+
     // Generate thread ID if this is a new conversation
     let threadId = generateThreadId();
     
@@ -228,15 +242,19 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // Exclude deleted messages
+    query.isDeleted = { $ne: true };
+
     const messages = await Message.find(query)
       .sort({ sentAt: -1 })
       .limit(100)
       .lean();
 
-    // Get unread count
+    // Get unread count (excluding deleted messages)
     const unreadCount = await Message.countDocuments({
       receiverId: userId,
-      isRead: false
+      isRead: false,
+      isDeleted: { $ne: true }
     });
 
     return NextResponse.json({
@@ -294,6 +312,58 @@ export async function PATCH(request: NextRequest) {
     console.error('Error marking message as read:', error);
     return NextResponse.json(
       { error: 'Failed to mark message as read' },
+      { status: 500 }
+    );
+  }
+}
+
+// Delete/Unsend message
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectToDatabase();
+
+    const { searchParams } = new URL(request.url);
+    const messageId = searchParams.get('messageId');
+
+    if (!messageId) {
+      return NextResponse.json({ error: 'Message ID required' }, { status: 400 });
+    }
+
+    const message = await Message.findOne({
+      _id: messageId,
+      senderId: userId
+    });
+
+    if (!message) {
+      return NextResponse.json({ error: 'Message not found or you are not the sender' }, { status: 404 });
+    }
+
+    // Check if message was sent within last 5 minutes (for unsend)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const canUnsend = message.sentAt > fiveMinutesAgo;
+
+    // Mark as deleted
+    message.isDeleted = true;
+    message.deletedAt = new Date();
+    message.deletedBy = userId;
+    await message.save();
+
+    return NextResponse.json({
+      success: true,
+      message: canUnsend ? 'Message unsent successfully' : 'Message deleted successfully',
+      canUnsend
+    });
+
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete message' },
       { status: 500 }
     );
   }

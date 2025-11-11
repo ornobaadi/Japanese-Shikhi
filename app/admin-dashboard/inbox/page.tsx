@@ -109,15 +109,15 @@ export default function AdminInboxPage() {
       const response = await fetch('/api/admin/users');
       if (response.ok) {
         const data = await response.json();
-        // Filter out admins (lifetime subscription)
-        const studentUsers = Array.isArray(data) 
-          ? data.filter((user: any) => user.subscriptionStatus !== 'lifetime')
+        // Get all users (including admins) for admin-to-admin messaging
+        const allUsers = Array.isArray(data) 
+          ? data.filter((user: any) => user.clerkUserId !== user.id) // Exclude self if needed
           : [];
-        setStudents(studentUsers);
+        setStudents(allUsers);
       }
     } catch (error) {
       console.error('Error fetching students:', error);
-      toast.error('Failed to load students');
+      toast.error('Failed to load users');
     } finally {
       setLoadingStudents(false);
     }
