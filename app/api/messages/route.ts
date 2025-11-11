@@ -317,7 +317,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// Delete/Unsend message
+// Delete/Unsend message (Telegram-style: anyone can delete for everyone)
 export async function DELETE(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -335,20 +335,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Message ID required' }, { status: 400 });
     }
 
+    // Find message where user is either sender or receiver
     const message = await Message.findOne({
       _id: messageId,
-      senderId: userId
+      $or: [
+        { senderId: userId },
+        { receiverId: userId }
+      ]
     });
 
     if (!message) {
-      return NextResponse.json({ error: 'Message not found or you are not the sender' }, { status: 404 });
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
-    // Check if message was sent within last 5 minutes (for unsend)
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const canUnsend = message.sentAt > fiveMinutesAgo;
-
-    // Mark as deleted
+    // Delete for everyone (Telegram-style)
     message.isDeleted = true;
     message.deletedAt = new Date();
     message.deletedBy = userId;
@@ -356,8 +356,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: canUnsend ? 'Message unsent successfully' : 'Message deleted successfully',
-      canUnsend
+      message: 'Message deleted for everyone'
     });
 
   } catch (error) {

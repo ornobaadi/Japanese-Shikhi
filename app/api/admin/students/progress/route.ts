@@ -179,6 +179,7 @@ export async function GET(request: NextRequest) {
 
       return {
         studentId: student.clerkUserId,
+        clerkUserId: student.clerkUserId, // Add explicit clerkUserId for messaging
         email: student.email,
         name: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unnamed User',
         profileImage: student.profileImageUrl,

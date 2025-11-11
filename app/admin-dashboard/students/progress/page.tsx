@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { ChatInterface } from "@/components/admin/ChatInterface";
 import { toast } from "sonner";
 import { 
   IconSearch, 
@@ -45,11 +47,13 @@ import {
   IconChartBar,
   IconCheck,
   IconX,
-  IconClock
+  IconClock,
+  IconMessageCircle
 } from '@tabler/icons-react';
 
 interface StudentProgress {
   studentId: string;
+  clerkUserId: string;
   email: string;
   name: string;
   profileImage?: string;
@@ -74,6 +78,7 @@ interface StudentProgress {
 }
 
 export default function StudentProgressPage() {
+  const { user } = useUser();
   const [students, setStudents] = useState<StudentProgress[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<StudentProgress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,12 +86,7 @@ export default function StudentProgressPage() {
   const [courseFilter, setCourseFilter] = useState<string>('all');
   const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [showMessageDialog, setShowMessageDialog] = useState(false);
-  const [messageForm, setMessageForm] = useState({
-    subject: '',
-    message: '',
-    contextType: 'general' as 'course' | 'assignment' | 'quiz' | 'general'
-  });
+  const [showChatDialog, setShowChatDialog] = useState(false);
   const [sending, setSending] = useState(false);
   const [summary, setSummary] = useState({
     totalStudents: 0,
@@ -143,44 +143,7 @@ export default function StudentProgressPage() {
 
   const handleMessageStudent = (student: StudentProgress) => {
     setSelectedStudent(student);
-    setMessageForm({
-      subject: '',
-      message: '',
-      contextType: 'general'
-    });
-    setShowMessageDialog(true);
-  };
-
-  const sendMessage = async () => {
-    if (!selectedStudent || !messageForm.subject || !messageForm.message) {
-      toast.error('Please fill in subject and message');
-      return;
-    }
-
-    setSending(true);
-    try {
-      const response = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          receiverId: selectedStudent.studentId,
-          subject: messageForm.subject,
-          message: messageForm.message,
-          contextType: messageForm.contextType
-        })
-      });
-
-      if (!response.ok) throw new Error('Failed to send message');
-
-      toast.success('Message sent successfully!');
-      setShowMessageDialog(false);
-      setMessageForm({ subject: '', message: '', contextType: 'general' });
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
-    } finally {
-      setSending(false);
-    }
+    setShowChatDialog(true);
   };
 
   const viewStudentDetails = (student: StudentProgress) => {
@@ -553,73 +516,20 @@ export default function StudentProgressPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Send Message Dialog */}
-        <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Send Message to Student</DialogTitle>
-              <DialogDescription>
-                Send a personal message to {selectedStudent?.name}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="subject">Subject *</Label>
-                <Input
-                  id="subject"
-                  placeholder="Message subject..."
-                  value={messageForm.subject}
-                  onChange={(e) => setMessageForm(prev => ({ ...prev, subject: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="message">Message *</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Type your message here..."
-                  value={messageForm.message}
-                  onChange={(e) => setMessageForm(prev => ({ ...prev, message: e.target.value }))}
-                  rows={6}
-                  maxLength={5000}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {messageForm.message.length}/5000 characters
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="contextType">Message Type</Label>
-                <Select 
-                  value={messageForm.contextType} 
-                  onValueChange={(value: any) => setMessageForm(prev => ({ ...prev, contextType: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General Message</SelectItem>
-                    <SelectItem value="course">Course Related</SelectItem>
-                    <SelectItem value="assignment">Assignment Feedback</SelectItem>
-                    <SelectItem value="quiz">Quiz Feedback</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowMessageDialog(false)}
-                  disabled={sending}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={sendMessage} disabled={sending}>
-                  {sending ? 'Sending...' : 'Send Message'}
-                </Button>
-              </div>
-            </div>
+        {/* Chat Interface Dialog */}
+        <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
+          <DialogContent className="max-w-4xl h-[600px] p-0">
+            <DialogTitle className="sr-only">
+              Chat with {selectedStudent?.name}
+            </DialogTitle>
+            {selectedStudent && user && (
+              <ChatInterface
+                currentUserId={user.id}
+                currentUserName={user.fullName || user.username || 'Admin'}
+                recipientId={selectedStudent.clerkUserId}
+                recipientName={selectedStudent.name}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </SidebarInset>

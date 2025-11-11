@@ -463,10 +463,6 @@ export default function UsersPage() {
                           <Button variant="outline" size="sm">
                             View Profile
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <IconMail className="size-4 mr-1" />
-                            Message
-                          </Button>
                         </div>
                       </div>
                     ))}

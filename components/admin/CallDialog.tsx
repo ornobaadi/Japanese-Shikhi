@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import AgoraRTC, {
+import dynamic from 'next/dynamic';
+import type {
   IAgoraRTCClient,
   ICameraVideoTrack,
   IMicrophoneAudioTrack,
@@ -14,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   IconPhone,
@@ -43,6 +45,7 @@ export function CallDialog({
   recipientImage,
   channelName,
 }: CallDialogProps) {
+  const [AgoraRTC, setAgoraRTC] = useState<any>(null);
   const [isJoined, setIsJoined] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
@@ -57,15 +60,28 @@ export function CallDialog({
   const remoteVideoRef = useRef<HTMLDivElement>(null);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Load AgoraRTC dynamically on client side
   useEffect(() => {
-    if (isOpen) {
+    if (typeof window !== 'undefined' && !AgoraRTC) {
+      import('agora-rtc-sdk-ng').then((module) => {
+        setAgoraRTC(module.default);
+        console.log('AgoraRTC loaded in component');
+      }).catch((error) => {
+        console.error('Failed to load AgoraRTC:', error);
+        toast.error('Failed to load calling library');
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && AgoraRTC) {
       initializeCall();
     }
 
     return () => {
       cleanup();
     };
-  }, [isOpen]);
+  }, [isOpen, AgoraRTC]);
 
   useEffect(() => {
     if (isJoined && !durationIntervalRef.current) {
@@ -83,8 +99,14 @@ export function CallDialog({
   }, [isJoined]);
 
   const initializeCall = async () => {
+    if (!AgoraRTC) {
+      console.log('AgoraRTC not ready, waiting...');
+      return; // Will retry when AgoraRTC loads
+    }
+
     try {
       setIsCalling(true);
+      console.log('Initializing call with AgoraRTC...');
 
       // Get Agora token from API
       const response = await fetch(
@@ -92,13 +114,28 @@ export function CallDialog({
       );
 
       if (!response.ok) {
-        throw new Error('Failed to get call token');
+        const errorData = await response.json();
+        console.error('Token API error:', errorData);
+        
+        // Show user-friendly error message
+        if (errorData.message && errorData.message.includes('not configured')) {
+          toast.error('Calling feature not configured. Please contact administrator.');
+        } else {
+          toast.error(errorData.message || 'Failed to initialize call');
+        }
+        
+        onClose();
+        return;
       }
 
       const { token, appId } = await response.json();
 
-      if (!appId) {
-        throw new Error('Agora not configured. Please add AGORA credentials to .env');
+      console.log('Received token data:', { appId: appId ? 'present' : 'missing', token: token ? 'present' : 'missing' });
+
+      if (!appId || !token) {
+        toast.error('Calling service not available. Please try again later.');
+        onClose();
+        return;
       }
 
       // Create Agora client
@@ -106,7 +143,7 @@ export function CallDialog({
       clientRef.current = client;
 
       // Set up event listeners
-      client.on('user-published', async (user, mediaType) => {
+      client.on('user-published', async (user: any, mediaType: any) => {
         await client.subscribe(user, mediaType);
 
         if (mediaType === 'video') {
@@ -125,11 +162,11 @@ export function CallDialog({
         }
       });
 
-      client.on('user-unpublished', (user) => {
+      client.on('user-unpublished', (user: any) => {
         setRemoteUsers((prev) => prev.filter((uid) => uid !== user.uid));
       });
 
-      client.on('user-left', (user) => {
+      client.on('user-left', (user: any) => {
         setRemoteUsers((prev) => prev.filter((uid) => uid !== user.uid));
       });
 
@@ -141,7 +178,7 @@ export function CallDialog({
         localVideoTrackRef.current = await AgoraRTC.createCameraVideoTrack();
         localAudioTrackRef.current = await AgoraRTC.createMicrophoneAudioTrack();
 
-        if (localVideoRef.current) {
+        if (localVideoRef.current && localVideoTrackRef.current) {
           localVideoTrackRef.current.play(localVideoRef.current);
         }
 
@@ -238,6 +275,14 @@ export function CallDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[600px] p-0">
+        <DialogTitle className="sr-only">
+          {callType === 'video' ? 'Video' : 'Voice'} call with {recipientName}
+        </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogDescription>
+            Active {callType} call session
+          </DialogDescription>
+        </DialogHeader>
         <div className="relative h-full flex flex-col bg-black">
           {/* Call Header */}
           <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent">

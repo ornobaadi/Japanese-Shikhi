@@ -18,15 +18,19 @@ export async function GET(request: NextRequest) {
     const channelName = searchParams.get('channel');
     const role = searchParams.get('role') || 'publisher'; // publisher or subscriber
     
+    console.log('Token request:', { channelName, role, APP_ID: APP_ID ? 'set' : 'missing', APP_CERT: APP_CERTIFICATE ? 'set' : 'missing' });
+    
     if (!channelName) {
       return NextResponse.json({ error: 'Channel name required' }, { status: 400 });
     }
 
-    if (!APP_ID || !APP_CERTIFICATE) {
-      console.warn('Agora credentials not configured');
+    if (!APP_ID || !APP_CERTIFICATE || APP_ID === 'your_agora_app_id_here' || APP_CERTIFICATE === 'your_agora_app_certificate_here') {
+      console.error('Agora credentials not configured properly');
       return NextResponse.json({ 
         error: 'Calling service not configured',
-        message: 'Please configure AGORA_APP_ID and AGORA_APP_CERTIFICATE in environment variables'
+        message: 'Please configure AGORA_APP_ID and AGORA_APP_CERTIFICATE in .env.local file. Get credentials from https://console.agora.io/',
+        appIdSet: !!APP_ID && APP_ID !== 'your_agora_app_id_here',
+        certificateSet: !!APP_CERTIFICATE && APP_CERTIFICATE !== 'your_agora_app_certificate_here'
       }, { status: 503 });
     }
 

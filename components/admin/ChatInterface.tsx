@@ -153,19 +153,25 @@ export function ChatInterface({
         }
       }
 
+      const payload = {
+        receiverId: recipientId,
+        subject: 'Chat Message',
+        message: newMessage || '📎 Attachment',
+        contextType: 'general',
+        attachments
+      };
+
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          receiverId: recipientId,
-          subject: 'Chat Message',
-          message: newMessage || '📎 Attachment',
-          contextType: 'general',
-          attachments
-        })
+        body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error('Failed to send');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Message send error:', errorData);
+        throw new Error(errorData.error || 'Failed to send');
+      }
 
       setNewMessage('');
       setSelectedFiles([]);
@@ -174,7 +180,7 @@ export function ChatInterface({
       toast.success('Message sent');
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      toast.error(error instanceof Error ? error.message : 'Failed to send message');
     } finally {
       setSending(false);
     }
@@ -188,7 +194,7 @@ export function ChatInterface({
 
       if (!response.ok) throw new Error('Failed to delete');
 
-      toast.success('Message deleted');
+      toast.success('Message deleted for everyone');
       fetchMessages();
     } catch (error) {
       console.error('Error deleting message:', error);
@@ -197,10 +203,8 @@ export function ChatInterface({
   };
 
   const canDelete = (message: Message) => {
-    if (message.senderId !== currentUserId) return false;
-    const sentTime = new Date(message.sentAt).getTime();
-    const now = Date.now();
-    return (now - sentTime) < 5 * 60 * 1000; // 5 minutes
+    // Both sender and receiver can delete (Telegram-style)
+    return message.senderId === currentUserId || message.receiverId === currentUserId;
   };
 
   const renderAttachment = (attachment: any) => {
@@ -356,24 +360,20 @@ export function ChatInterface({
                         minute: '2-digit' 
                       })}
                     </span>
-                    {isSender && (
-                      <>
-                        {message.isRead ? (
-                          <IconChecks className="h-3 w-3 text-blue-500" />
-                        ) : (
-                          <IconCheck className="h-3 w-3 text-muted-foreground" />
-                        )}
-                        {canDeleteMsg && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0"
-                            onClick={() => deleteMessage(message._id)}
-                          >
-                            <IconTrash className="h-3 w-3 text-red-500" />
-                          </Button>
-                        )}
-                      </>
+                    {isSender && message.isRead ? (
+                      <IconChecks className="h-3 w-3 text-blue-500" />
+                    ) : isSender ? (
+                      <IconCheck className="h-3 w-3 text-muted-foreground" />
+                    ) : null}
+                    {canDeleteMsg && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 w-5 p-0 hover:bg-red-100"
+                        onClick={() => deleteMessage(message._id)}
+                      >
+                        <IconTrash className="h-3 w-3 text-red-500" />
+                      </Button>
                     )}
                   </div>
                 </div>
