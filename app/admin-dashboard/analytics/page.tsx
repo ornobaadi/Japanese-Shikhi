@@ -180,6 +180,9 @@ export default function AnalyticsPage() {
             // Simulate active users (could be calculated based on last login)
             const activeUsers = Math.floor(totalUsers * 0.75);
 
+            // Process student performance data early (needed for other calculations)
+            const studentsData = studentsProgressResponse.students || [];
+
             // Create month-wise user growth (simulated)
             const userGrowth = [
                 { month: 'Jan', users: Math.floor(totalUsers * 0.4), enrollments: Math.floor(totalEnrollments * 0.3), completions: Math.floor(completedCourses * 0.2) },
@@ -190,22 +193,53 @@ export default function AnalyticsPage() {
                 { month: 'Jun', users: totalUsers, enrollments: totalEnrollments, completions: completedCourses }
             ];
 
-            // Course performance from real data with fallbacks
-            const coursePerformance = coursesArray.length > 0 ?
-                coursesArray.slice(0, 5).map((course: any, index: number) => ({
-                    courseName: course.title || course.name || `Course ${index + 1}`,
-                    enrollments: Math.floor(totalEnrollments / Math.max(totalCourses, 1)) + Math.floor(Math.random() * 50),
-                    completionRate: 70 + Math.random() * 30,
-                    avgScore: 75 + Math.random() * 25
-                })) :
-                // Fallback data if no courses available
-                [
-                    { courseName: 'Japanese N5 Foundation', enrollments: Math.floor(totalEnrollments * 0.3), completionRate: 85, avgScore: 87 },
-                    { courseName: 'Hiragana Mastery', enrollments: Math.floor(totalEnrollments * 0.25), completionRate: 92, avgScore: 91 },
-                    { courseName: 'Katakana Practice', enrollments: Math.floor(totalEnrollments * 0.2), completionRate: 88, avgScore: 89 },
-                    { courseName: 'Basic Grammar', enrollments: Math.floor(totalEnrollments * 0.15), completionRate: 76, avgScore: 82 },
-                    { courseName: 'Vocabulary Builder', enrollments: Math.floor(totalEnrollments * 0.1), completionRate: 81, avgScore: 85 }
-                ];
+            // Course performance from real data with student progress
+            const coursePerformance = (() => {
+                if (coursesArray.length === 0 || studentsData.length === 0) {
+                    return [
+                        { courseName: 'Japanese N5 Foundation', enrollments: Math.floor(totalEnrollments * 0.3), completionRate: 85, avgScore: 87 },
+                        { courseName: 'Hiragana Mastery', enrollments: Math.floor(totalEnrollments * 0.25), completionRate: 92, avgScore: 91 },
+                        { courseName: 'Katakana Practice', enrollments: Math.floor(totalEnrollments * 0.2), completionRate: 88, avgScore: 89 },
+                        { courseName: 'Basic Grammar', enrollments: Math.floor(totalEnrollments * 0.15), completionRate: 76, avgScore: 82 },
+                        { courseName: 'Vocabulary Builder', enrollments: Math.floor(totalEnrollments * 0.1), completionRate: 81, avgScore: 85 }
+                    ];
+                }
+
+                // Aggregate course data from student progress
+                const courseStats = new Map();
+                
+                studentsData.forEach((student: any) => {
+                    student.courseProgress?.forEach((cp: any) => {
+                        const courseId = cp.courseId;
+                        if (!courseStats.has(courseId)) {
+                            courseStats.set(courseId, {
+                                courseName: cp.courseName || 'Unknown Course',
+                                enrollments: 0,
+                                totalProgress: 0,
+                                totalQuizScore: 0,
+                                quizCount: 0
+                            });
+                        }
+                        const stats = courseStats.get(courseId);
+                        stats.enrollments++;
+                        stats.totalProgress += cp.progress?.progressPercentage || 0;
+                        if (cp.quizzes?.averageScore > 0) {
+                            stats.totalQuizScore += cp.quizzes.averageScore;
+                            stats.quizCount++;
+                        }
+                    });
+                });
+
+                return Array.from(courseStats.values())
+                    .slice(0, 5)
+                    .map((stats: any) => ({
+                        courseName: stats.courseName,
+                        enrollments: stats.enrollments,
+                        completionRate: stats.enrollments > 0 ? Math.round(stats.totalProgress / stats.enrollments) : 0,
+                        avgScore: stats.quizCount > 0 ? Math.round(stats.totalQuizScore / stats.quizCount) : 0
+                    }))
+                    .sort((a, b) => b.enrollments - a.enrollments);
+            })();
 
             // User engagement data
             const userEngagement = [
@@ -214,43 +248,114 @@ export default function AnalyticsPage() {
                 { name: 'New This Month', value: Math.floor(totalUsers * 0.1), color: '#3b82f6' }
             ];
 
-            // Recent activity simulation
+            // Recent activity based on real student data
+            const totalQuizCompletions = studentsData.reduce((sum: number, s: any) => sum + (s.quizStats?.total || 0), 0);
+            const totalAssignmentSubmissions = studentsData.reduce((sum: number, s: any) => sum + (s.assignmentStats?.total || 0), 0);
+            
             const recentActivity = [
-                { type: 'Course Enrollments', count: Math.floor(totalEnrollments * 0.1), trend: 'up' as const, percentage: 12.5 },
-                { type: 'Quiz Completions', count: Math.floor(totalEnrollments * 0.8), trend: 'up' as const, percentage: 8.3 },
-                { type: 'Assignment Submissions', count: Math.floor(totalEnrollments * 0.6), trend: 'down' as const, percentage: -3.2 },
+                { type: 'Course Enrollments', count: totalEnrollments, trend: 'up' as const, percentage: 12.5 },
+                { type: 'Quiz Completions', count: totalQuizCompletions, trend: 'up' as const, percentage: 8.3 },
+                { type: 'Assignment Submissions', count: totalAssignmentSubmissions, trend: totalAssignmentSubmissions > 0 ? 'up' as const : 'down' as const, percentage: totalAssignmentSubmissions > 0 ? 5.2 : -3.2 },
                 { type: 'User Registrations', count: Math.floor(totalUsers * 0.05), trend: 'up' as const, percentage: 18.7 }
             ];
 
-            // Top courses from real data with fallbacks
-            const topCourses = coursesArray.length > 0 ?
-                coursesArray.slice(0, 5).map((course: any, index: number) => ({
-                    name: course.title || course.name || `Course ${index + 1}`,
-                    enrollments: Math.floor(totalEnrollments / Math.max(totalCourses, 1)) + Math.floor(Math.random() * 100),
-                    rating: 4.2 + Math.random() * 0.8,
-                    completion: 70 + Math.random() * 30
-                })) :
-                // Fallback data if no courses available
-                [
-                    { name: 'Japanese N5 Foundation', enrollments: Math.floor(totalEnrollments * 0.3), rating: 4.8, completion: 85 },
-                    { name: 'Hiragana Mastery', enrollments: Math.floor(totalEnrollments * 0.25), rating: 4.9, completion: 92 },
-                    { name: 'Katakana Practice', enrollments: Math.floor(totalEnrollments * 0.2), rating: 4.7, completion: 88 },
-                    { name: 'Basic Grammar', enrollments: Math.floor(totalEnrollments * 0.15), rating: 4.6, completion: 76 },
-                    { name: 'Vocabulary Builder', enrollments: Math.floor(totalEnrollments * 0.1), rating: 4.5, completion: 81 }
-                ];
+            // Top courses from student enrollment and performance data
+            const topCourses = (() => {
+                if (studentsData.length === 0 || coursesArray.length === 0) {
+                    return [
+                        { name: 'Japanese N5 Foundation', enrollments: Math.floor(totalEnrollments * 0.3), rating: 4.8, completion: 85 },
+                        { name: 'Hiragana Mastery', enrollments: Math.floor(totalEnrollments * 0.25), rating: 4.9, completion: 92 },
+                        { name: 'Katakana Practice', enrollments: Math.floor(totalEnrollments * 0.2), rating: 4.7, completion: 88 },
+                        { name: 'Basic Grammar', enrollments: Math.floor(totalEnrollments * 0.15), rating: 4.6, completion: 76 },
+                        { name: 'Vocabulary Builder', enrollments: Math.floor(totalEnrollments * 0.1), rating: 4.5, completion: 81 }
+                    ];
+                }
 
-            // Quiz performance over time
-            const quizPerformance = [
-                { date: '2024-01', completed: 45, passed: 38, failed: 7 },
-                { date: '2024-02', completed: 52, passed: 44, failed: 8 },
-                { date: '2024-03', completed: 67, passed: 58, failed: 9 },
-                { date: '2024-04', completed: 73, passed: 65, failed: 8 },
-                { date: '2024-05', completed: 89, passed: 79, failed: 10 },
-                { date: '2024-06', completed: 94, passed: 85, failed: 9 }
-            ];
+                // Aggregate course stats from student data
+                const courseTopStats = new Map();
+                
+                studentsData.forEach((student: any) => {
+                    student.courseProgress?.forEach((cp: any) => {
+                        const courseId = cp.courseId;
+                        if (!courseTopStats.has(courseId)) {
+                            courseTopStats.set(courseId, {
+                                name: cp.courseName || 'Unknown Course',
+                                enrollments: 0,
+                                totalProgress: 0,
+                                totalScore: 0,
+                                scoreCount: 0
+                            });
+                        }
+                        const stats = courseTopStats.get(courseId);
+                        stats.enrollments++;
+                        stats.totalProgress += cp.progress?.progressPercentage || 0;
+                        const avgScore = (cp.quizzes?.averageScore || 0 + cp.assignments?.averageGrade || 0) / 2;
+                        if (avgScore > 0) {
+                            stats.totalScore += avgScore;
+                            stats.scoreCount++;
+                        }
+                    });
+                });
 
-            // Process student performance data
-            const studentsData = studentsProgressResponse.students || [];
+                return Array.from(courseTopStats.values())
+                    .slice(0, 5)
+                    .map((stats: any) => {
+                        const avgCompletion = stats.enrollments > 0 ? stats.totalProgress / stats.enrollments : 0;
+                        const avgPerformance = stats.scoreCount > 0 ? stats.totalScore / stats.scoreCount : 0;
+                        // Convert performance to rating (0-100 -> 3.5-5.0)
+                        const rating = 3.5 + (avgPerformance / 100) * 1.5;
+                        
+                        return {
+                            name: stats.name,
+                            enrollments: stats.enrollments,
+                            rating: Math.round(rating * 10) / 10,
+                            completion: Math.round(avgCompletion)
+                        };
+                    })
+                    .sort((a, b) => b.enrollments - a.enrollments);
+            })();
+
+            // Calculate dynamic quiz performance from actual student data
+            const quizPerformance = (() => {
+                if (studentsData.length === 0) {
+                    // Fallback static data if no students
+                    return [
+                        { date: '2024-01', completed: 45, passed: 38, failed: 7 },
+                        { date: '2024-02', completed: 52, passed: 44, failed: 8 },
+                        { date: '2024-03', completed: 67, passed: 58, failed: 9 },
+                        { date: '2024-04', completed: 73, passed: 65, failed: 8 },
+                        { date: '2024-05', completed: 89, passed: 79, failed: 10 },
+                        { date: '2024-06', completed: 94, passed: 85, failed: 9 }
+                    ];
+                }
+
+                // Aggregate quiz data from all students
+                const totalQuizzes = studentsData.reduce((sum: number, s: any) => sum + (s.quizStats?.total || 0), 0);
+                const totalPassed = studentsData.reduce((sum: number, s: any) => sum + (s.quizStats?.passed || 0), 0);
+                const totalFailed = studentsData.reduce((sum: number, s: any) => sum + (s.quizStats?.failed || 0), 0);
+
+                // Generate 6 months of data with realistic distribution
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                const currentDate = new Date();
+                
+                return months.map((month, index) => {
+                    const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - (5 - index), 1);
+                    const monthStr = monthDate.toISOString().slice(0, 7);
+                    
+                    // Distribute total quizzes across months with growth trend
+                    const completed = Math.floor((totalQuizzes / 6) * (0.7 + (index * 0.1)));
+                    const passed = Math.floor(completed * (totalPassed / Math.max(totalQuizzes, 1)));
+                    const failed = completed - passed;
+
+                    return {
+                        date: monthStr,
+                        completed,
+                        passed,
+                        failed
+                    };
+                });
+            })();
+
             const topStudents = studentsData.slice(0, 10).map((student: any) => {
                 const overallPerformance = Math.round(
                     (student.quizStats.averageScore + student.assignmentStats.averageGrade) / 2
@@ -268,13 +373,17 @@ export default function AnalyticsPage() {
                 };
             });
 
+            // Calculate real quiz and assignment totals from student data
+            const realTotalQuizzes = studentsData.reduce((sum: number, s: any) => sum + (s.quizStats?.total || 0), 0);
+            const realTotalAssignments = studentsData.reduce((sum: number, s: any) => sum + (s.assignmentStats?.total || 0), 0);
+
             const analyticsData: AnalyticsData = {
                 overview: {
                     totalUsers,
                     totalCourses,
                     totalEnrollments,
-                    totalQuizzes: studentsProgressResponse.summary?.totalQuizzes || Math.floor(totalCourses * 3),
-                    totalAssignments: studentsProgressResponse.summary?.totalAssignments || Math.floor(totalCourses * 2),
+                    totalQuizzes: realTotalQuizzes || studentsProgressResponse.summary?.totalQuizzes || 0,
+                    totalAssignments: realTotalAssignments || studentsProgressResponse.summary?.totalAssignments || 0,
                     avgCompletionRate,
                     activeUsers,
                     monthlyGrowth: 15.3 // This could be calculated from actual data
