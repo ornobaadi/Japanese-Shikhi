@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChatInterface } from "@/components/admin/ChatInterface";
 import { toast } from "sonner";
 import { 
   IconInbox, 
@@ -34,7 +36,8 @@ import {
   IconClock,
   IconCheck,
   IconSearch,
-  IconFilter
+  IconFilter,
+  IconMessageCircle
 } from '@tabler/icons-react';
 
 interface Message {
@@ -65,6 +68,7 @@ interface Student {
 }
 
 export default function AdminInboxPage() {
+  const { user } = useUser();
   const [inboxMessages, setInboxMessages] = useState<Message[]>([]);
   const [sentMessages, setSentMessages] = useState<Message[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -76,7 +80,9 @@ export default function AdminInboxPage() {
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showReplyDialog, setShowReplyDialog] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
+  const [showChatInterface, setShowChatInterface] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [chatRecipient, setChatRecipient] = useState<{ id: string; name: string; image?: string } | null>(null);
   const [sending, setSending] = useState(false);
   
   const [students, setStudents] = useState<Student[]>([]);
@@ -163,6 +169,16 @@ export default function AdminInboxPage() {
         console.error('Error marking message as read:', error);
       }
     }
+  };
+
+  const openChat = (message: Message) => {
+    const isInbox = activeTab === 'inbox';
+    setChatRecipient({
+      id: isInbox ? message.senderId : message.receiverId,
+      name: isInbox ? message.senderName : message.receiverName,
+      image: undefined // Could be added if available
+    });
+    setShowChatInterface(true);
   };
 
   const openReplyDialog = () => {
@@ -302,8 +318,7 @@ export default function AdminInboxPage() {
         {filteredMessages.map((message) => (
           <div
             key={message._id}
-            onClick={() => viewMessage(message)}
-            className={`p-4 border rounded-lg cursor-pointer hover:bg-accent transition-colors ${
+            className={`p-4 border rounded-lg transition-colors ${
               activeTab === 'inbox' && !message.isRead ? 'bg-blue-50 dark:bg-blue-950 border-blue-200' : ''
             }`}
           >
@@ -329,14 +344,36 @@ export default function AdminInboxPage() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
-                    <IconClock className="h-3 w-3" />
-                    {new Date(message.sentAt).toLocaleDateString()}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openChat(message);
+                      }}
+                      className="h-8"
+                    >
+                      <IconMessageCircle className="h-4 w-4 mr-1" />
+                      Chat
+                    </Button>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <IconClock className="h-3 w-3" />
+                      {new Date(message.sentAt).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
                 
-                <p className="text-sm font-medium mb-1">{message.subject}</p>
-                <p className="text-sm text-muted-foreground line-clamp-2">
+                <p 
+                  className="text-sm font-medium mb-1 cursor-pointer hover:text-primary"
+                  onClick={() => viewMessage(message)}
+                >
+                  {message.subject}
+                </p>
+                <p 
+                  className="text-sm text-muted-foreground line-clamp-2 cursor-pointer"
+                  onClick={() => viewMessage(message)}
+                >
                   {message.message}
                 </p>
                 
@@ -662,6 +699,22 @@ export default function AdminInboxPage() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Chat Interface Dialog */}
+        <Dialog open={showChatInterface} onOpenChange={setShowChatInterface}>
+          <DialogContent className="max-w-5xl h-[90vh] p-0">
+            {showChatInterface && chatRecipient && user && (
+              <ChatInterface
+                currentUserId={user.id}
+                currentUserName={user.fullName || `${user.firstName} ${user.lastName}` || 'Admin'}
+                recipientId={chatRecipient.id}
+                recipientName={chatRecipient.name}
+                recipientImage={chatRecipient.image}
+                onBack={() => setShowChatInterface(false)}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </SidebarInset>
