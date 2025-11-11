@@ -54,6 +54,16 @@ interface Message {
   replyToId?: string;
 }
 
+interface Student {
+  _id: string;
+  clerkUserId: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  profileImageUrl?: string;
+}
+
 export default function AdminInboxPage() {
   const [inboxMessages, setInboxMessages] = useState<Message[]>([]);
   const [sentMessages, setSentMessages] = useState<Message[]>([]);
@@ -65,16 +75,53 @@ export default function AdminInboxPage() {
   
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showReplyDialog, setShowReplyDialog] = useState(false);
+  const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [sending, setSending] = useState(false);
+  
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   
   const [replyForm, setReplyForm] = useState({
     message: ''
   });
 
+  const [composeForm, setComposeForm] = useState({
+    receiverId: '',
+    subject: '',
+    message: '',
+    contextType: 'general' as 'general' | 'course' | 'assignment' | 'quiz'
+  });
+
   useEffect(() => {
     fetchMessages();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (showComposeDialog) {
+      fetchStudents();
+    }
+  }, [showComposeDialog]);
+
+  const fetchStudents = async () => {
+    setLoadingStudents(true);
+    try {
+      const response = await fetch('/api/admin/users');
+      if (response.ok) {
+        const data = await response.json();
+        // Filter out admins (lifetime subscription)
+        const studentUsers = Array.isArray(data) 
+          ? data.filter((user: any) => user.subscriptionStatus !== 'lifetime')
+          : [];
+        setStudents(studentUsers);
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast.error('Failed to load students');
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
 
   const fetchMessages = async () => {
     setLoading(true);
@@ -153,6 +200,54 @@ export default function AdminInboxPage() {
     } catch (error) {
       console.error('Error sending reply:', error);
       toast.error('Failed to send reply');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const openComposeDialog = () => {
+    setComposeForm({
+      receiverId: '',
+      subject: '',
+      message: '',
+      contextType: 'general'
+    });
+    setShowComposeDialog(true);
+  };
+
+  const sendNewMessage = async () => {
+    if (!composeForm.receiverId || !composeForm.subject || !composeForm.message) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverId: composeForm.receiverId,
+          subject: composeForm.subject,
+          message: composeForm.message,
+          contextType: composeForm.contextType
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to send message');
+
+      toast.success('Message sent successfully!');
+      setShowComposeDialog(false);
+      setComposeForm({
+        receiverId: '',
+        subject: '',
+        message: '',
+        contextType: 'general'
+      });
+      fetchMessages();
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
     } finally {
       setSending(false);
     }
@@ -265,11 +360,17 @@ export default function AdminInboxPage() {
         <SiteHeader />
         <div className="container mx-auto p-6 space-y-6">
           {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Admin Inbox</h1>
-            <p className="text-muted-foreground">
-              Manage messages from students
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Admin Inbox</h1>
+              <p className="text-muted-foreground">
+                Manage messages from students
+              </p>
+            </div>
+            <Button onClick={openComposeDialog} className="flex items-center gap-2">
+              <IconSend className="h-4 w-4" />
+              Compose Message
+            </Button>
           </div>
 
           {/* Stats */}
@@ -452,6 +553,112 @@ export default function AdminInboxPage() {
                 </Button>
                 <Button onClick={sendReply} disabled={sending}>
                   {sending ? 'Sending...' : 'Send Reply'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Compose New Message Dialog */}
+        <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Compose New Message</DialogTitle>
+              <DialogDescription>
+                Send a message to a student
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Student Selection */}
+              <div>
+                <Label htmlFor="student-select">Select Student *</Label>
+                <Select
+                  value={composeForm.receiverId}
+                  onValueChange={(value) => setComposeForm({ ...composeForm, receiverId: value })}
+                >
+                  <SelectTrigger id="student-select">
+                    <SelectValue placeholder={loadingStudents ? "Loading students..." : "Select a student"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {loadingStudents ? (
+                      <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    ) : students.length === 0 ? (
+                      <SelectItem value="none" disabled>No students found</SelectItem>
+                    ) : (
+                      students.map((student) => (
+                        <SelectItem key={student.clerkUserId} value={student.clerkUserId}>
+                          {student.firstName && student.lastName 
+                            ? `${student.firstName} ${student.lastName}`
+                            : student.username || student.email
+                          } ({student.email})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Message Type */}
+              <div>
+                <Label htmlFor="message-type">Message Type</Label>
+                <Select
+                  value={composeForm.contextType}
+                  onValueChange={(value: any) => setComposeForm({ ...composeForm, contextType: value })}
+                >
+                  <SelectTrigger id="message-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="course">Course Related</SelectItem>
+                    <SelectItem value="assignment">Assignment</SelectItem>
+                    <SelectItem value="quiz">Quiz</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Subject */}
+              <div>
+                <Label htmlFor="compose-subject">Subject *</Label>
+                <Input
+                  id="compose-subject"
+                  placeholder="Enter subject"
+                  value={composeForm.subject}
+                  onChange={(e) => setComposeForm({ ...composeForm, subject: e.target.value })}
+                  maxLength={200}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {composeForm.subject.length}/200 characters
+                </p>
+              </div>
+
+              {/* Message */}
+              <div>
+                <Label htmlFor="compose-message">Message *</Label>
+                <Textarea
+                  id="compose-message"
+                  placeholder="Type your message here..."
+                  value={composeForm.message}
+                  onChange={(e) => setComposeForm({ ...composeForm, message: e.target.value })}
+                  rows={8}
+                  maxLength={5000}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {composeForm.message.length}/5000 characters
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowComposeDialog(false)}
+                  disabled={sending}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={sendNewMessage} disabled={sending || !composeForm.receiverId || !composeForm.subject || !composeForm.message}>
+                  {sending ? 'Sending...' : 'Send Message'}
                 </Button>
               </div>
             </div>
