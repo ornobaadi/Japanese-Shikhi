@@ -25,7 +25,7 @@ export default function StudentMessagesPage() {
                 <div className="mb-6">
                   <h1 className="text-3xl font-bold mb-2">Messages</h1>
                   <p className="text-muted-foreground">
-                    Contact admin team or view their responses
+                    Chat with admin team - Send messages, share files, and make voice/video calls
                   </p>
                 </div>
                 <StudentMessaging />

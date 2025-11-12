@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -12,7 +13,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { IconSearch, IconDownload, IconMail, IconUser, IconTrophy, IconLoader2 } from "@tabler/icons-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { IconSearch, IconDownload, IconMail, IconUser, IconTrophy, IconLoader2, IconShield, IconShieldOff } from "@tabler/icons-react"
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
@@ -35,6 +46,7 @@ interface User {
 }
 
 export default function UsersPage() {
+  const { user: currentUser } = useUser();
   const { t } = useLanguage();
   const [users, setUsers] = useState<User[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);  // Store all users for filtering
@@ -44,6 +56,9 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [subscriptionFilter, setSubscriptionFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [updatingRole, setUpdatingRole] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -205,6 +220,59 @@ export default function UsersPage() {
       toast.error(t('users.exportError'));
     } finally {
       setExporting(false);
+    }
+  };
+
+  // Toggle admin role
+  const handleToggleAdminRole = (user: User) => {
+    if (user.clerkId === currentUser?.id) {
+      toast.error('Cannot change your own admin status');
+      return;
+    }
+    setSelectedUser(user);
+    setShowAdminDialog(true);
+  };
+
+  const confirmToggleAdmin = async () => {
+    if (!selectedUser) return;
+
+    setUpdatingRole(true);
+    try {
+      const isCurrentlyAdmin = selectedUser.role === 'admin';
+      const endpoint = '/api/admin/users/make-admin';
+      const method = isCurrentlyAdmin ? 'DELETE' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: selectedUser.clerkId })
+      });
+
+      if (response.ok) {
+        toast.success(
+          isCurrentlyAdmin 
+            ? `${selectedUser.name} is no longer an admin` 
+            : `${selectedUser.name} is now an admin`
+        );
+        
+        // Refresh users list
+        const refreshResponse = await fetch('/api/admin/users');
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json();
+          setAllUsers(data.users || []);
+          setUsers(data.users || []);
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update user role');
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast.error('Failed to update user role');
+    } finally {
+      setUpdatingRole(false);
+      setShowAdminDialog(false);
+      setSelectedUser(null);
     }
   };
 
@@ -404,64 +472,89 @@ export default function UsersPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     {users.map((user) => (
                       <div
                         key={user.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-3 sm:gap-0"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
                           {user.profilePicture ? (
                             <img
                               src={user.profilePicture}
                               alt={user.name}
-                              className="size-10 rounded-full object-cover"
+                              className="size-8 md:size-10 rounded-full object-cover shrink-0"
                             />
                           ) : (
-                            <div className="size-10 rounded-full bg-muted flex items-center justify-center">
-                              <IconUser className="size-5 text-muted-foreground" />
+                            <div className="size-8 md:size-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                              <IconUser className="size-4 md:size-5 text-muted-foreground" />
                             </div>
                           )}
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{user.name}</h3>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-medium text-sm md:text-base truncate">{user.name}</h3>
                               {user.isAdmin && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                <span className="inline-flex items-center px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 shrink-0">
                                   Admin
                                 </span>
                               )}
                               {user.isPremium && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                  <IconTrophy className="size-3 mr-1" />
+                                <span className="inline-flex items-center px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 shrink-0">
+                                  <IconTrophy className="size-2 md:size-3 mr-1" />
                                   Premium
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
-                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                              <span>Courses: {user.coursesEnrolled}</span>
-                              <span>Role: {user.role}</span>
-                              <span>
+                            <p className="text-xs md:text-sm text-muted-foreground truncate">{user.email}</p>
+                            <div className="flex items-center flex-wrap gap-2 md:gap-4 mt-1 text-[10px] md:text-xs text-muted-foreground">
+                              <span className="shrink-0">Courses: {user.coursesEnrolled}</span>
+                              <span className="shrink-0">Role: {user.role}</span>
+                              <span className="shrink-0">
                                 Status: {user.isActive ? (
                                   <span className="text-green-600">Active</span>
                                 ) : (
                                   <span className="text-red-600">Inactive</span>
                                 )}
                               </span>
-                              <span>
+                              <span className="hidden sm:inline shrink-0">
                                 Joined: {new Date(user.createdAt).toLocaleDateString()}
                               </span>
                               {user.lastLoginAt && (
-                                <span>
+                                <span className="hidden md:inline shrink-0">
                                   Last login: {new Date(user.lastLoginAt).toLocaleDateString()}
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs md:text-sm h-8 md:h-9"
+                          >
                             View Profile
+                          </Button>
+                          <Button
+                            variant={user.role === 'admin' ? 'destructive' : 'default'}
+                            size="sm"
+                            onClick={() => handleToggleAdminRole(user)}
+                            disabled={user.clerkId === currentUser?.id}
+                            className="text-xs md:text-sm h-8 md:h-9"
+                          >
+                            {user.role === 'admin' ? (
+                              <>
+                                <IconShieldOff className="size-3 md:size-4 mr-1" />
+                                <span className="hidden sm:inline">Remove Admin</span>
+                                <span className="sm:hidden">Remove</span>
+                              </>
+                            ) : (
+                              <>
+                                <IconShield className="size-3 md:size-4 mr-1" />
+                                <span className="hidden sm:inline">Make Admin</span>
+                                <span className="sm:hidden">Admin</span>
+                              </>
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -473,6 +566,47 @@ export default function UsersPage() {
           </div>
         </div>
       </SidebarInset>
+
+      {/* Admin Role Confirmation Dialog */}
+      <AlertDialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {selectedUser?.role === 'admin' ? 'Remove Admin Role' : 'Make User Admin'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedUser?.role === 'admin' ? (
+                <>
+                  Are you sure you want to remove admin privileges from <strong>{selectedUser.name}</strong>?
+                  They will lose access to the admin dashboard and all admin features.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to make <strong>{selectedUser?.name}</strong> an admin?
+                  They will have full access to the admin dashboard and can manage all users, courses, and content.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updatingRole}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmToggleAdmin}
+              disabled={updatingRole}
+              className={selectedUser?.role === 'admin' ? 'bg-destructive hover:bg-destructive/90' : ''}
+            >
+              {updatingRole ? (
+                <>
+                  <IconLoader2 className="size-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                selectedUser?.role === 'admin' ? 'Remove Admin' : 'Make Admin'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   )
 }

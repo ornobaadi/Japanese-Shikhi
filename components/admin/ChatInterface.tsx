@@ -213,7 +213,7 @@ export function ChatInterface({
         <img 
           src={attachment.url} 
           alt={attachment.name}
-          className="max-w-xs rounded-lg cursor-pointer hover:opacity-90"
+          className="max-w-[200px] sm:max-w-xs rounded-lg cursor-pointer hover:opacity-90"
           onClick={() => window.open(attachment.url, '_blank')}
         />
       );
@@ -224,7 +224,7 @@ export function ChatInterface({
         <video 
           src={attachment.url} 
           controls
-          className="max-w-xs rounded-lg"
+          className="max-w-[200px] sm:max-w-xs rounded-lg"
         />
       );
     }
@@ -234,7 +234,7 @@ export function ChatInterface({
         <audio 
           src={attachment.url} 
           controls
-          className="max-w-xs"
+          className="max-w-[200px] sm:max-w-xs w-full"
         />
       );
     }
@@ -244,18 +244,18 @@ export function ChatInterface({
         href={attachment.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 p-3 bg-muted rounded-lg hover:bg-muted/80"
+        className="flex items-center gap-2 p-2 md:p-3 bg-muted rounded-lg hover:bg-muted/80"
       >
-        <IconFile className="h-5 w-5" />
+        <IconFile className="h-4 w-4 md:h-5 md:w-5 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{attachment.name}</p>
+          <p className="text-xs md:text-sm font-medium truncate">{attachment.name}</p>
           {attachment.size && (
             <p className="text-xs text-muted-foreground">
               {(attachment.size / 1024).toFixed(1)} KB
             </p>
           )}
         </div>
-        <IconDownload className="h-4 w-4" />
+        <IconDownload className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
       </a>
     );
   };
@@ -280,37 +280,37 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex flex-col h-[600px] border rounded-lg overflow-hidden">
+    <div className="flex flex-col h-[600px] md:h-[700px] border rounded-lg overflow-hidden">
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-muted/30">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between p-3 md:p-4 border-b bg-muted/30">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
           {onBack && (
-            <Button variant="ghost" size="sm" onClick={onBack}>
+            <Button variant="ghost" size="sm" onClick={onBack} className="shrink-0">
               <IconX className="h-4 w-4" />
             </Button>
           )}
-          <Avatar>
+          <Avatar className="h-8 w-8 md:h-10 md:w-10 shrink-0">
             <AvatarImage src={recipientImage} />
             <AvatarFallback>{recipientName.charAt(0)}</AvatarFallback>
           </Avatar>
-          <div>
-            <p className="font-semibold">{recipientName}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-sm md:text-base truncate">{recipientName}</p>
             <p className="text-xs text-muted-foreground">Active now</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => startCall('audio')} title="Voice Call">
+        <div className="flex items-center gap-1 md:gap-2 shrink-0">
+          <Button variant="ghost" size="sm" onClick={() => startCall('audio')} title="Voice Call" className="h-8 w-8 md:h-9 md:w-9 p-0">
             <IconPhone className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => startCall('video')} title="Video Call">
+          <Button variant="ghost" size="sm" onClick={() => startCall('video')} title="Video Call" className="h-8 w-8 md:h-9 md:w-9 p-0">
             <IconVideo className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
         {messages.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">
             <p>No messages yet</p>
@@ -326,22 +326,22 @@ export function ChatInterface({
                 key={message._id}
                 className={`flex items-end gap-2 ${isSender ? 'flex-row-reverse' : 'flex-row'}`}
               >
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
+                <Avatar className="h-6 w-6 md:h-8 md:w-8 shrink-0">
+                  <AvatarFallback className="text-xs">
                     {isSender ? currentUserName.charAt(0) : recipientName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className={`flex flex-col max-w-[70%] ${isSender ? 'items-end' : 'items-start'}`}>
+                <div className={`flex flex-col max-w-[75%] sm:max-w-[70%] ${isSender ? 'items-end' : 'items-start'}`}>
                   <div
-                    className={`rounded-2xl px-4 py-2 ${
+                    className={`rounded-2xl px-3 py-2 md:px-4 md:py-2 ${
                       isSender
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
                     }`}
                   >
                     {message.message && message.message !== '📎 Attachment' && (
-                      <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
+                      <p className="text-xs md:text-sm whitespace-pre-wrap break-words">{message.message}</p>
                     )}
                     
                     {message.attachments && message.attachments.length > 0 && (
@@ -385,12 +385,12 @@ export function ChatInterface({
       </div>
 
       {/* Input Area */}
-      <div className="border-t p-4">
+      <div className="border-t p-3 md:p-4">
         {selectedFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             {selectedFiles.map((file, idx) => (
-              <Badge key={idx} variant="secondary" className="flex items-center gap-2">
-                {file.name}
+              <Badge key={idx} variant="secondary" className="flex items-center gap-2 text-xs">
+                <span className="truncate max-w-[120px] md:max-w-none">{file.name}</span>
                 <button onClick={() => setSelectedFiles(files => files.filter((_, i) => i !== idx))}>
                   <IconX className="h-3 w-3" />
                 </button>
@@ -413,6 +413,7 @@ export function ChatInterface({
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={sending}
+            className="h-9 w-9 p-0 shrink-0"
           >
             <IconPaperclip className="h-5 w-5" />
           </Button>
@@ -428,15 +429,16 @@ export function ChatInterface({
               }
             }}
             disabled={sending}
-            className="flex-1"
+            className="flex-1 text-sm"
           />
 
           <Button
             onClick={sendMessage}
             disabled={sending || (!newMessage.trim() && selectedFiles.length === 0)}
             size="sm"
+            className="h-9 w-9 p-0 shrink-0"
           >
-            <IconSend className="h-5 w-5" />
+            <IconSend className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         </div>
       </div>

@@ -283,25 +283,27 @@ export default function DashboardPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h1 className="text-2xl font-bold">Welcome back, {user?.firstName}! 👋</h1>
-                    <p className="text-muted-foreground">Continue your Japanese learning journey</p>
+                    <h1 className="text-xl md:text-2xl font-bold">Welcome back, {user?.firstName}! 👋</h1>
+                    <p className="text-sm md:text-base text-muted-foreground">Continue your Japanese learning journey</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={createDemoActivities}
-                      className="gap-2"
+                      className="gap-2 text-xs md:text-sm"
                     >
-                      <Trophy className="size-4" />
-                      Load Demo Activities
+                      <Trophy className="size-3 md:size-4" />
+                      <span className="hidden sm:inline">Load Demo Activities</span>
+                      <span className="sm:hidden">Demo</span>
                     </Button>
-                    <Button className="gap-2" asChild>
+                    <Button className="gap-2 text-xs md:text-sm" size="sm" asChild>
                       <a href="/courses">
-                        <BookOpen className="size-4" />
-                        Browse Courses
+                        <BookOpen className="size-3 md:size-4" />
+                        <span className="hidden sm:inline">Browse Courses</span>
+                        <span className="sm:hidden">Courses</span>
                       </a>
                     </Button>
                   </div>

@@ -173,11 +173,11 @@ export default function StudentProgressPage() {
       <AppSidebar />
       <SidebarInset>
         <SiteHeader />
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold mb-2">Student Progress Tracking</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Student Progress Tracking</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
               Monitor student participation, quiz scores, and assignment submissions
             </p>
           </div>
@@ -232,9 +232,9 @@ export default function StudentProgressPage() {
           {/* Filters */}
           <Card>
             <CardHeader>
-              <CardTitle>Filters</CardTitle>
+              <CardTitle className="text-lg md:text-xl">Filters</CardTitle>
             </CardHeader>
-            <CardContent className="flex gap-4">
+            <CardContent className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
                   <IconSearch className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -247,7 +247,7 @@ export default function StudentProgressPage() {
                 </div>
               </div>
               <Select value={courseFilter} onValueChange={setCourseFilter}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue placeholder="All Courses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -267,12 +267,13 @@ export default function StudentProgressPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead className="text-center">Courses</TableHead>
-                    <TableHead className="text-center">Quizzes</TableHead>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[200px]">Student</TableHead>
+                      <TableHead className="text-center min-w-[80px]">Courses</TableHead>
+                      <TableHead className="text-center min-w-[100px]">Quizzes</TableHead>
                     <TableHead className="text-center">Quiz Avg</TableHead>
                     <TableHead className="text-center">Assignments</TableHead>
                     <TableHead className="text-center">Assignment Avg</TableHead>
@@ -353,21 +354,23 @@ export default function StudentProgressPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1 md:gap-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => viewStudentDetails(student)}
+                              className="text-xs md:text-sm"
                             >
-                              <IconChartBar className="h-4 w-4 mr-1" />
-                              Details
+                              <IconChartBar className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                              <span className="hidden md:inline">Details</span>
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleMessageStudent(student)}
+                              className="px-2 md:px-3"
                             >
-                              <IconMail className="h-4 w-4" />
+                              <IconMail className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -376,24 +379,25 @@ export default function StudentProgressPage() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Student Details Dialog */}
         <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-full md:max-w-4xl max-h-[90vh] md:max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Student Progress Details</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-lg md:text-xl">Student Progress Details</DialogTitle>
+              <DialogDescription className="text-sm">
                 Detailed progress information for {selectedStudent?.name}
               </DialogDescription>
             </DialogHeader>
 
             {selectedStudent && (
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {/* Student Info */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
                   <Avatar className="h-16 w-16">
                     <AvatarImage src={selectedStudent.profileImage} />
                     <AvatarFallback className="text-lg">
