@@ -74,17 +74,23 @@ export async function GET(
 
     // Filter content based on enrollment and free preview settings
     let itemCount = 0;
+    // Ensure modules are in order
+    const modules = Array.isArray(course.curriculum.modules)
+      ? course.curriculum.modules.slice().sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+      : [];
+
     const filteredCurriculum = {
-      modules: course.curriculum.modules
-        .filter((module: any) => module.isPublished)
+      modules: modules
+        // Show module if it's published OR the user is enrolled OR the user is admin
+        .filter((module: any) => (isEnrolled || isAdmin) ? true : module.isPublished)
         .map((module: any) => ({
           ...module.toObject(),
-          items: module.items
+          items: (module.items || [])
             .filter((item: any) => item.isPublished)
             .map((item: any) => {
               itemCount++;
               const itemObj = item.toObject();
-              
+
               // Determine if user has access to this item
               let hasAccess = false;
               if (isEnrolled) {
@@ -94,7 +100,7 @@ export async function GET(
                 // Non-enrolled users get free preview access
                 hasAccess = item.isFreePreview || itemCount <= (course.freePreviewCount || 2);
               }
-              
+
               return {
                 ...itemObj,
                 hasAccess,
