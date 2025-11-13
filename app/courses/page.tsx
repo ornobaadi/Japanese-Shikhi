@@ -101,14 +101,9 @@ export default function CoursesPage() {
   };
 
   const handleEnrollClick = (courseId: string) => {
-    console.log('handleEnrollClick called with courseId:', courseId);
-    console.log('isSignedIn:', isSignedIn);
     if (isSignedIn) {
-      console.log('User signed in, navigating to payment');
       router.push(`/payment/${courseId}`);
     } else {
-      console.log('User not signed in, storing courseId and redirecting to sign-in');
-      // Store the course ID in localStorage to redirect after login
       localStorage.setItem('pendingCourseEnrollment', courseId);
       router.push('/sign-in');
     }
@@ -116,18 +111,17 @@ export default function CoursesPage() {
 
   const handleViewCurriculum = (courseId: string) => {
     console.log('handleViewCurriculum called with courseId:', courseId);
-    console.log('Navigating to:', `/courses/${courseId}/curriculum`);
-    try {
+    // If enrolled, go to dashboard curriculum for full interface
+    if (isEnrolled(courseId)) {
+      console.log('User enrolled, navigating to dashboard curriculum');
+      router.push(`/dashboard/courses/${courseId}/curriculum`);
+    } else {
+      console.log('User not enrolled, navigating to preview');
       router.push(`/courses/${courseId}/curriculum`);
-      console.log('Navigation initiated');
-    } catch (error) {
-      console.error('Navigation error:', error);
     }
   };
 
   const handleContinueLearning = (courseId: string) => {
-    console.log('handleContinueLearning called with courseId:', courseId);
-    console.log('Navigating to dashboard curriculum');
     router.push(`/dashboard/courses/${courseId}/curriculum`);
   };
 
@@ -146,13 +140,6 @@ export default function CoursesPage() {
 
   const CourseCard = ({ course }: { course: Course }) => {
     const daysLeft = getDaysLeft(course.enrollmentDeadline);
-    
-    console.log('CourseCard rendering:', {
-      title: course.title,
-      id: course._id,
-      idType: typeof course._id,
-      idExists: !!course._id
-    });
 
     return (
       <Card className="h-full flex flex-col hover:shadow-md transition-all duration-200 border-0 shadow-sm">
@@ -258,12 +245,7 @@ export default function CoursesPage() {
             ) : (
               <>
                 <Button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Enroll button clicked!');
-                    handleEnrollClick(course._id);
-                  }}
+                  onClick={() => handleEnrollClick(course._id)}
                   className="flex-1"
                   type="button"
                 >
@@ -271,24 +253,9 @@ export default function CoursesPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={(e) => {
-                    console.log('=== START COURSE BUTTON CLICKED ===');
-                    console.log('course object:', course);
-                    console.log('course._id:', course._id);
-                    console.log('course._id type:', typeof course._id);
-                    alert(`BUTTON CLICKED! Course ID: ${course._id}`);
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleViewCurriculum(course._id);
-                  }}
-                  onMouseDown={() => {
-                    console.log('Start Course button MOUSE DOWN', course._id);
-                    alert('MOUSE DOWN!');
-                  }}
-                  onMouseUp={() => console.log('Start Course button MOUSE UP')}
+                  onClick={() => handleViewCurriculum(course._id)}
                   className="flex-1"
                   type="button"
-                  style={{ pointerEvents: 'auto', cursor: 'pointer', zIndex: 999 }}
                 >
                   Start Course
                 </Button>
@@ -397,24 +364,14 @@ export default function CoursesPage() {
               ) : (
                 <>
                   <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('List view: Enroll button clicked!');
-                      handleEnrollClick(course._id);
-                    }}
+                    onClick={() => handleEnrollClick(course._id)}
                     type="button"
                   >
                     Enroll Now
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('List view: Start Course button clicked!', course._id);
-                      handleViewCurriculum(course._id);
-                    }}
+                    onClick={() => handleViewCurriculum(course._id)}
                     type="button"
                   >
                     Start Course

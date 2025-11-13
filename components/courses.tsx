@@ -99,17 +99,19 @@ export default function Courses() {
   };
 
   const handleStartCourse = (courseId: string) => {
-    console.log('Start Course clicked for:', courseId);
     router.push(`/courses/${courseId}/curriculum`);
   };
 
   const handleViewCurriculum = (courseId: string) => {
-    console.log('View Curriculum clicked for:', courseId);
-    router.push(`/courses/${courseId}/curriculum`);
+    // If enrolled, go to dashboard curriculum; otherwise preview
+    if (isEnrolled(courseId)) {
+      router.push(`/dashboard/courses/${courseId}/curriculum`);
+    } else {
+      router.push(`/courses/${courseId}/curriculum`);
+    }
   };
 
   const handleContinueLearning = (courseId: string) => {
-    console.log('Continue Learning clicked for:', courseId);
     router.push(`/dashboard/courses/${courseId}/curriculum`);
   };
 
