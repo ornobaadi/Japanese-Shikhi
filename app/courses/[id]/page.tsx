@@ -221,7 +221,10 @@ export default function CourseDetailPage() {
                 <Button 
                   size="lg"
                   className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                  onClick={() => router.push(`/courses/${course._id}/curriculum`)}
+                  onClick={() => {
+                    console.log('Preview button clicked, navigating to:', `/courses/${course._id}/curriculum`);
+                    router.push(`/courses/${course._id}/curriculum`);
+                  }}
                 >
                   <Video className="mr-2 h-5 w-5" />
                   Preview First 2 Lessons Free

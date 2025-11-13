@@ -371,8 +371,7 @@ const CourseSchema = new Schema<ICourse>({
           },
           mcqQuestions: [{
             question: {
-              type: String,
-              required: function() { return this.quizType === 'mcq'; }
+              type: String
             },
             options: [{
               text: String,

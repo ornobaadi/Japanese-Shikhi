@@ -101,9 +101,13 @@ export default function CoursesPage() {
   };
 
   const handleEnrollClick = (courseId: string) => {
+    console.log('handleEnrollClick called with courseId:', courseId);
+    console.log('isSignedIn:', isSignedIn);
     if (isSignedIn) {
+      console.log('User signed in, navigating to payment');
       router.push(`/payment/${courseId}`);
     } else {
+      console.log('User not signed in, storing courseId and redirecting to sign-in');
       // Store the course ID in localStorage to redirect after login
       localStorage.setItem('pendingCourseEnrollment', courseId);
       router.push('/sign-in');
@@ -111,10 +115,19 @@ export default function CoursesPage() {
   };
 
   const handleViewCurriculum = (courseId: string) => {
-    router.push(`/dashboard/courses/${courseId}/curriculum`);
+    console.log('handleViewCurriculum called with courseId:', courseId);
+    console.log('Navigating to:', `/courses/${courseId}/curriculum`);
+    try {
+      router.push(`/courses/${courseId}/curriculum`);
+      console.log('Navigation initiated');
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
   };
 
   const handleContinueLearning = (courseId: string) => {
+    console.log('handleContinueLearning called with courseId:', courseId);
+    console.log('Navigating to dashboard curriculum');
     router.push(`/dashboard/courses/${courseId}/curriculum`);
   };
 
@@ -238,17 +251,23 @@ export default function CoursesPage() {
             ) : (
               <>
                 <Button
-                  onClick={() => handleEnrollClick(course._id)}
+                  onClick={() => {
+                    console.log('Enroll button clicked!');
+                    handleEnrollClick(course._id);
+                  }}
                   className="flex-1"
                 >
                   Enroll Now
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleViewCurriculum(course._id)}
+                  onClick={() => {
+                    console.log('Start Course button clicked!', course._id);
+                    handleViewCurriculum(course._id);
+                  }}
                   className="flex-1"
                 >
-                  View Curriculum
+                  Start Course
                 </Button>
               </>
             )}
@@ -355,15 +374,21 @@ export default function CoursesPage() {
               ) : (
                 <>
                   <Button
-                    onClick={() => handleEnrollClick(course._id)}
+                    onClick={() => {
+                      console.log('List view: Enroll button clicked!');
+                      handleEnrollClick(course._id);
+                    }}
                   >
                     Enroll Now
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => handleViewCurriculum(course._id)}
+                    onClick={() => {
+                      console.log('List view: Start Course button clicked!', course._id);
+                      handleViewCurriculum(course._id);
+                    }}
                   >
-                    View Curriculum
+                    Start Course
                   </Button>
                 </>
               )}
