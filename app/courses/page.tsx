@@ -146,6 +146,13 @@ export default function CoursesPage() {
 
   const CourseCard = ({ course }: { course: Course }) => {
     const daysLeft = getDaysLeft(course.enrollmentDeadline);
+    
+    console.log('CourseCard rendering:', {
+      title: course.title,
+      id: course._id,
+      idType: typeof course._id,
+      idExists: !!course._id
+    });
 
     return (
       <Card className="h-full flex flex-col hover:shadow-md transition-all duration-200 border-0 shadow-sm">
@@ -251,21 +258,37 @@ export default function CoursesPage() {
             ) : (
               <>
                 <Button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log('Enroll button clicked!');
                     handleEnrollClick(course._id);
                   }}
                   className="flex-1"
+                  type="button"
                 >
                   Enroll Now
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    console.log('Start Course button clicked!', course._id);
+                  onClick={(e) => {
+                    console.log('=== START COURSE BUTTON CLICKED ===');
+                    console.log('course object:', course);
+                    console.log('course._id:', course._id);
+                    console.log('course._id type:', typeof course._id);
+                    alert(`BUTTON CLICKED! Course ID: ${course._id}`);
+                    e.preventDefault();
+                    e.stopPropagation();
                     handleViewCurriculum(course._id);
                   }}
+                  onMouseDown={() => {
+                    console.log('Start Course button MOUSE DOWN', course._id);
+                    alert('MOUSE DOWN!');
+                  }}
+                  onMouseUp={() => console.log('Start Course button MOUSE UP')}
                   className="flex-1"
+                  type="button"
+                  style={{ pointerEvents: 'auto', cursor: 'pointer', zIndex: 999 }}
                 >
                   Start Course
                 </Button>
@@ -374,19 +397,25 @@ export default function CoursesPage() {
               ) : (
                 <>
                   <Button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       console.log('List view: Enroll button clicked!');
                       handleEnrollClick(course._id);
                     }}
+                    type="button"
                   >
                     Enroll Now
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       console.log('List view: Start Course button clicked!', course._id);
                       handleViewCurriculum(course._id);
                     }}
+                    type="button"
                   >
                     Start Course
                   </Button>

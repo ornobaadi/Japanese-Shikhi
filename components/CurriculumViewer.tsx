@@ -155,7 +155,7 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
       // Show enrollment prompt with toast
       if (!user) {
         toast.error('Please sign in to access more content', {
-          description: 'You can preview the first 2 lessons for free',
+          description: 'You can preview the first 2 items (videos, PDFs, quizzes, assignments) for free',
           action: {
             label: 'Sign In',
             onClick: () => router.push('/sign-in')
@@ -163,7 +163,7 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
         });
       } else {
         toast.error('This content is locked', {
-          description: 'Enroll in the course to unlock all lessons',
+          description: 'Enroll in the course to unlock all content',
           action: {
             label: 'Enroll Now',
             onClick: () => router.push(`/payment/${courseId}`)
@@ -269,11 +269,11 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
           <Alert className="mb-6 border-blue-200 bg-blue-50">
             <AlertCircle className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
-              <strong>🎁 Free Preview Available!</strong> You can watch the first {course.accessInfo.freePreviewCount} lessons completely free. 
+              <strong>🎁 Free Preview Available!</strong> You can access the first {course.accessInfo.freePreviewCount} items (videos, PDFs, quizzes, or assignments) completely free. 
               {!course.accessInfo.isLoggedIn ? (
-                <> <strong>Sign in and enroll</strong> to get full access to all {course.curriculum.modules.reduce((acc: number, m: Module) => acc + m.items.length, 0)} lessons, assignments, and quizzes!</>
+                <> <strong>Sign in and enroll</strong> to get full access to all {course.curriculum.modules.reduce((acc: number, m: Module) => acc + m.items.length, 0)} course items!</>
               ) : (
-                <> <strong>Enroll now</strong> to unlock all {course.curriculum.modules.reduce((acc: number, m: Module) => acc + m.items.length, 0)} lessons and course materials!</>
+                <> <strong>Enroll now</strong> to unlock all {course.curriculum.modules.reduce((acc: number, m: Module) => acc + m.items.length, 0)} course materials!</>
               )}
             </AlertDescription>
           </Alert>

@@ -26,11 +26,38 @@ interface UserStats {
   accuracyRate: number;
 }
 
+interface QuizSubmission {
+  _id: string;
+  courseId: string;
+  courseTitle: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  passed: boolean;
+  submittedAt: string;
+}
+
+interface CourseProgress {
+  courseId: string;
+  courseTitle: string;
+  totalItems: number;
+  completedItems: number;
+  totalResources: number;
+  totalQuizzes: number;
+  totalAssignments: number;
+  totalAnnouncements: number;
+  completedQuizzes: number;
+  completedAssignments: number;
+  progressPercentage: number;
+}
+
 export default function DashboardProgressPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [quizSubmissions, setQuizSubmissions] = useState<QuizSubmission[]>([]);
+  const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,9 +88,13 @@ export default function DashboardProgressPage() {
           accuracyRate: 0
         };
         
+        let allSubmissions: any[] = [];
+        
         if (quizResponse.ok) {
           const quizData = await quizResponse.json();
           const submissions = quizData.submissions || [];
+          allSubmissions = submissions;
+          setQuizSubmissions(submissions);
           
           if (submissions.length > 0) {
             const totalScore = submissions.reduce((sum: number, sub: any) => sum + (sub.percentage || 0), 0);
@@ -74,6 +105,78 @@ export default function DashboardProgressPage() {
             };
           }
         }
+        
+        // Fetch course progress with curriculum breakdown
+        const enrolledCourses = userData.enrolledCourses || [];
+        const progressData: CourseProgress[] = [];
+        
+        for (const enrollment of enrolledCourses) {
+          try {
+            const courseId = enrollment.courseId?._id || enrollment.courseId;
+            const curriculumResponse = await fetch(`/api/courses/${courseId}/curriculum`);
+            
+            if (curriculumResponse.ok) {
+              const curriculumData = await curriculumResponse.json();
+              const modules = curriculumData.curriculum?.modules || [];
+              
+              let totalItems = 0;
+              let totalResources = 0;
+              let totalQuizzes = 0;
+              let totalAssignments = 0;
+              let totalAnnouncements = 0;
+              
+              // Count all items by type
+              modules.forEach((module: any) => {
+                module.items?.forEach((item: any) => {
+                  totalItems++;
+                  switch (item.type) {
+                    case 'resource':
+                      totalResources++;
+                      break;
+                    case 'quiz':
+                      totalQuizzes++;
+                      break;
+                    case 'assignment':
+                      totalAssignments++;
+                      break;
+                    case 'announcement':
+                      totalAnnouncements++;
+                      break;
+                  }
+                });
+              });
+              
+              // Count completed quizzes for this course
+              const completedQuizzes = allSubmissions.filter((sub: any) => 
+                sub.courseId === courseId
+              ).length;
+              
+              // Calculate progress (for now, based on quiz completion)
+              const completedItems = completedQuizzes;
+              const progressPercentage = totalItems > 0 
+                ? Math.round((completedItems / totalItems) * 100) 
+                : 0;
+              
+              progressData.push({
+                courseId,
+                courseTitle: curriculumData.title,
+                totalItems,
+                completedItems,
+                totalResources,
+                totalQuizzes,
+                totalAssignments,
+                totalAnnouncements,
+                completedQuizzes,
+                completedAssignments: 0, // TODO: Add assignment tracking
+                progressPercentage
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching course curriculum:', error);
+          }
+        }
+        
+        setCourseProgress(progressData);
         
         setUserStats({
           totalCourses: userData.enrolledCourses?.length || 0,
@@ -137,6 +240,65 @@ export default function DashboardProgressPage() {
               
               <div className="px-4 lg:px-6">
                 <div className="space-y-6">
+                  {/* Course-wise Progress */}
+                  {courseProgress.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Course Progress</CardTitle>
+                        <CardDescription>
+                          Track your progress across all enrolled courses
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {courseProgress.map((course) => (
+                            <div key={course.courseId} className="border rounded-lg p-4">
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <h4 className="font-semibold">{course.courseTitle}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {course.completedItems} of {course.totalItems} items completed
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className="ml-2">
+                                  {course.progressPercentage}%
+                                </Badge>
+                              </div>
+                              
+                              {/* Progress bar */}
+                              <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                                <div
+                                  className="bg-green-500 h-2 rounded-full transition-all"
+                                  style={{ width: `${course.progressPercentage}%` }}
+                                />
+                              </div>
+                              
+                              {/* Item breakdown */}
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">📚 Resources:</span>
+                                  <span className="font-medium">{course.totalResources}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">📝 Quizzes:</span>
+                                  <span className="font-medium">{course.completedQuizzes}/{course.totalQuizzes}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">✍️ Assignments:</span>
+                                  <span className="font-medium">{course.completedAssignments}/{course.totalAssignments}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">📢 Announcements:</span>
+                                  <span className="font-medium">{course.totalAnnouncements}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
                   <Card>
                     <CardHeader>
                       <CardTitle>Learning Progress</CardTitle>
@@ -193,6 +355,59 @@ export default function DashboardProgressPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  
+                  {/* Quiz History */}
+                  {quizSubmissions.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5" />
+                          Quiz Results
+                        </CardTitle>
+                        <CardDescription>
+                          Your recent quiz attempts and scores
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {quizSubmissions.slice(0, 5).map((submission) => (
+                            <div
+                              key={submission._id}
+                              className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                            >
+                              <div className="flex-1">
+                                <h4 className="font-medium">{submission.courseTitle}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(submission.submittedAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                  <p className="text-sm text-muted-foreground">Score</p>
+                                  <p className="font-semibold">{submission.score}/{submission.totalQuestions}</p>
+                                </div>
+                                <Badge 
+                                  variant={submission.passed ? "default" : "destructive"}
+                                  className="min-w-[60px] justify-center"
+                                >
+                                  {submission.percentage}%
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {quizSubmissions.length > 5 && (
+                          <p className="text-sm text-muted-foreground text-center mt-4">
+                            Showing 5 most recent quizzes out of {quizSubmissions.length} total
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </div>
             </div>

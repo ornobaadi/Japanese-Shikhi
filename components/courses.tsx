@@ -1,5 +1,8 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+
 interface Course {
   _id?: string;
   title: string;
@@ -9,6 +12,7 @@ interface Course {
   lessons?: Array<any>;
   learningObjectives?: string[];
 }
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +26,9 @@ import {
 export default function Courses() {
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [enrolledCourseIds, setEnrolledCourseIds] = React.useState<string[]>([]);
+  const { isSignedIn, user } = useUser();
+  const router = useRouter();
   React.useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -62,6 +69,49 @@ export default function Courses() {
     };
     fetchCourses();
   }, []);
+
+  // Fetch user's enrolled courses
+  React.useEffect(() => {
+    const fetchEnrolledCourses = async () => {
+      if (!isSignedIn || !user) return;
+
+      try {
+        const res = await fetch('/api/users/me');
+        if (res.ok) {
+          const result = await res.json();
+          const userData = result.data || result;
+          const enrolledIds = userData.enrolledCourses?.map((c: any) => {
+            const id = c.courseId?._id || c.courseId?.toString() || c.courseId || c._id;
+            return id;
+          }) || [];
+          setEnrolledCourseIds(enrolledIds);
+        }
+      } catch (error) {
+        console.error('Failed to fetch enrolled courses:', error);
+      }
+    };
+
+    fetchEnrolledCourses();
+  }, [isSignedIn, user]);
+
+  const isEnrolled = (courseId: string) => {
+    return enrolledCourseIds.includes(courseId);
+  };
+
+  const handleStartCourse = (courseId: string) => {
+    console.log('Start Course clicked for:', courseId);
+    router.push(`/courses/${courseId}/curriculum`);
+  };
+
+  const handleViewCurriculum = (courseId: string) => {
+    console.log('View Curriculum clicked for:', courseId);
+    router.push(`/courses/${courseId}/curriculum`);
+  };
+
+  const handleContinueLearning = (courseId: string) => {
+    console.log('Continue Learning clicked for:', courseId);
+    router.push(`/dashboard/courses/${courseId}/curriculum`);
+  };
 
   return (
     <section id="courses" className="py-20 bg-gray-50">
@@ -111,13 +161,41 @@ export default function Courses() {
                     </div>
                   </div>
                   <div className="flex flex-col justify-center space-y-3">
-                    <Button className={`bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90`}>
-                      Start Course
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      View Curriculum
-                    </Button>
+                    {isEnrolled(course._id || '') ? (
+                      <>
+                        <Button 
+                          className="bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90"
+                          onClick={() => handleContinueLearning(course._id || '')}
+                        >
+                          Continue Learning
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewCurriculum(course._id || '')}
+                        >
+                          View Curriculum
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button 
+                          className="bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90"
+                          onClick={() => handleStartCourse(course._id || '')}
+                        >
+                          Start Course
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewCurriculum(course._id || '')}
+                        >
+                          View Curriculum
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </Card>

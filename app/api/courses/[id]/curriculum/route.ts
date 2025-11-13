@@ -81,11 +81,8 @@ export async function GET(
 
     const filteredCurriculum = {
       modules: modules
-        // Show module if it's published OR the user is enrolled OR the user is admin
-        .filter((module: any) => (isEnrolled || isAdmin) ? true : module.isPublished)
-        .map((module: any) => ({
-          ...module.toObject(),
-          items: (module.items || [])
+        .map((module: any) => {
+          const moduleItems = (module.items || [])
             .filter((item: any) => item.isPublished)
             .map((item: any) => {
               itemCount++;
@@ -107,8 +104,23 @@ export async function GET(
                 isLocked: !hasAccess,
                 requiresEnrollment: !hasAccess && !isEnrolled
               };
-            })
-        }))
+            });
+          
+          return {
+            ...module.toObject(),
+            items: moduleItems,
+            hasUnlockedItems: moduleItems.some((item: any) => item.hasAccess)
+          };
+        })
+        // Show module if: (1) user enrolled/admin, OR (2) module is published, OR (3) has unlocked items
+        .filter((module: any) => 
+          isEnrolled || 
+          isAdmin || 
+          module.isPublished || 
+          module.hasUnlockedItems
+        )
+        // Only show modules that have items
+        .filter((module: any) => module.items.length > 0)
     };
 
     return NextResponse.json({
