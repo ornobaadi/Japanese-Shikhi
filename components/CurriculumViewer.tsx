@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription } from '@/components/ui';
+import { toast } from 'sonner';
 import { 
   ArrowLeft,
   Clock, 
@@ -151,7 +152,24 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
 
   const handleItemClick = (item: CurriculumItem) => {
     if (!item.hasAccess) {
-      // Show enrollment prompt
+      // Show enrollment prompt with toast
+      if (!user) {
+        toast.error('Please sign in to access more content', {
+          description: 'You can preview the first 2 lessons for free',
+          action: {
+            label: 'Sign In',
+            onClick: () => router.push('/sign-in')
+          }
+        });
+      } else {
+        toast.error('This content is locked', {
+          description: 'Enroll in the course to unlock all lessons',
+          action: {
+            label: 'Enroll Now',
+            onClick: () => router.push(`/payment/${courseId}`)
+          }
+        });
+      }
       return;
     }
 
@@ -248,12 +266,24 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
         
         {/* Access Status */}
         {!isAdmin && !course.accessInfo.isEnrolled && course.accessInfo.canPreview && (
-          <Alert className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              You can preview the first {course.accessInfo.freePreviewCount} lessons for free. 
-              {!course.accessInfo.isLoggedIn && " Sign in and "} 
-              Enroll to get full access to all content.
+          <Alert className="mb-6 border-blue-200 bg-blue-50">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>🎁 Free Preview Available!</strong> You can watch the first {course.accessInfo.freePreviewCount} lessons completely free. 
+              {!course.accessInfo.isLoggedIn ? (
+                <> <strong>Sign in and enroll</strong> to get full access to all {course.curriculum.modules.reduce((acc: number, m: Module) => acc + m.items.length, 0)} lessons, assignments, and quizzes!</>
+              ) : (
+                <> <strong>Enroll now</strong> to unlock all {course.curriculum.modules.reduce((acc: number, m: Module) => acc + m.items.length, 0)} lessons and course materials!</>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {!isAdmin && course.accessInfo.isEnrolled && (
+          <Alert className="mb-6 border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              <strong>✓ Enrolled!</strong> You have full access to all course content.
             </AlertDescription>
           </Alert>
         )}

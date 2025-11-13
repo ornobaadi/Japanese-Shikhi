@@ -46,6 +46,7 @@ interface CurriculumItem {
   isPinned?: boolean;
   dueDate?: Date;
   quizData?: QuizData; // Quiz specific data
+  isFreePreview?: boolean; // Mark as free preview (overrides count)
   isPublished: boolean;
   createdAt: Date;
 }
@@ -79,6 +80,9 @@ export interface ICourse extends Document {
   links: string[];
   whatYoullLearn?: string;
   courseLessonModule?: string;
+  // Free Preview Settings
+  allowFreePreview: boolean;
+  freePreviewCount: number; // Number of lessons/items free to preview
   lessons: mongoose.Types.ObjectId[];
   totalLessons: number;
   averageRating: number;
@@ -170,6 +174,17 @@ const CourseSchema = new Schema<ICourse>({
     index: true
   },
   thumbnailUrl: String,
+  // Free Preview Settings
+  allowFreePreview: {
+    type: Boolean,
+    default: true
+  },
+  freePreviewCount: {
+    type: Number,
+    default: 2,
+    min: 0,
+    max: 10
+  },
   actualPrice: {
     type: Number,
     min: 0,
@@ -308,6 +323,10 @@ const CourseSchema = new Schema<ICourse>({
         },
         resourceUrl: String,
         resourceFile: String,
+        isFreePreview: {
+          type: Boolean,
+          default: false
+        },
         announcementType: {
           type: String,
           enum: ['important', 'cancellation', 'general']
@@ -499,12 +518,9 @@ CourseSchema.pre('save', function(next) {
   next();
 });
 
-// Force model refresh - delete from both models and connection
+// Force model refresh
 if (mongoose.models.Course) {
   delete mongoose.models.Course;
-}
-if (mongoose.connection.models.Course) {
-  delete mongoose.connection.models.Course;
 }
 
 export default mongoose.model<ICourse>('Course', CourseSchema);

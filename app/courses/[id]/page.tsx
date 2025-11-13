@@ -220,17 +220,19 @@ export default function CourseDetailPage() {
               <>
                 <Button 
                   size="lg"
-                  className="bg-gradient-to-r from-green-500 to-teal-500"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                   onClick={() => router.push(`/courses/${course._id}/curriculum`)}
                 >
-                  Preview Course
+                  <Video className="mr-2 h-5 w-5" />
+                  Preview First 2 Lessons Free
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline"
                   onClick={() => setShowPaymentForm(true)}
+                  className="border-2"
                 >
-                  Enroll Now
+                  Enroll Now - Get Full Access
                 </Button>
               </>
             )}
