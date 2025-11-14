@@ -4,6 +4,9 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import FacebookPixel from "@/components/analytics/FacebookPixel";
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
+import TikTokPixel from "@/components/analytics/TikTokPixel";
 
 const notoSansBengali = Noto_Sans_Bengali({
   subsets: ["bengali"],
@@ -40,6 +43,9 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${notoSansBengali.variable} ${hindSiliguri.variable} ${inter.variable} antialiased`}>
+          <FacebookPixel />
+          <GoogleAnalytics />
+          <TikTokPixel />
           <LanguageProvider>
             {children}
             <Toaster richColors position="top-right" />
