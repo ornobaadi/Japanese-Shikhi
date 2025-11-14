@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       blogPosts: { $exists: true, $ne: [] }
     })
       .select('title blogPosts')
-      .lean();
+      .lean() as any[];
 
     // Extract and flatten all blog posts
     const allBlogs = courses.flatMap(course =>
