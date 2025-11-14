@@ -74,7 +74,8 @@ export async function GET(request: NextRequest) {
     }).select('_id title thumbnail');
 
     const courseMap = courses.reduce((acc, course) => {
-      acc[course._id.toString()] = {
+      const courseId = course._id?.toString() || '';
+      acc[courseId] = {
         title: course.title,
         thumbnail: course.thumbnail
       };
