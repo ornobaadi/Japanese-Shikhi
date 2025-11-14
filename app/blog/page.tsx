@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ interface BlogPost {
     courseName?: string;
 }
 
-export default function BlogPage() {
+function BlogPageContent() {
     const { t } = useLanguage();
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -295,5 +295,13 @@ export default function BlogPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function BlogPage() {
+    return (
+        <Suspense fallback={<div className="container mx-auto py-12 px-4">Loading...</div>}>
+            <BlogPageContent />
+        </Suspense>
     );
 }
