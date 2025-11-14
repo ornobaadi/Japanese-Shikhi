@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     
     const curriculumData: Record<string, any> = {};
     coursesWithCurriculum.forEach(course => {
-      curriculumData[course._id.toString()] = course.curriculum;
+      curriculumData[String(course._id)] = course.curriculum;
     });
 
     // Helper function to find next live class from curriculum
