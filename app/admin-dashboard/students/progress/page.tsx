@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -77,7 +77,7 @@ interface StudentProgress {
   recentAssignments: any[];
 }
 
-export default function StudentProgressPage() {
+function StudentProgressPageContent() {
   const { user } = useUser();
   const [students, setStudents] = useState<StudentProgress[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<StudentProgress[]>([]);
@@ -538,5 +538,13 @@ export default function StudentProgressPage() {
         </Dialog>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+export default function StudentProgressPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <StudentProgressPageContent />
+    </Suspense>
   );
 }
