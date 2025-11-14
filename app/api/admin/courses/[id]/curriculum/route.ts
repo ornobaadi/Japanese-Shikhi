@@ -94,15 +94,6 @@ export async function PUT(
     console.log('Current course category:', course.category);
     console.log('Current metadata:', course.metadata);
 
-    // Log the course object to see what's causing validation issues
-    console.log('Full course object before update:', JSON.stringify({
-      _id: course._id,
-      title: course.title,
-      category: course.category,
-      level: course.level,
-      status: course.status
-    }, null, 2));
-
     course.curriculum = body.curriculum;
     
     // Ensure metadata exists before updating
