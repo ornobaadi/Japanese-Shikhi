@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
-export default function AdminSetupPage() {
+function AdminSetupContent() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -58,5 +58,13 @@ export default function AdminSetupPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AdminSetupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminSetupContent />
+    </Suspense>
   );
 }
