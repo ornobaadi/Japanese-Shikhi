@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { Suspense } from "react";
 import FacebookPixel from "@/components/analytics/FacebookPixel";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import TikTokPixel from "@/components/analytics/TikTokPixel";
@@ -43,9 +44,11 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${notoSansBengali.variable} ${hindSiliguri.variable} ${inter.variable} antialiased`}>
-          <FacebookPixel />
-          <GoogleAnalytics />
-          <TikTokPixel />
+          <Suspense fallback={null}>
+            <FacebookPixel />
+            <GoogleAnalytics />
+            <TikTokPixel />
+          </Suspense>
           <LanguageProvider>
             {children}
             <Toaster richColors position="top-right" />
