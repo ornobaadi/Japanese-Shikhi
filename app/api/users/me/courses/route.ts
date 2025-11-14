@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
     if (courseIds.length) {
       const courses = await Course.find({ _id: { $in: courseIds } })
         .select('title description level category estimatedDuration thumbnailUrl totalLessons enrolledStudents averageRating totalRatings');
-      courses.forEach(c => { coursesById[c._id.toString()] = c; });
-      console.log('[me/courses] fetched courses:', courses.map(c => ({ id: c._id.toString(), title: c.title })));
+      courses.forEach(c => { coursesById[String(c._id)] = c; });
+      console.log('[me/courses] fetched courses:', courses.map(c => ({ id: String(c._id), title: c.title })));
     } else {
       console.log('[me/courses] no courseIds found');
     }
