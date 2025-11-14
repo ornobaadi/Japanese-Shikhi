@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     // Atomic enrollment write to prevent duplicate & guarantee persistence
     const enrollmentDoc = {
-      courseId: course._id instanceof mongoose.Types.ObjectId ? course._id : new mongoose.Types.ObjectId(course._id),
+      courseId: course._id instanceof mongoose.Types.ObjectId ? course._id : new mongoose.Types.ObjectId(course._id as string),
       enrolledAt: new Date(),
       progress: {
         completedLessons: 0,
