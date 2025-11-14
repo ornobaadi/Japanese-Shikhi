@@ -71,13 +71,13 @@ export async function GET(request: NextRequest) {
 
     const courses = await Course.find({
       _id: { $in: courseIds }
-    }).select('_id title thumbnail');
+    }).select('_id title thumbnailUrl');
 
     const courseMap = courses.reduce((acc, course) => {
       const courseId = course._id?.toString() || '';
       acc[courseId] = {
         title: course.title,
-        thumbnail: course.thumbnail
+        thumbnail: course.thumbnailUrl
       };
       return acc;
     }, {} as Record<string, any>);
