@@ -12,9 +12,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { IconPlus, IconBook, IconUsers, IconChartBar } from "@tabler/icons-react"
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 
 export default function Page() {
   const { t } = useLanguage();
+  const { isLoaded, isSignedIn, user } = useUser();
+  const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (isLoaded) {
+        if (!isSignedIn) {
+          router.push('/sign-in');
+          return;
+        }
+
+        // Check if user is NOT admin - if so, redirect to student dashboard
+        if (user) {
+          const userRole = (user.publicMetadata as any)?.role;
+          if (userRole !== 'admin') {
+            console.log('Non-admin user detected, redirecting to student dashboard');
+            router.push('/dashboard');
+            return;
+          }
+        }
+
+        setIsChecking(false);
+      }
+    };
+
+    checkUserRole();
+  }, [isLoaded, isSignedIn, user, router]);
+
+  if (!isLoaded || isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return null; // Will redirect via useEffect
+  }
+
   return (
     <SidebarProvider
       style={

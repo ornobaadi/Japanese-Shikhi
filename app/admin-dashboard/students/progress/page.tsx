@@ -153,8 +153,15 @@ function StudentProgressPageContent() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <AppSidebar />
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
           <div className="flex items-center justify-center min-h-screen">
@@ -169,21 +176,33 @@ function StudentProgressPageContent() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-          {/* Header */}
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">Student Progress Tracking</h1>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Monitor student participation, quiz scores, and assignment submissions
-            </p>
-          </div>
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              {/* Header */}
+              <div className="px-4 lg:px-6">
+                <div>
+                  <h1 className="text-2xl font-bold">Student Progress Tracking</h1>
+                  <p className="text-muted-foreground">
+                    Monitor student participation, quiz scores, and assignment submissions
+                  </p>
+                </div>
+              </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Summary Cards */}
+              <div className="px-4 lg:px-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Students</CardTitle>
@@ -227,10 +246,12 @@ function StudentProgressPageContent() {
                 <p className="text-xs text-muted-foreground">Need to grade</p>
               </CardContent>
             </Card>
-          </div>
+                </div>
+              </div>
 
-          {/* Filters */}
-          <Card>
+              {/* Filters */}
+              <div className="px-4 lg:px-6">
+                <Card>
             <CardHeader>
               <CardTitle className="text-lg md:text-xl">Filters</CardTitle>
             </CardHeader>
@@ -256,10 +277,12 @@ function StudentProgressPageContent() {
                 </SelectContent>
               </Select>
             </CardContent>
-          </Card>
+                </Card>
+              </div>
 
-          {/* Student Progress Table */}
-          <Card>
+              {/* Student Progress Table */}
+              <div className="px-4 lg:px-6">
+                <Card>
             <CardHeader>
               <CardTitle>Student Progress Overview</CardTitle>
               <CardDescription>
@@ -381,7 +404,10 @@ function StudentProgressPageContent() {
               </Table>
               </div>
             </CardContent>
-          </Card>
+                </Card>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Student Details Dialog */}
@@ -522,17 +548,20 @@ function StudentProgressPageContent() {
 
         {/* Chat Interface Dialog */}
         <Dialog open={showChatDialog} onOpenChange={setShowChatDialog}>
-          <DialogContent className="max-w-4xl h-[600px] p-0">
+          <DialogContent className="max-w-4xl w-[95vw] h-[85vh] max-h-[750px] p-0 gap-0 flex flex-col">
             <DialogTitle className="sr-only">
               Chat with {selectedStudent?.name}
             </DialogTitle>
             {selectedStudent && user && (
-              <ChatInterface
-                currentUserId={user.id}
-                currentUserName={user.fullName || user.username || 'Admin'}
-                recipientId={selectedStudent.clerkUserId}
-                recipientName={selectedStudent.name}
-              />
+              <div className="flex flex-col h-full overflow-hidden">
+                <ChatInterface
+                  currentUserId={user.id}
+                  currentUserName={user.fullName || user.username || 'Admin'}
+                  recipientId={selectedStudent.clerkUserId}
+                  recipientName={selectedStudent.name}
+                  recipientImage={selectedStudent.profileImage}
+                />
+              </div>
             )}
           </DialogContent>
         </Dialog>

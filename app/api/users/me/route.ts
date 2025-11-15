@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import { z } from 'zod';
@@ -33,13 +33,37 @@ export async function GET(request: NextRequest) {
 
     await connectToDatabase();
 
-    const user = await User.findOne({ clerkUserId: userId });
+    let user = await User.findOne({ clerkUserId: userId });
 
+    // If user doesn't exist in MongoDB, create them automatically
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
+      console.log('User not found in MongoDB, creating new user:', userId);
+      
+      try {
+        const client = await clerkClient();
+        const clerkUser = await client.users.getUser(userId);
+        
+        user = new User({
+          clerkUserId: userId,
+          email: clerkUser.emailAddresses[0]?.emailAddress || '',
+          username: clerkUser.username || undefined,
+          firstName: clerkUser.firstName || undefined,
+          lastName: clerkUser.lastName || undefined,
+          profileImageUrl: clerkUser.imageUrl || undefined,
+          nativeLanguage: 'English',
+          currentLevel: 'beginner',
+          learningGoals: [],
+        });
+
+        await user.save();
+        console.log('User created successfully in MongoDB:', user._id);
+      } catch (createError) {
+        console.error('Error creating user in MongoDB:', createError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to create user profile' },
+          { status: 500 }
+        );
+      }
     }
 
     // Remove sensitive data from response

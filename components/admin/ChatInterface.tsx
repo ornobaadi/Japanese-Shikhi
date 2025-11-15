@@ -62,14 +62,27 @@ export function ChatInterface({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showCallDialog, setShowCallDialog] = useState(false);
   const [callType, setCallType] = useState<'audio' | 'video'>('audio');
+  const [callingEnabled, setCallingEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Check if Agora calling is configured
+    const agoraAppId = process.env.NEXT_PUBLIC_AGORA_APP_ID;
+    setCallingEnabled(!!agoraAppId && agoraAppId !== 'your_agora_app_id_here');
+  }, []);
+
+  useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
+    // Poll every 5 seconds (reduced from 3 for better performance)
+    const interval = setInterval(() => {
+      // Only poll if component is still mounted and not currently sending
+      if (!sending) {
+        fetchMessages();
+      }
+    }, 5000);
     return () => clearInterval(interval);
-  }, [recipientId]);
+  }, [recipientId, sending]);
 
   useEffect(() => {
     scrollToBottom();
@@ -84,25 +97,36 @@ export function ChatInterface({
       const response = await fetch(`/api/messages?studentId=${recipientId}`);
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages || []);
-        
-        // Mark unread messages as read
-        const unreadMessages = data.messages?.filter(
+        // Sort messages by sentAt date (ascending - oldest first)
+        const sortedMessages = (data.messages || []).sort((a: Message, b: Message) =>
+          new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
+        );
+        setMessages(sortedMessages);
+
+        // Mark unread messages as read (do this asynchronously to avoid blocking)
+        const unreadMessages = sortedMessages.filter(
           (msg: Message) => msg.receiverId === currentUserId && !msg.isRead
         );
-        
+
         if (unreadMessages && unreadMessages.length > 0) {
-          for (const msg of unreadMessages) {
-            await fetch('/api/messages', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ messageId: msg._id })
-            });
-          }
+          // Mark messages as read in background without awaiting
+          Promise.all(
+            unreadMessages.map((msg: Message) =>
+              fetch('/api/messages', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messageId: msg._id })
+              }).catch((err: Error) => console.error('Failed to mark message as read:', err))
+            )
+          );
         }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      // Don't show error toast during polling to avoid spam
+      if (loading) {
+        toast.error('Failed to load messages');
+      }
     } finally {
       setLoading(false);
     }
@@ -110,6 +134,22 @@ export function ChatInterface({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+
+    // Validate file sizes
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    const invalidFiles = files.filter(f => f.size > maxSize);
+
+    if (invalidFiles.length > 0) {
+      toast.error(`Some files are too large (max 50MB): ${invalidFiles.map(f => f.name).join(', ')}`);
+      return;
+    }
+
+    // Limit number of files
+    if (files.length > 5) {
+      toast.error('You can only send up to 5 files at once');
+      return;
+    }
+
     setSelectedFiles(files);
   };
 
@@ -122,8 +162,11 @@ export function ChatInterface({
       body: formData
     });
 
-    if (!response.ok) throw new Error('Upload failed');
-    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+
     const data = await response.json();
     return data.url;
   };
@@ -137,20 +180,27 @@ export function ChatInterface({
 
       // Upload files if any
       if (selectedFiles.length > 0) {
+        toast.loading('Uploading files...', { id: 'upload' });
         for (const file of selectedFiles) {
-          const url = await uploadFile(file);
-          const fileType = file.type.startsWith('image/') ? 'image' :
-                          file.type.startsWith('video/') ? 'video' :
-                          file.type.startsWith('audio/') ? 'audio' : 'file';
-          
-          attachments.push({
-            type: fileType,
-            url,
-            name: file.name,
-            size: file.size,
-            mimeType: file.type
-          });
+          try {
+            const url = await uploadFile(file);
+            const fileType = file.type.startsWith('image/') ? 'image' :
+                            file.type.startsWith('video/') ? 'video' :
+                            file.type.startsWith('audio/') ? 'audio' : 'file';
+
+            attachments.push({
+              type: fileType,
+              url,
+              name: file.name,
+              size: file.size,
+              mimeType: file.type
+            });
+          } catch (uploadError) {
+            toast.dismiss('upload');
+            throw new Error(`Failed to upload ${file.name}: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+          }
         }
+        toast.dismiss('upload');
       }
 
       const payload = {
@@ -170,13 +220,13 @@ export function ChatInterface({
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Message send error:', errorData);
-        throw new Error(errorData.error || 'Failed to send');
+        throw new Error(errorData.error || errorData.details || 'Failed to send message');
       }
 
       setNewMessage('');
       setSelectedFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
-      fetchMessages();
+      await fetchMessages();
       toast.success('Message sent');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -187,18 +237,25 @@ export function ChatInterface({
   };
 
   const deleteMessage = async (messageId: string) => {
+    if (!confirm('Are you sure you want to delete this message? This will delete it for everyone.')) {
+      return;
+    }
+
     try {
       const response = await fetch(`/api/messages?messageId=${messageId}`, {
         method: 'DELETE'
       });
 
-      if (!response.ok) throw new Error('Failed to delete');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete');
+      }
 
       toast.success('Message deleted for everyone');
-      fetchMessages();
+      await fetchMessages();
     } catch (error) {
       console.error('Error deleting message:', error);
-      toast.error('Failed to delete message');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete message');
     }
   };
 
@@ -280,9 +337,9 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex flex-col h-[600px] md:h-[700px] border rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full border rounded-lg overflow-hidden">
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-3 md:p-4 border-b bg-muted/30">
+      <div className="flex items-center justify-between p-3 md:p-4 border-b bg-muted/30 shrink-0">
         <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
           {onBack && (
             <Button variant="ghost" size="sm" onClick={onBack} className="shrink-0">
@@ -299,14 +356,16 @@ export function ChatInterface({
           </div>
         </div>
         
-        <div className="flex items-center gap-1 md:gap-2 shrink-0">
-          <Button variant="ghost" size="sm" onClick={() => startCall('audio')} title="Voice Call" className="h-8 w-8 md:h-9 md:w-9 p-0">
-            <IconPhone className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => startCall('video')} title="Video Call" className="h-8 w-8 md:h-9 md:w-9 p-0">
-            <IconVideo className="h-4 w-4" />
-          </Button>
-        </div>
+        {callingEnabled && (
+          <div className="flex items-center gap-1 md:gap-2 shrink-0">
+            <Button variant="ghost" size="sm" onClick={() => startCall('audio')} title="Voice Call" className="h-8 w-8 md:h-9 md:w-9 p-0">
+              <IconPhone className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => startCall('video')} title="Video Call" className="h-8 w-8 md:h-9 md:w-9 p-0">
+              <IconVideo className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Messages Area */}
@@ -324,56 +383,65 @@ export function ChatInterface({
             return (
               <div
                 key={message._id}
-                className={`flex items-end gap-2 ${isSender ? 'flex-row-reverse' : 'flex-row'}`}
+                className={`flex items-start gap-2 group ${isSender ? 'flex-row-reverse' : 'flex-row'}`}
               >
-                <Avatar className="h-6 w-6 md:h-8 md:w-8 shrink-0">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={isSender ? undefined : recipientImage} />
                   <AvatarFallback className="text-xs">
                     {isSender ? currentUserName.charAt(0) : recipientName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className={`flex flex-col max-w-[75%] sm:max-w-[70%] ${isSender ? 'items-end' : 'items-start'}`}>
-                  <div
-                    className={`rounded-2xl px-3 py-2 md:px-4 md:py-2 ${
-                      isSender
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    {message.message && message.message !== '📎 Attachment' && (
-                      <p className="text-xs md:text-sm whitespace-pre-wrap break-words">{message.message}</p>
-                    )}
-                    
-                    {message.attachments && message.attachments.length > 0 && (
-                      <div className="space-y-2 mt-2">
-                        {message.attachments.map((attachment, idx) => (
-                          <div key={idx}>{renderAttachment(attachment)}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <div className="relative">
+                    <div
+                      className={`rounded-2xl px-3 py-2 md:px-4 md:py-2.5 ${
+                        isSender
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      {message.message && message.message !== '📎 Attachment' && (
+                        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.message}</p>
+                      )}
 
-                  <div className="flex items-center gap-2 mt-1 px-2">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(message.sentAt).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </span>
-                    {isSender && message.isRead ? (
-                      <IconChecks className="h-3 w-3 text-blue-500" />
-                    ) : isSender ? (
-                      <IconCheck className="h-3 w-3 text-muted-foreground" />
-                    ) : null}
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className="space-y-2 mt-2">
+                          {message.attachments.map((attachment, idx) => (
+                            <div key={idx}>{renderAttachment(attachment)}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Delete button - appears on hover */}
                     {canDeleteMsg && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-5 w-5 p-0 hover:bg-red-100"
+                        className={`absolute -top-1 ${isSender ? '-left-8' : '-right-8'} h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100`}
                         onClick={() => deleteMessage(message._id)}
+                        title="Delete message"
                       >
-                        <IconTrash className="h-3 w-3 text-red-500" />
+                        <IconTrash className="h-3.5 w-3.5 text-red-500" />
                       </Button>
+                    )}
+                  </div>
+
+                  {/* Time and read status - hidden by default, shown on hover */}
+                  <div className={`flex items-center gap-1.5 mt-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity ${isSender ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(message.sentAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    {isSender && (
+                      message.isRead ? (
+                        <IconChecks className="h-3.5 w-3.5 text-blue-500" title="Read" />
+                      ) : (
+                        <IconCheck className="h-3.5 w-3.5 text-muted-foreground" title="Sent" />
+                      )
                     )}
                   </div>
                 </div>
@@ -385,7 +453,7 @@ export function ChatInterface({
       </div>
 
       {/* Input Area */}
-      <div className="border-t p-3 md:p-4">
+      <div className="border-t p-3 md:p-4 shrink-0">
         {selectedFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             {selectedFiles.map((file, idx) => (
@@ -437,8 +505,13 @@ export function ChatInterface({
             disabled={sending || (!newMessage.trim() && selectedFiles.length === 0)}
             size="sm"
             className="h-9 w-9 p-0 shrink-0"
+            title={sending ? "Sending..." : "Send message"}
           >
-            <IconSend className="h-4 w-4 md:h-5 md:w-5" />
+            {sending ? (
+              <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-current"></div>
+            ) : (
+              <IconSend className="h-4 w-4 md:h-5 md:w-5" />
+            )}
           </Button>
         </div>
       </div>

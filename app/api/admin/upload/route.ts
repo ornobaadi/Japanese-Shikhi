@@ -17,19 +17,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Validate file type
+    // Validate file type - support messaging file types
     const allowedTypes = [
+      // Documents
       'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      // Videos
       'video/mp4',
       'video/webm',
       'video/quicktime',
+      'video/x-msvideo',
+      'video/mpeg',
+      // Images
       'image/jpeg',
       'image/png',
-      'image/gif'
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      // Audio
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/wav',
+      'audio/ogg',
+      'audio/webm',
+      'audio/aac',
+      // Text
+      'text/plain',
+      'text/csv'
     ];
 
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
+      return NextResponse.json({
+        error: `Invalid file type: ${file.type}. Allowed types: images, videos, audio, documents`
+      }, { status: 400 });
     }
 
     // Validate file size (50MB max)

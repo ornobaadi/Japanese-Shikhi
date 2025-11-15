@@ -58,14 +58,29 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoaded) {
-      if (!isSignedIn) {
-        router.push('/sign-in');
-      } else {
+    const checkUserRole = async () => {
+      if (isLoaded) {
+        if (!isSignedIn) {
+          router.push('/sign-in');
+          return;
+        }
+
+        // Check if user is admin - if so, redirect to admin dashboard
+        if (user) {
+          const userRole = (user.publicMetadata as any)?.role;
+          if (userRole === 'admin') {
+            console.log('Admin user detected, redirecting to admin dashboard');
+            router.push('/admin-dashboard');
+            return;
+          }
+        }
+
         setIsChecking(false);
       }
-    }
-  }, [isLoaded, isSignedIn, router]);
+    };
+
+    checkUserRole();
+  }, [isLoaded, isSignedIn, user, router]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -86,9 +101,29 @@ export default function DashboardPage() {
             level: userData.currentLevel || 'beginner',
             wordsLearned: userData.statistics?.wordsLearned || 0
           });
+        } else {
+          console.error('Failed to fetch user data:', response.status, await response.text());
+          // Set default stats even if API fails
+          setUserStats({
+            totalCourses: 0,
+            completedLessons: 0,
+            studyStreak: 0,
+            studyTime: 0,
+            level: 'beginner',
+            wordsLearned: 0
+          });
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        // Set default stats on error
+        setUserStats({
+          totalCourses: 0,
+          completedLessons: 0,
+          studyStreak: 0,
+          studyTime: 0,
+          level: 'beginner',
+          wordsLearned: 0
+        });
       } finally {
         setLoading(false);
       }

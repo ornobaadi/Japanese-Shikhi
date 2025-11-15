@@ -5,54 +5,45 @@ import { clerkClient } from '@clerk/nextjs/server';
 const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/admin-dashboard(.*)']);
 const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
 const isAdminRoute = createRouteMatcher(['/admin-dashboard(.*)']);
+const isStudentRoute = createRouteMatcher(['/dashboard(.*)']);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Don't protect sign-in/sign-up routes - let Clerk handle them
+  if (isPublicRoute(req)) {
+    return NextResponse.next();
+  }
+
   const { userId } = await auth();
-  const { pathname } = req.nextUrl;
 
   // If user is not signed in and trying to access protected routes, redirect to sign-in
   if (!userId && isProtectedRoute(req)) {
-    console.log('Protected route accessed without auth - bypassing for admin testing');
-    // Temporarily allow admin dashboard access for testing
-    if (isAdminRoute(req)) {
-      return NextResponse.next();
-    }
-    return NextResponse.redirect(new URL('/sign-in', req.url));
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect_url', req.url);
+    return NextResponse.redirect(signInUrl);
   }
 
-  // For admin routes, we need to fetch the user data to check the role
-  if (isAdminRoute(req)) {
-    // Temporary bypass admin check for testing
-    console.log('Admin route accessed - bypassing auth for testing');
-    
-    // if (!userId) {
-    //   return NextResponse.redirect(new URL('/sign-in', req.url));
-    // }
-    
-    // try {
-    //   // Fetch user data directly from Clerk to get publicMetadata
-    //   const user = await (await clerkClient()).users.getUser(userId);
-    //   const userRole = (user.publicMetadata as any)?.role;
-    //   const isAdmin = userRole === 'admin';
-    //   
-    //   if (!isAdmin) {
-    //     return NextResponse.redirect(new URL('/dashboard', req.url));
-    //   }
-    // } catch (error) {
-    //   console.error('Error fetching user data:', error);
-    //   return NextResponse.redirect(new URL('/dashboard', req.url));
-    // }
-  }
-
-  // If user is signed in and trying to access sign-in/sign-up, redirect to appropriate dashboard
-  if (userId && isPublicRoute(req)) {
+  // For authenticated users, enforce role-based routing
+  if (userId && isProtectedRoute(req)) {
     try {
-      const user = await (await clerkClient()).users.getUser(userId);
-      const isAdmin = (user.publicMetadata as any)?.role === 'admin';
-      const redirectUrl = isAdmin ? '/admin-dashboard' : '/dashboard';
-      return NextResponse.redirect(new URL(redirectUrl, req.url));
+      const client = await clerkClient();
+      const user = await client.users.getUser(userId);
+      const userRole = (user.publicMetadata as any)?.role;
+      const isAdmin = userRole === 'admin';
+
+      // CRITICAL: Admin trying to access student dashboard -> redirect to admin dashboard
+      if (isAdmin && isStudentRoute(req) && !isAdminRoute(req)) {
+        console.log('Admin user attempted to access student dashboard, redirecting to admin dashboard');
+        return NextResponse.redirect(new URL('/admin-dashboard', req.url));
+      }
+
+      // CRITICAL: Non-admin trying to access admin dashboard -> redirect to student dashboard
+      if (!isAdmin && isAdminRoute(req)) {
+        console.log('Non-admin user attempted to access admin route, redirecting to student dashboard');
+        return NextResponse.redirect(new URL('/dashboard', req.url));
+      }
     } catch (error) {
-      console.error('Error fetching user for redirect:', error);
+      console.error('Error fetching user data in middleware:', error);
+      // On error, redirect to student dashboard as fallback
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
   }

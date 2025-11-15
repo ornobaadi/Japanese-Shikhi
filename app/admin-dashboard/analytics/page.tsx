@@ -410,8 +410,15 @@ export default function AnalyticsPage() {
 
     if (loading) {
         return (
-            <SidebarProvider>
-                <AppSidebar />
+            <SidebarProvider
+                style={
+                    {
+                        "--sidebar-width": "calc(var(--spacing) * 72)",
+                        "--header-height": "calc(var(--spacing) * 12)",
+                    } as React.CSSProperties
+                }
+            >
+                <AppSidebar variant="inset" />
                 <SidebarInset>
                     <SiteHeader />
                     <div className="flex items-center justify-center min-h-screen">
@@ -427,8 +434,15 @@ export default function AnalyticsPage() {
 
     if (error) {
         return (
-            <SidebarProvider>
-                <AppSidebar />
+            <SidebarProvider
+                style={
+                    {
+                        "--sidebar-width": "calc(var(--spacing) * 72)",
+                        "--header-height": "calc(var(--spacing) * 12)",
+                    } as React.CSSProperties
+                }
+            >
+                <AppSidebar variant="inset" />
                 <SidebarInset>
                     <SiteHeader />
                     <div className="flex items-center justify-center min-h-screen">
@@ -449,14 +463,24 @@ export default function AnalyticsPage() {
 
     if (!data) return null;
     return (
-        <SidebarProvider>
-            <AppSidebar />
+        <SidebarProvider
+            style={
+                {
+                    "--sidebar-width": "calc(var(--spacing) * 72)",
+                    "--header-height": "calc(var(--spacing) * 12)",
+                } as React.CSSProperties
+            }
+        >
+            <AppSidebar variant="inset" />
             <SidebarInset>
                 <SiteHeader />
-                <div className="container mx-auto p-6 space-y-6">
-                    {/* Header */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
+                <div className="flex flex-1 flex-col">
+                    <div className="@container/main flex flex-1 flex-col gap-2">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                            {/* Header */}
+                            <div className="px-4 lg:px-6">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div>
                             <h1 className="text-3xl font-bold mb-2">📊 Analytics Dashboard</h1>
                             <p className="text-muted-foreground">
                                 Real-time insights from your Japanese learning platform

@@ -57,17 +57,35 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if sender is admin
-    const isAdmin = senderUser.subscriptionStatus === 'lifetime';
+    // Check sender role from Clerk metadata
+    const clerkSender = await user;
+    const senderRole = (clerkSender?.publicMetadata as any)?.role;
+    const isSenderAdmin = senderRole === 'admin';
 
-    // If sender is not admin and receiverId is not 'admin', block student-to-student messaging
-    if (!isAdmin && receiverId !== 'admin') {
-      const receiver = await User.findOne({ clerkUserId: receiverId });
-      if (receiver && receiver.subscriptionStatus !== 'lifetime') {
-        console.error('Student-to-student messaging not allowed');
-        return NextResponse.json({ 
-          error: 'Students can only message admins' 
-        }, { status: 403 });
+    console.log('Sender role:', senderRole, 'Is admin:', isSenderAdmin);
+
+    // If sender is not admin and receiverId is not 'admin', check if receiver is admin
+    if (!isSenderAdmin && receiverId !== 'admin') {
+      // Get receiver from Clerk to check their role
+      const { clerkClient: getClerkClient } = await import('@clerk/nextjs/server');
+      const client = await getClerkClient();
+      
+      try {
+        const receiverClerkUser = await client.users.getUser(receiverId);
+        const receiverRole = (receiverClerkUser.publicMetadata as any)?.role;
+        const isReceiverAdmin = receiverRole === 'admin';
+        
+        console.log('Receiver role:', receiverRole, 'Is admin:', isReceiverAdmin);
+        
+        if (!isReceiverAdmin) {
+          console.error('Student-to-student messaging not allowed');
+          return NextResponse.json({ 
+            error: 'Students can only message admins' 
+          }, { status: 403 });
+        }
+      } catch (error) {
+        console.error('Error checking receiver role:', error);
+        // If we can't verify receiver role, allow the message (fail open for now)
       }
     }
 
@@ -86,55 +104,28 @@ export async function POST(request: NextRequest) {
 
     // If sending to "admin", all admins will receive
     if (receiverId === 'admin') {
-      // Get all admin users
-      const admins = await User.find({ subscriptionStatus: 'lifetime' });
+      // Get all admin users from Clerk
+      const { clerkClient: getClerkClient } = await import('@clerk/nextjs/server');
+      const client = await getClerkClient();
       
-      console.log('Found admins:', admins.length);
-      
-      if (admins.length === 0) {
-        console.warn('No admins found, creating a notification entry');
+      try {
+        // Get all users and filter for admins
+        const { data: allUsers } = await client.users.getUserList({ limit: 100 });
+        const adminClerkUsers = allUsers.filter(u => (u.publicMetadata as any)?.role === 'admin');
         
-        // Create a notification entry that can be picked up later
-        // Store it with a special receiverId
-        const notificationMessage = new Message({
-          senderId: userId,
-          senderName: user.fullName || `${user.firstName} ${user.lastName}`,
-          senderEmail: user.emailAddresses[0]?.emailAddress || '',
-          receiverId: 'ADMIN_TEAM', // Special marker for admin team
-          receiverName: 'Admin Team',
-          receiverEmail: 'admin@system',
-          subject,
-          message,
-          contextType,
-          contextId,
-          contextTitle,
-          threadId,
-          replyToId,
-          attachments: attachments || [],
-          isRead: false,
-          sentAt: new Date()
-        });
+        console.log('Found admin users from Clerk:', adminClerkUsers.length);
         
-        await notificationMessage.save();
-        
-        return NextResponse.json({
-          success: true,
-          message: 'Message saved. Will be delivered when admin is available.',
-          data: notificationMessage,
-          warning: 'No active admins found'
-        });
-      }
-
-      // Create message for each admin
-      const messages = await Promise.all(
-        admins.map(admin => {
-          const newMessage = new Message({
+        if (adminClerkUsers.length === 0) {
+          console.warn('No admins found, creating a notification entry');
+          
+          // Create a notification entry that can be picked up later
+          const notificationMessage = new Message({
             senderId: userId,
             senderName: user.fullName || `${user.firstName} ${user.lastName}`,
             senderEmail: user.emailAddresses[0]?.emailAddress || '',
-            receiverId: admin.clerkUserId,
-            receiverName: `${admin.firstName} ${admin.lastName}`,
-            receiverEmail: admin.email,
+            receiverId: 'ADMIN_TEAM',
+            receiverName: 'Admin Team',
+            receiverEmail: 'admin@system',
             subject,
             message,
             contextType,
@@ -146,15 +137,73 @@ export async function POST(request: NextRequest) {
             isRead: false,
             sentAt: new Date()
           });
-          return newMessage.save();
-        })
-      );
+          
+          await notificationMessage.save();
+          
+          return NextResponse.json({
+            success: true,
+            message: 'Message saved. Will be delivered when admin is available.',
+            data: notificationMessage,
+            warning: 'No active admins found'
+          });
+        }
 
-      return NextResponse.json({
-        success: true,
-        message: `Message sent to ${admins.length} admin(s)`,
-        data: messages[0] // Return first message as reference
-      });
+        // Create message for each admin
+        const messages = await Promise.all(
+          adminClerkUsers.map(async adminClerkUser => {
+            // Get or create admin user in MongoDB
+            let adminUser = await User.findOne({ clerkUserId: adminClerkUser.id });
+            
+            if (!adminUser) {
+              // Create admin user if not exists
+              adminUser = new User({
+                clerkUserId: adminClerkUser.id,
+                email: adminClerkUser.emailAddresses[0]?.emailAddress || '',
+                username: adminClerkUser.username || undefined,
+                firstName: adminClerkUser.firstName || undefined,
+                lastName: adminClerkUser.lastName || undefined,
+                profileImageUrl: adminClerkUser.imageUrl || undefined,
+                nativeLanguage: 'English',
+                currentLevel: 'beginner',
+                learningGoals: [],
+              });
+              await adminUser.save();
+            }
+            
+            const newMessage = new Message({
+              senderId: userId,
+              senderName: user.fullName || `${user.firstName} ${user.lastName}`,
+              senderEmail: user.emailAddresses[0]?.emailAddress || '',
+              receiverId: adminClerkUser.id,
+              receiverName: `${adminClerkUser.firstName || ''} ${adminClerkUser.lastName || ''}`.trim() || 'Admin',
+              receiverEmail: adminClerkUser.emailAddresses[0]?.emailAddress || '',
+              subject,
+              message,
+              contextType,
+              contextId,
+              contextTitle,
+              threadId,
+              replyToId,
+              attachments: attachments || [],
+              isRead: false,
+              sentAt: new Date()
+            });
+            return newMessage.save();
+          })
+        );
+
+        return NextResponse.json({
+          success: true,
+          message: `Message sent to ${adminClerkUsers.length} admin(s)`,
+          data: messages[0]
+        });
+      } catch (error) {
+        console.error('Error fetching admins from Clerk:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch admin users' },
+          { status: 500 }
+        );
+      }
     }
 
     // Get receiver details for specific user

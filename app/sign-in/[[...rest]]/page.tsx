@@ -7,10 +7,14 @@ import { useUser } from '@clerk/nextjs';
 
 export default function SignInPage() {
   const router = useRouter();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
 
   useEffect(() => {
-    if (isSignedIn) {
+    if (isSignedIn && user) {
+      // Check user role to determine correct dashboard
+      const userRole = (user.publicMetadata as any)?.role;
+      const isAdmin = userRole === 'admin';
+
       // Check if there's a pending course enrollment
       const pendingCourseId = localStorage.getItem('pendingCourseEnrollment');
       // Use window.location.search on the client to avoid useSearchParams suspense during prerender
@@ -24,10 +28,17 @@ export default function SignInPage() {
       } else if (redirectUrl) {
         router.push(redirectUrl);
       } else {
-        router.push('/dashboard');
+        // CRITICAL: Redirect based on user role
+        if (isAdmin) {
+          console.log('Admin signed in, redirecting to admin dashboard');
+          router.push('/admin-dashboard');
+        } else {
+          console.log('Student signed in, redirecting to student dashboard');
+          router.push('/dashboard');
+        }
       }
     }
-  }, [isSignedIn, router]);
+  }, [isSignedIn, user, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

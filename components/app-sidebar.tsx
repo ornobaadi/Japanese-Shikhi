@@ -50,11 +50,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (mounted && user && pathname?.startsWith('/dashboard')) {
       const fetchUnreadCount = async () => {
         try {
-          const response = await fetch('/api/messages')
+          const response = await fetch('/api/messages?type=inbox')
           if (response.ok) {
             const data = await response.json()
-            const unread = data.messages?.filter((msg: any) => !msg.isRead && msg.receiverId === user.id).length || 0
-            setUnreadCount(unread)
+            // Use the unreadCount from API instead of filtering client-side
+            setUnreadCount(data.unreadCount || 0)
           }
         } catch (error) {
           console.error('Failed to fetch unread count:', error)
@@ -66,17 +66,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       return () => clearInterval(interval)
     }
   }, [mounted, user, pathname])
-  
+
   // Fetch unread message count for admins
   React.useEffect(() => {
     if (mounted && user && pathname?.startsWith('/admin-dashboard')) {
       const fetchAdminUnreadCount = async () => {
         try {
-          const response = await fetch('/api/messages')
+          const response = await fetch('/api/messages?type=inbox')
           if (response.ok) {
             const data = await response.json()
-            const unread = data.messages?.filter((msg: any) => !msg.isRead && msg.receiverId === user.id).length || 0
-            setAdminUnreadCount(unread)
+            // Use the unreadCount from API instead of filtering client-side
+            setAdminUnreadCount(data.unreadCount || 0)
           }
         } catch (error) {
           console.error('Failed to fetch admin unread count:', error)
