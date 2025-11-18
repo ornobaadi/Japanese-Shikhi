@@ -8,7 +8,15 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const type = formData.get('type') as string || 'image';
     
+    console.log('📤 Upload request received:', { 
+      fileName: file?.name, 
+      fileType: file?.type, 
+      fileSize: file?.size,
+      uploadType: type 
+    });
+    
     if (!file) {
+      console.error('❌ No file in request');
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
@@ -36,20 +44,24 @@ export async function POST(request: NextRequest) {
       // Image
       allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       maxSize = 5 * 1024 * 1024; // 5MB for images
-      folder = 'blogs';
+      folder = 'payments'; // Changed to payments folder for payment screenshots
     }
 
     if (!allowedTypes.includes(file.type)) {
+      console.error('❌ Invalid file type:', file.type);
       return NextResponse.json({ 
-        error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}` 
+        error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`,
+        success: false
       }, { status: 400 });
     }
 
     // Validate file size
     if (file.size > maxSize) {
       const sizeMB = Math.round(maxSize / (1024 * 1024));
+      console.error('❌ File too large:', file.size);
       return NextResponse.json({ 
-        error: `File size exceeds ${sizeMB}MB limit` 
+        error: `File size exceeds ${sizeMB}MB limit`,
+        success: false
       }, { status: 400 });
     }
 
@@ -76,16 +88,20 @@ export async function POST(request: NextRequest) {
     // Return public URL
     const publicUrl = `/uploads/${folder}/${filename}`;
     
-    console.log(`✅ Uploaded ${type}: ${filename} (${(file.size / 1024).toFixed(2)} KB)`);
+    console.log(`✅ Successfully uploaded ${type}: ${filename} (${(file.size / 1024).toFixed(2)} KB) to ${publicUrl}`);
     
     return NextResponse.json({ 
       success: true, 
       url: publicUrl,
       filename: filename,
       type: type 
-    });
+    }, { status: 200 });
   } catch (error) {
     console.error('❌ Upload error:', error);
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to upload file. Please try again.',
+      success: false,
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

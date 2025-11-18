@@ -43,6 +43,20 @@ export function PaymentForm({ open, onOpenChange, courseId, courseTitle, courseP
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a valid image file (JPG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -54,14 +68,20 @@ export function PaymentForm({ open, onOpenChange, courseId, courseTitle, courseP
         body: formData,
       });
 
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
+
       const data = await response.json();
-      if (data.success) {
+      
+      if (data.success && data.url) {
         setScreenshot(data.url);
-        toast.success('Screenshot uploaded!');
+        toast.success('Screenshot uploaded successfully!');
       } else {
-        toast.error('Upload failed: ' + data.error);
+        toast.error('Upload failed: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
+      console.error('Upload error:', error);
       toast.error('Upload failed. Please try again.');
     } finally {
       setUploading(false);
@@ -195,16 +215,17 @@ export function PaymentForm({ open, onOpenChange, courseId, courseTitle, courseP
               <Input
                 id="screenshot"
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                 onChange={handleScreenshotUpload}
+                disabled={uploading}
                 className="hidden"
               />
               <label
                 htmlFor="screenshot"
-                className="flex-1 cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                className={`flex-1 cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Upload className="w-4 h-4 mr-2" />
-                {uploading ? 'Uploading...' : screenshot ? 'Change Screenshot' : 'Upload Screenshot'}
+                {uploading ? 'Uploading...' : screenshot ? '✓ Screenshot Uploaded' : 'Upload Screenshot'}
               </label>
               {screenshot && (
                 <Button
@@ -216,6 +237,10 @@ export function PaymentForm({ open, onOpenChange, courseId, courseTitle, courseP
                 </Button>
               )}
             </div>
+            {screenshot && (
+              <p className="text-xs text-green-600">✓ Screenshot uploaded successfully</p>
+            )}
+            <p className="text-xs text-muted-foreground">Supported: JPG, PNG, GIF, WebP (Max 5MB)</p>
           </div>
 
           {/* Submit Button */}
