@@ -259,6 +259,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
+    const user = await currentUser();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -267,18 +268,37 @@ export async function GET(request: NextRequest) {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type') || 'inbox'; // inbox | sent | thread
+    const type = searchParams.get('type') || 'inbox'; // inbox | sent | thread | all
     const threadId = searchParams.get('threadId');
     const studentId = searchParams.get('studentId'); // For admin to see messages with specific student
 
     let query: any = {};
 
+    // Check if user is admin
+    const userRole = (user?.publicMetadata as any)?.role;
+    const isAdmin = userRole === 'admin';
+
     if (type === 'inbox') {
-      query.receiverId = userId;
+      // For inbox, get all messages where user is sender OR receiver
+      // This allows building conversation lists
+      query = {
+        $or: [
+          { receiverId: userId },
+          { senderId: userId }
+        ]
+      };
     } else if (type === 'sent') {
       query.senderId = userId;
     } else if (type === 'thread' && threadId) {
       query.threadId = threadId;
+    } else if (type === 'all') {
+      // Get all messages for this user (both sent and received)
+      query = {
+        $or: [
+          { receiverId: userId },
+          { senderId: userId }
+        ]
+      };
     }
 
     // If admin is viewing messages with a specific student
@@ -299,7 +319,7 @@ export async function GET(request: NextRequest) {
       .limit(100)
       .lean();
 
-    // Get unread count (excluding deleted messages)
+    // Get unread count (only messages TO this user, excluding deleted)
     const unreadCount = await Message.countDocuments({
       receiverId: userId,
       isRead: false,
