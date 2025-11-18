@@ -265,6 +265,7 @@ export default function AdminInboxPage() {
                   recipientName={selectedConversation.userName}
                   recipientImage={selectedConversation.userImage}
                   onBack={() => setSelectedConversation(null)}
+                  isAdminView={true}
                 />
               ) : (
                 <Card>

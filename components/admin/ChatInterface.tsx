@@ -45,6 +45,7 @@ interface ChatInterfaceProps {
   recipientName: string;
   recipientImage?: string;
   onBack?: () => void;
+  isAdminView?: boolean; // true for admin dashboard, false for student dashboard
 }
 
 export function ChatInterface({
@@ -53,7 +54,8 @@ export function ChatInterface({
   recipientId,
   recipientName,
   recipientImage,
-  onBack
+  onBack,
+  isAdminView = false
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -380,26 +382,30 @@ export function ChatInterface({
             const isSender = message.senderId === currentUserId;
             const canDeleteMsg = canDelete(message);
             
-            // For admin view: Student messages on right (blue), Admin messages on left (gray)
-            const isStudentMessage = message.senderId === recipientId;
+            // Determine message positioning based on view
+            // Admin view: Student messages RIGHT (blue), Admin messages LEFT (gray)
+            // Student view: Student messages RIGHT (blue), Admin messages LEFT (gray)
+            const isRightSide = isAdminView 
+              ? message.senderId === recipientId  // In admin view, recipient (student) messages go right
+              : message.senderId === currentUserId; // In student view, current user (student) messages go right
 
             return (
               <div
                 key={message._id}
-                className={`flex items-start gap-2 group ${isStudentMessage ? 'flex-row-reverse' : 'flex-row'}`}
+                className={`flex items-start gap-2 group ${isRightSide ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarImage src={isStudentMessage ? recipientImage : undefined} />
+                  <AvatarImage src={isRightSide ? recipientImage : undefined} />
                   <AvatarFallback className="text-xs">
-                    {isStudentMessage ? recipientName.charAt(0) : currentUserName.charAt(0)}
+                    {isRightSide ? recipientName.charAt(0) : currentUserName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className={`flex flex-col max-w-[75%] sm:max-w-[70%] ${isStudentMessage ? 'items-end' : 'items-start'}`}>
+                <div className={`flex flex-col max-w-[75%] sm:max-w-[70%] ${isRightSide ? 'items-end' : 'items-start'}`}>
                   <div className="relative">
                     <div
                       className={`rounded-2xl px-3 py-2 md:px-4 md:py-2.5 ${
-                        isStudentMessage
+                        isRightSide
                           ? 'bg-blue-500 text-white'
                           : 'bg-muted text-foreground'
                       }`}
@@ -422,7 +428,7 @@ export function ChatInterface({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={`absolute -top-1 ${isStudentMessage ? '-left-8' : '-right-8'} h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100`}
+                        className={`absolute -top-1 ${isRightSide ? '-left-8' : '-right-8'} h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100`}
                         onClick={() => deleteMessage(message._id)}
                         title="Delete message"
                       >
@@ -432,7 +438,7 @@ export function ChatInterface({
                   </div>
 
                   {/* Time and read status - hidden by default, shown on hover */}
-                  <div className={`flex items-center gap-1.5 mt-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity ${isStudentMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`flex items-center gap-1.5 mt-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRightSide ? 'flex-row-reverse' : 'flex-row'}`}>
                     <span className="text-xs text-muted-foreground">
                       {new Date(message.sentAt).toLocaleTimeString([], {
                         hour: '2-digit',

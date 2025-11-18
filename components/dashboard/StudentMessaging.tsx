@@ -153,6 +153,7 @@ export default function StudentMessaging() {
             recipientId={selectedAdmin.clerkId}
             recipientName={selectedAdmin.name}
             recipientImage={selectedAdmin.profilePicture}
+            isAdminView={false}
           />
         ) : (
           <Card>
