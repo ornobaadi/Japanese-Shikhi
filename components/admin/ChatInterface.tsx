@@ -379,26 +379,29 @@ export function ChatInterface({
           messages.map((message) => {
             const isSender = message.senderId === currentUserId;
             const canDeleteMsg = canDelete(message);
+            
+            // For admin view: Student messages on right (blue), Admin messages on left (gray)
+            const isStudentMessage = message.senderId === recipientId;
 
             return (
               <div
                 key={message._id}
-                className={`flex items-start gap-2 group ${isSender ? 'flex-row-reverse' : 'flex-row'}`}
+                className={`flex items-start gap-2 group ${isStudentMessage ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarImage src={isSender ? undefined : recipientImage} />
+                  <AvatarImage src={isStudentMessage ? recipientImage : undefined} />
                   <AvatarFallback className="text-xs">
-                    {isSender ? currentUserName.charAt(0) : recipientName.charAt(0)}
+                    {isStudentMessage ? recipientName.charAt(0) : currentUserName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className={`flex flex-col max-w-[75%] sm:max-w-[70%] ${isSender ? 'items-end' : 'items-start'}`}>
+                <div className={`flex flex-col max-w-[75%] sm:max-w-[70%] ${isStudentMessage ? 'items-end' : 'items-start'}`}>
                   <div className="relative">
                     <div
                       className={`rounded-2xl px-3 py-2 md:px-4 md:py-2.5 ${
-                        isSender
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                        isStudentMessage
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-muted text-foreground'
                       }`}
                     >
                       {message.message && message.message !== '📎 Attachment' && (
@@ -419,7 +422,7 @@ export function ChatInterface({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={`absolute -top-1 ${isSender ? '-left-8' : '-right-8'} h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100`}
+                        className={`absolute -top-1 ${isStudentMessage ? '-left-8' : '-right-8'} h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100`}
                         onClick={() => deleteMessage(message._id)}
                         title="Delete message"
                       >
@@ -429,7 +432,7 @@ export function ChatInterface({
                   </div>
 
                   {/* Time and read status - hidden by default, shown on hover */}
-                  <div className={`flex items-center gap-1.5 mt-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity ${isSender ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`flex items-center gap-1.5 mt-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity ${isStudentMessage ? 'flex-row-reverse' : 'flex-row'}`}>
                     <span className="text-xs text-muted-foreground">
                       {new Date(message.sentAt).toLocaleTimeString([], {
                         hour: '2-digit',
