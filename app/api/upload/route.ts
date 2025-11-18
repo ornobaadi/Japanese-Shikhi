@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,18 +15,19 @@ export async function POST(request: NextRequest) {
     
     if (!file) {
       console.error('❌ No file in request');
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'No file uploaded',
+        success: false 
+      }, { status: 400 });
     }
 
     // Validate file type based on upload type
     let allowedTypes: string[] = [];
     let maxSize = 5 * 1024 * 1024; // Default 5MB
-    let folder = 'blogs';
 
     if (type === 'video') {
       allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
       maxSize = 100 * 1024 * 1024; // 100MB for videos
-      folder = 'videos';
     } else if (type === 'document') {
       allowedTypes = [
         'application/pdf',
@@ -39,12 +38,10 @@ export async function POST(request: NextRequest) {
         'text/plain'
       ];
       maxSize = 10 * 1024 * 1024; // 10MB for documents
-      folder = 'documents';
     } else {
       // Image
       allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       maxSize = 5 * 1024 * 1024; // 5MB for images
-      folder = 'payments'; // Changed to payments folder for payment screenshots
     }
 
     if (!allowedTypes.includes(file.type)) {
@@ -65,35 +62,18 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Convert file to base64 for serverless environment
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Create unique filename
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/\s+/g, '-');
-    const filename = `${timestamp}-${originalName}`;
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
     
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', folder);
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-
-    // Save file
-    const filepath = path.join(uploadsDir, filename);
-    await writeFile(filepath, buffer);
-
-    // Return public URL
-    const publicUrl = `/uploads/${folder}/${filename}`;
-    
-    console.log(`✅ Successfully uploaded ${type}: ${filename} (${(file.size / 1024).toFixed(2)} KB) to ${publicUrl}`);
+    console.log(`✅ Successfully converted ${type}: ${file.name} (${(file.size / 1024).toFixed(2)} KB) to base64`);
     
     return NextResponse.json({ 
       success: true, 
-      url: publicUrl,
-      filename: filename,
+      url: dataUrl,
+      filename: file.name,
       type: type 
     }, { status: 200 });
   } catch (error) {
