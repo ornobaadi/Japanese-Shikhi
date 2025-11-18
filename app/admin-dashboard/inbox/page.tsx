@@ -9,13 +9,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChatInterface } from "@/components/admin/ChatInterface";
+import { BroadcastMessageDialog } from "@/components/admin/BroadcastMessageDialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   IconInbox,
   IconMessageCircle,
   IconSearch,
-  IconLoader2
+  IconLoader2,
+  IconSpeakerphone
 } from '@tabler/icons-react';
 
 interface Conversation {
@@ -34,6 +37,7 @@ export default function AdminInboxPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchConversations();
@@ -180,15 +184,25 @@ export default function AdminInboxPage() {
             {/* Conversations List */}
             <Card className="lg:col-span-1">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                  <IconMessageCircle className="h-5 w-5" />
-                  Conversations
-                  {conversations.reduce((acc, c) => acc + c.unreadCount, 0) > 0 && (
-                    <Badge variant="destructive" className="ml-auto">
-                      {conversations.reduce((acc, c) => acc + c.unreadCount, 0)}
-                    </Badge>
-                  )}
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <IconMessageCircle className="h-5 w-5" />
+                    Conversations
+                    {conversations.reduce((acc, c) => acc + c.unreadCount, 0) > 0 && (
+                      <Badge variant="destructive">
+                        {conversations.reduce((acc, c) => acc + c.unreadCount, 0)}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <Button
+                    onClick={() => setBroadcastDialogOpen(true)}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <IconSpeakerphone className="h-4 w-4" />
+                    Broadcast
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {/* Search */}
@@ -284,7 +298,20 @@ export default function AdminInboxPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
-  );
+        </SidebarInset>
+
+        {/* Broadcast Message Dialog */}
+        <BroadcastMessageDialog 
+          open={broadcastDialogOpen} 
+          onOpenChange={(open) => {
+            setBroadcastDialogOpen(open);
+            if (!open) {
+              // Refresh conversations when dialog closes
+              fetchConversations();
+            }
+          }}
+          currentUserId={user?.id || ''}
+        />
+      </SidebarProvider>
+    );
 }
