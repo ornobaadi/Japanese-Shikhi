@@ -26,6 +26,13 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Badge } from "@/components/ui/badge";
 import StudentMessaging from "@/components/dashboard/StudentMessaging";
 
+// Facebook Pixel tracking helper
+const trackFBCustomEvent = (eventName: string, params?: any) => {
+  if (typeof window !== 'undefined' && (window as any).fbq) {
+    (window as any).fbq('trackCustom', eventName, params);
+  }
+};
+
 interface UserStats {
   totalCourses: number;
   completedLessons: number;
@@ -48,6 +55,17 @@ interface RecentActivity {
   };
 }
 
+// Track dashboard visit
+const trackDashboardVisit = (stats?: UserStats) => {
+  trackFBCustomEvent('DashboardVisit', {
+    page_name: 'Student Dashboard',
+    page_type: 'dashboard',
+    total_courses: stats?.totalCourses || 0,
+    completed_lessons: stats?.completedLessons || 0,
+    study_streak: stats?.studyStreak || 0
+  });
+};
+
 export default function DashboardPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { t } = useLanguage();
@@ -56,6 +74,13 @@ export default function DashboardPage() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Track dashboard visit when stats are loaded
+  useEffect(() => {
+    if (userStats) {
+      trackDashboardVisit(userStats);
+    }
+  }, [userStats]);
 
   useEffect(() => {
     const checkUserRole = async () => {

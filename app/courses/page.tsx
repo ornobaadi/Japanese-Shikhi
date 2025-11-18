@@ -22,6 +22,19 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+// Facebook Pixel tracking helper
+const trackFBEvent = (eventName: string, params?: any) => {
+  if (typeof window !== 'undefined' && (window as any).fbq) {
+    (window as any).fbq('track', eventName, params);
+  }
+};
+
+const trackFBCustomEvent = (eventName: string, params?: any) => {
+  if (typeof window !== 'undefined' && (window as any).fbq) {
+    (window as any).fbq('trackCustom', eventName, params);
+  }
+};
+
 interface Course {
   _id: string;
   title: string;
@@ -48,7 +61,26 @@ export default function CoursesPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
   const { isSignedIn, user } = useUser();
+  
+  // Track courses page visit
+  useEffect(() => {
+    trackFBCustomEvent('CoursesPageVisit', {
+      page_name: 'Courses Listing',
+      page_type: 'catalog'
+    });
+  }, []);
   const router = useRouter();
+  
+  const handleCourseClick = (course: Course) => {
+    // Track course click
+    trackFBCustomEvent('CourseCardClick', {
+      content_name: course.title,
+      content_category: course.category,
+      content_ids: [course._id],
+      level: course.level
+    });
+    router.push(`/courses/${course._id}`);
+  };
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -101,6 +133,20 @@ export default function CoursesPage() {
   };
 
   const handleEnrollClick = (courseId: string) => {
+    const course = courses.find(c => c._id === courseId);
+    
+    // Track enroll button click
+    if (course) {
+      trackFBCustomEvent('EnrollButtonClick', {
+        content_name: course.title,
+        content_category: course.category,
+        content_ids: [courseId],
+        value: course.discountedPrice || course.actualPrice || 0,
+        currency: 'BDT',
+        source: 'courses_page'
+      });
+    }
+    
     if (isSignedIn) {
       router.push(`/payment/${courseId}`);
     } else {
@@ -111,6 +157,19 @@ export default function CoursesPage() {
 
   const handleViewCurriculum = (courseId: string) => {
     console.log('handleViewCurriculum called with courseId:', courseId);
+    
+    const course = courses.find(c => c._id === courseId);
+    
+    // Track curriculum view
+    if (course) {
+      trackFBCustomEvent('ViewCurriculumClick', {
+        content_name: course.title,
+        content_ids: [courseId],
+        is_enrolled: isEnrolled(courseId),
+        source: 'courses_page'
+      });
+    }
+    
     // If enrolled, go to dashboard curriculum for full interface
     if (isEnrolled(courseId)) {
       console.log('User enrolled, navigating to dashboard curriculum');
@@ -122,6 +181,17 @@ export default function CoursesPage() {
   };
 
   const handleContinueLearning = (courseId: string) => {
+    const course = courses.find(c => c._id === courseId);
+    
+    // Track continue learning click
+    if (course) {
+      trackFBCustomEvent('ContinueLearningClick', {
+        content_name: course.title,
+        content_ids: [courseId],
+        source: 'courses_page'
+      });
+    }
+    
     router.push(`/dashboard/courses/${courseId}/curriculum`);
   };
 
