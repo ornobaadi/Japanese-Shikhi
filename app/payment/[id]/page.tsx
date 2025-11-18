@@ -13,6 +13,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentForm } from '@/components/PaymentForm';
 import { ArrowLeft, Clock, Users, BookOpen, CheckCircle } from 'lucide-react';
 
+// Facebook Pixel tracking helper
+const trackFBEvent = (eventName: string, params?: any) => {
+  if (typeof window !== 'undefined' && (window as any).fbq) {
+    (window as any).fbq('track', eventName, params);
+  }
+};
+
 interface Course {
   _id: string;
   title: string;
@@ -43,7 +50,20 @@ export default function PaymentPage() {
       try {
         const res = await fetch(`/api/courses/${params?.id}`);
         const data = await res.json();
-        if (data.success) setCourse(data.data);
+        if (data.success) {
+          setCourse(data.data);
+          
+          // Track InitiateCheckout when user reaches payment page
+          trackFBEvent('InitiateCheckout', {
+            content_name: data.data.title,
+            content_category: data.data.level,
+            content_ids: [data.data._id],
+            content_type: 'product',
+            value: data.data.discountedPrice || data.data.actualPrice || 0,
+            currency: 'BDT',
+            num_items: 1
+          });
+        }
         else setError(data.error || 'Course not found');
       } catch (error) {
         setError('Failed to load course');

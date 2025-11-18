@@ -14,6 +14,13 @@ import {
   Calendar, Link as LinkIcon, GraduationCap, ArrowLeft 
 } from 'lucide-react';
 
+// Facebook Pixel tracking helper
+const trackFBEvent = (eventName: string, params?: any) => {
+  if (typeof window !== 'undefined' && (window as any).fbq) {
+    (window as any).fbq('track', eventName, params);
+  }
+};
+
 interface Course {
   _id: string;
   title: string;
@@ -75,6 +82,16 @@ export default function CourseDetailPage() {
         }
         const data = await response.json();
         setCourse(data.data);
+        
+        // Track ViewContent event when course is viewed
+        trackFBEvent('ViewContent', {
+          content_name: data.data.title,
+          content_category: data.data.category,
+          content_ids: [data.data._id],
+          content_type: 'product',
+          value: data.data.discountedPrice || data.data.actualPrice || 0,
+          currency: 'BDT'
+        });
       } catch (error) {
         console.error('Error fetching course:', error);
         toast.error('Failed to load course details');
@@ -232,7 +249,18 @@ export default function CourseDetailPage() {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  onClick={() => setShowPaymentForm(true)}
+                  onClick={() => {
+                    // Track AddToCart event when user clicks Enroll
+                    trackFBEvent('AddToCart', {
+                      content_name: course.title,
+                      content_category: course.category,
+                      content_ids: [course._id],
+                      content_type: 'product',
+                      value: course.discountedPrice || course.actualPrice || 0,
+                      currency: 'BDT'
+                    });
+                    setShowPaymentForm(true);
+                  }}
                   className="border-2"
                 >
                   Enroll Now - Get Full Access

@@ -9,6 +9,13 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Upload, Check } from "lucide-react";
 
+// Facebook Pixel tracking helper
+const trackFBEvent = (eventName: string, params?: any) => {
+  if (typeof window !== 'undefined' && (window as any).fbq) {
+    (window as any).fbq('track', eventName, params);
+  }
+};
+
 interface PaymentFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -87,6 +94,16 @@ export function PaymentForm({ open, onOpenChange, courseId, courseTitle, courseP
       const data = await response.json();
 
       if (data.success) {
+        // Track Purchase event when payment is submitted
+        trackFBEvent('Purchase', {
+          content_name: courseTitle,
+          content_ids: [courseId],
+          content_type: 'product',
+          value: coursePrice,
+          currency: 'BDT',
+          payment_method: paymentMethod
+        });
+        
         toast.success('Enrollment request submitted! Admin will review it soon.');
         onOpenChange(false);
         // Reset form
