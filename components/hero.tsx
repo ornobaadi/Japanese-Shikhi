@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,8 +42,36 @@ const HERO_GLOBE_CONFIG = {
   ],
 };
 
+interface LandingSettings {
+  hero: {
+    heading: string;
+    subheading: string;
+    description: string;
+    ctaPrimary: string;
+    ctaSecondary: string;
+  };
+  stats: {
+    totalEnrollments: number;
+    coursesCount: number;
+    instructorsCount: number;
+    successRate: number;
+  };
+}
+
 export default function Hero() {
   const { t } = useLanguage();
+  const [settings, setSettings] = useState<LandingSettings | null>(null);
+
+  useEffect(() => {
+    fetch('/api/landing-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSettings(data.data);
+        }
+      })
+      .catch(err => console.error('Failed to load landing settings:', err));
+  }, []);
 
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 overflow-hidden">
@@ -64,8 +92,8 @@ export default function Hero() {
               <Star className="h-4 w-4 text-yellow-500 fill-current" />
               <span className="text-sm font-medium text-gray-700">
                 {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
-                  ? '১০,০০০+ শিক্ষার্থীর বিশ্বস্ত'
-                  : 'Trusted by 10,000+ learners'}
+                  ? `${settings?.stats.totalEnrollments || '50+'}+ শিক্ষার্থীর বিশ্বস্ত`
+                  : `Trusted by ${settings?.stats.totalEnrollments || '50+'}+ learners`}
               </span>
               <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-xs">
                 4.9/5
@@ -75,7 +103,7 @@ export default function Hero() {
             {/* Main Heading */}
             <div className="space-y-6">
               <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 leading-[1.1] tracking-tight">
-                {t('hero.title')}
+                {settings?.hero.heading || t('hero.title')}
                 <span className="relative mx-3">
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-500 to-red-600 animate-gradient bg-[length:200%_200%]">
                     {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'জাপানি' : 'Japanese'}
@@ -116,18 +144,20 @@ export default function Hero() {
               <Button
                 size="lg"
                 className="group bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-lg px-8 py-4 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
+                onClick={() => window.location.href = '/courses'}
               >
                 <Play className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
-                {t('hero.cta')}
+                {settings?.hero.ctaPrimary || t('hero.cta')}
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="group text-lg px-8 py-4 border-2 border-gray-300 hover:border-red-300 hover:bg-red-50 transition-all duration-300 hover:shadow-lg"
+                onClick={() => window.location.href = '/courses'}
               >
                 <Video className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
-                {t('hero.watchDemo')}
+                {settings?.hero.ctaSecondary || t('hero.watchDemo')}
               </Button>
             </div>
 
@@ -135,19 +165,29 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-8 pt-8">
               <div className="flex items-center space-x-2">
                 <Users className="h-5 w-5 text-blue-500" />
-                <span className="text-sm text-gray-600">
-                  {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
-                    ? '১০,০০০+ সক্রিয় শিক্ষার্থী'
-                    : '10,000+ active learners'}
-                </span>
+                <div className="text-left">
+                  <div className="text-2xl font-bold text-gray-900">{settings?.stats.totalEnrollments || '50+'}+</div>
+                  <div className="text-sm text-gray-600">
+                    {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সক্রিয় শিক্ষার্থী' : 'Active Students'}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
-                <BookOpen className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm text-gray-600">
-                  {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
-                    ? '৫০০+ পাঠ উপলব্ধ'
-                    : '500+ lessons available'}
-                </span>
+                <BookOpen className="h-5 w-5 text-green-500" />
+                <div className="text-left">
+                  <div className="text-2xl font-bold text-gray-900">{settings?.stats.coursesCount || '10+'}+</div>
+                  <div className="text-sm text-gray-600">
+                    {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'কোর্স উপলব্ধ' : 'Courses Available'}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                <div className="text-left">
+                  <div className="text-2xl font-bold text-gray-900">{settings?.stats.successRate || '95'}%</div>
+                  <div className="text-sm text-gray-600">
+                    {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সফলতার হার' : 'Success Rate'}
+                </div>
               </div>
             </div>
           </div>

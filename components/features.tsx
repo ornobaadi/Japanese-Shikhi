@@ -1,24 +1,38 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import {
-  BookOpen,
-  Users,
-  Award,
-  Globe,
-  Video,
-  MessageCircle,
-  Sparkles,
-  Clock,
-  Target
-} from "lucide-react";
+import * as Icons from "lucide-react";
+
+interface Feature {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface LandingSettings {
+  features: Feature[];
+}
 
 export default function Features() {
   const { t } = useLanguage();
-  const features = [
+  const [settings, setSettings] = useState<LandingSettings | null>(null);
+
+  useEffect(() => {
+    fetch('/api/landing-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSettings(data.data);
+        }
+      })
+      .catch(err => console.error('Failed to load landing settings:', err));
+  }, []);
+
+  // Default features as fallback
+  const defaultFeatures = [
     {
       icon: BookOpen,
       title: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'কাঠামোবদ্ধ পাঠ্যক্রম' : 'Structured Curriculum',
@@ -156,34 +170,41 @@ export default function Features() {
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <Card
-              key={index}
-              className="group relative bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2 cursor-pointer overflow-hidden"
-            >
-              {/* Background gradient on hover */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${feature.bgGradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500`}></div>
+          {(settings?.features || defaultFeatures).map((feature, index) => {
+            const IconComponent = (Icons as any)[feature.icon || 'BookOpen'];
+            
+            return (
+              <Card
+                key={index}
+                className="group relative bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2 cursor-pointer overflow-hidden"
+              >
+                {/* Background gradient on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
 
-              <CardHeader className="relative">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-xl bg-gradient-to-r ${feature.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className="h-6 w-6 text-white" />
+                <CardHeader className="relative">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      {IconComponent && <IconComponent className="h-6 w-6 text-white" />}
+                    </div>
+                    <Badge variant="secondary" className="text-xs font-medium bg-gray-100 text-gray-700">
+                      Feature
+                    </Badge>
                   </div>
-                  <Badge variant="secondary" className="text-xs font-medium bg-gray-100 text-gray-700">
-                    {feature.category}
-                  </Badge>
-                </div>
 
-                <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-gray-800 transition-colors">
-                  {feature.title}
-                </CardTitle>
+                  <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-gray-800 transition-colors">
+                    {feature.title}
+                  </CardTitle>
+                </CardHeader>
 
-                <div className="flex items-center space-x-2 mt-2">
-                  <Target className="h-4 w-4 text-emerald-500" />
-                  <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200">
-                    {feature.highlight}
-                  </Badge>
-                </div>
+                <CardContent className="relative">
+                  <CardDescription className="text-gray-600 leading-relaxed group-hover:text-gray-700 transition-colors">
+                    {feature.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
               </CardHeader>
 
               <CardContent className="relative">

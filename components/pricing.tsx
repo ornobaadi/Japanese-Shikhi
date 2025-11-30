@@ -1,14 +1,40 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CheckCircle, Star, Zap, Crown, Sparkles } from "lucide-react";
+import { Check, X, Sparkles, Zap, Crown } from "lucide-react";
+
+interface PricingPlan {
+  name: string;
+  price: number;
+  currency: string;
+  duration: string;
+  features: string[];
+  popular: boolean;
+  ctaText: string;
+}
+
+interface LandingSettings {
+  pricing: PricingPlan[];
+}
 
 export default function Pricing() {
   const { t } = useLanguage();
+  const [settings, setSettings] = useState<LandingSettings | null>(null);
+
+  useEffect(() => {
+    fetch('/api/landing-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSettings(data.data);
+        }
+      })
+      .catch(err => console.error('Failed to load landing settings:', err));
+  }, []);
   const plans = [
     {
       name: t('pricing.free'),

@@ -1,14 +1,39 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Star, Quote, Award, MapPin, Sparkles } from "lucide-react";
 
+interface Testimonial {
+  name: string;
+  role: string;
+  content: string;
+  rating: number;
+  image?: string;
+}
+
+interface LandingSettings {
+  testimonials: Testimonial[];
+}
+
 export default function Testimonials() {
   const { t } = useLanguage();
-  const testimonials = [
+  const [settings, setSettings] = useState<LandingSettings | null>(null);
+
+  useEffect(() => {
+    fetch('/api/landing-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSettings(data.data);
+        }
+      })
+      .catch(err => console.error('Failed to load landing settings:', err));
+  }, []);
+
+  const defaultTestimonials = [
     {
       name: "Sarah Johnson",
       role: "Software Engineer",
