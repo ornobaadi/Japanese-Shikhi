@@ -24,6 +24,8 @@ interface CourseFormData {
   difficulty: string;
   isPremium: boolean;
   isPublished: boolean;
+  allowFreePreview: boolean;
+  freePreviewCount: string;
   learningObjectives: string[];
   links: string[];
   thumbnailUrl: string;
@@ -51,6 +53,8 @@ export default function CourseForm() {
     difficulty: '5',
     isPremium: false,
     isPublished: false,
+    allowFreePreview: true,
+    freePreviewCount: '2',
     learningObjectives: [''],
     links: [''],
     thumbnailUrl: '',
@@ -194,6 +198,9 @@ export default function CourseForm() {
         links: formData.links.filter((link: string) => link.trim()),
         estimatedDuration: parseInt(formData.estimatedDuration),
         difficulty: parseInt(formData.difficulty)
+        ,
+        allowFreePreview: formData.allowFreePreview,
+        freePreviewCount: parseInt(formData.freePreviewCount || '0')
       };
 
       console.log('Submitting course:', courseData);
@@ -440,6 +447,36 @@ export default function CourseForm() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Free Preview Settings */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Free Preview</h3>
+            <div className="flex items-center space-x-4">
+              <Checkbox checked={formData.allowFreePreview} onCheckedChange={(checked) => handleInputChange('allowFreePreview', !!checked)} />
+              <div>
+                <div className="font-medium">Allow free preview</div>
+                <p className="text-sm text-gray-600">Enable preview access for the first few items (videos, PDFs, quizzes).</p>
+              </div>
+            </div>
+
+            {formData.allowFreePreview && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div>
+                  <Label htmlFor="freePreviewCount">Free preview count</Label>
+                  <Input
+                    id="freePreviewCount"
+                    type="number"
+                    min={0}
+                    max={20}
+                    placeholder="2"
+                    value={formData.freePreviewCount}
+                    onChange={(e) => handleInputChange('freePreviewCount', e.target.value)}
+                  />
+                </div>
+                <div className="md:col-span-2 text-sm text-gray-600">Users who are not enrolled will be able to access the first N items. They must sign in and enroll to unlock all content.</div>
+              </div>
+            )}
           </div>
 
           {/* Additional Information */}

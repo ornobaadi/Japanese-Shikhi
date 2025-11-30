@@ -187,6 +187,7 @@ export default function Hero() {
                   <div className="text-2xl font-bold text-gray-900">{settings?.stats.successRate || '95'}%</div>
                   <div className="text-sm text-gray-600">
                     {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সফলতার হার' : 'Success Rate'}
+                  </div>
                 </div>
               </div>
             </div>

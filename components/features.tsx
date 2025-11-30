@@ -34,7 +34,7 @@ export default function Features() {
   // Default features as fallback
   const defaultFeatures = [
     {
-      icon: BookOpen,
+      icon: "BookOpen",
       title: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'কাঠামোবদ্ধ পাঠ্যক্রম' : 'Structured Curriculum',
       description: t('nav.features') === 'বৈশিষ্ট্যসমূহ'
         ? 'মৌলিক হিরাগানা থেকে উন্নত কাঞ্জি এবং ব্যাকরণ পর্যন্ত ক্রমিক পাঠ'
@@ -45,7 +45,7 @@ export default function Features() {
       category: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'শিক্ষা' : 'Learning'
     },
     {
-      icon: Video,
+      icon: "Video",
       title: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'ইন্টারঅ্যাক্টিভ ভিডিও' : 'Interactive Videos',
       description: t('nav.features') === 'বৈশিষ্ট্যসমূহ'
         ? 'স্থানীয় বক্তা এবং সাংস্কৃতিক প্রসঙ্গ সহ HD ভিডিও পাঠ'
@@ -56,7 +56,7 @@ export default function Features() {
       category: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'বিষয়বস্তু' : 'Content'
     },
     {
-      icon: MessageCircle,
+      icon: "MessageCircle",
       title: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'AI কথোপকথন' : 'AI Conversation',
       description: t('nav.features') === 'বৈশিষ্ট্যসমূহ'
         ? '২৪/৭ উপলব্ধ AI শিক্ষকদের সাথে কথা বলার অনুশীলন করুন'
@@ -67,7 +67,7 @@ export default function Features() {
       category: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'AI-চালিত' : 'AI-Powered'
     },
     {
-      icon: Users,
+      icon: "Users",
       title: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'লাইভ ক্লাস' : 'Live Classes',
       description: t('nav.features') === 'বৈশিষ্ট্যসমূহ'
         ? 'লাইভ গ্রুপ সেশন এবং ১-অন-১ টিউটরিং এ যোগ দিন'
@@ -78,7 +78,7 @@ export default function Features() {
       category: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'লাইভ শিক্ষা' : 'Live Learning'
     },
     {
-      icon: Award,
+      icon: "Award",
       title: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সার্টিফিকেট' : 'Certificates',
       description: t('nav.features') === 'বৈশিষ্ট্যসমূহ'
         ? 'স্তর সম্পূর্ণ করার সাথে সাথে স্বীকৃত সার্টিফিকেট অর্জন করুন'
@@ -89,7 +89,7 @@ export default function Features() {
       category: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'অর্জন' : 'Achievement'
     },
     {
-      icon: Globe,
+      icon: "Globe",
       title: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সাংস্কৃতিক নিমজ্জন' : 'Cultural Immersion',
       description: t('nav.features') === 'বৈশিষ্ট্যসমূহ'
         ? 'জাপানি সংস্কৃতি, ঐতিহ্য এবং শিষ্টাচার সম্পর্কে শিখুন'
@@ -103,25 +103,25 @@ export default function Features() {
 
   const stats = [
     {
-      icon: Users,
+      icon: "Users",
       label: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সক্রিয় শিক্ষার্থী' : 'Active Learners',
       value: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '১০,০০০+' : '10,000+',
       color: "text-blue-600"
     },
     {
-      icon: BookOpen,
+      icon: "BookOpen",
       label: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'সম্পূর্ণ পাঠ' : 'Lessons Completed',
       value: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '৫০,০০০+' : '50,000+',
       color: "text-emerald-600"
     },
     {
-      icon: Award,
+      icon: "Award",
       label: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'প্রদত্ত সার্টিফিকেট' : 'Certificates Issued',
       value: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '২,৫০০+' : '2,500+',
       color: "text-purple-600"
     },
     {
-      icon: Clock,
+      icon: "Clock",
       label: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'শেখার ঘন্টা' : 'Learning Hours',
       value: t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '১,০০,০০০+' : '100,000+',
       color: "text-orange-600"
@@ -138,7 +138,7 @@ export default function Features() {
         {/* Header Section */}
         <div className="text-center space-y-6 mb-20">
           <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-blue-200/50 shadow-sm">
-            <Sparkles className="h-4 w-4 text-blue-500" />
+            {Icons.Sparkles && <Icons.Sparkles className="h-4 w-4 text-blue-500" />}
             <span className="text-sm font-medium text-gray-700">{t('features.title')}</span>
           </div>
 
@@ -157,15 +157,18 @@ export default function Features() {
 
         {/* Stats Section */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-          {stats.map((stat, index) => (
-            <Card key={index} className="text-center bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <CardContent className="p-6">
-                <stat.icon className={`h-8 w-8 mx-auto mb-3 ${stat.color}`} />
-                <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
-              </CardContent>
-            </Card>
-          ))}
+          {stats.map((stat, index) => {
+            const StatIcon = (Icons as any)[stat.icon] || Icons.Users;
+            return (
+              <Card key={index} className="text-center bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <CardContent className="p-6">
+                  {StatIcon && <StatIcon className={`h-8 w-8 mx-auto mb-3 ${stat.color}`} />}
+                  <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
+                  <div className="text-sm text-gray-600">{stat.label}</div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Features Grid */}
@@ -204,24 +207,6 @@ export default function Features() {
               </Card>
             );
           })}
-        </div>
-              </CardHeader>
-
-              <CardContent className="relative">
-                <CardDescription className="text-base text-gray-600 leading-relaxed">
-                  {feature.description}
-                </CardDescription>
-
-                {/* Hover arrow indicator */}
-                <div className="flex items-center mt-4 text-sm font-medium text-gray-500 group-hover:text-gray-700 transition-colors">
-                  <span>Learn more</span>
-                  <div className="ml-2 w-4 h-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1">
-                    →
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
 
         {/* CTA Section */}

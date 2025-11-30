@@ -87,10 +87,11 @@ export async function GET() {
       });
     }
 
-    // Calculate real enrollment count
-    const realEnrollmentCount = await Enrollment.countDocuments();
-    const totalEnrollments = settings.stats.showRealCount 
-      ? settings.stats.baseEnrollmentCount + realEnrollmentCount 
+
+    // Calculate real enrollment count (only approved)
+    const realEnrollmentCount = await Enrollment.countDocuments({ status: 'approved' });
+    const totalEnrollments = settings.stats.showRealCount
+      ? settings.stats.baseEnrollmentCount + realEnrollmentCount
       : settings.stats.baseEnrollmentCount;
 
     return NextResponse.json({

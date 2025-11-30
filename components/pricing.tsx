@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Check, X, Sparkles, Zap, Crown } from "lucide-react";
+import * as Icons from "lucide-react";
 
 interface PricingPlan {
   name: string;
@@ -102,7 +102,7 @@ export default function Pricing() {
         {/* Header Section */}
         <div className="text-center space-y-6 mb-16">
           <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-orange-200/50 shadow-sm">
-            <Sparkles className="h-4 w-4 text-orange-500" />
+            {Icons.Sparkles && <Icons.Sparkles className="h-4 w-4 text-orange-500" />}
             <span className="text-sm font-medium text-gray-700">{t('pricing.title')}</span>
           </div>
 
@@ -141,9 +141,9 @@ export default function Pricing() {
               <CardHeader className="pb-6">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
-                    {index === 0 && <Star className="h-5 w-5 text-green-500" />}
-                    {index === 1 && <Zap className="h-5 w-5 text-orange-500" />}
-                    {index === 2 && <Crown className="h-5 w-5 text-purple-500" />}
+                      {index === 0 && Icons.Star && <Icons.Star className="h-5 w-5 text-green-500" />}
+                      {index === 1 && Icons.Zap && <Icons.Zap className="h-5 w-5 text-orange-500" />}
+                      {index === 2 && Icons.Crown && <Icons.Crown className="h-5 w-5 text-purple-500" />}
                     <CardTitle className="text-2xl font-bold text-gray-900">
                       {plan.name}
                     </CardTitle>
@@ -172,7 +172,7 @@ export default function Pricing() {
                 <ul className="space-y-3">
                   {plan.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-start space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        {Icons.CheckCircle && <Icons.CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />}
                       <span className="text-sm text-gray-700 leading-relaxed">
                         {feature}
                       </span>
@@ -186,7 +186,7 @@ export default function Pricing() {
                   className={`w-full ${plan.buttonStyle} text-white shadow-lg hover:shadow-xl transition-all duration-300 group`}
                 >
                   {plan.buttonText}
-                  {index === 1 && <Zap className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />}
+                    {index === 1 && Icons.Zap && <Icons.Zap className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />}
                 </Button>
 
                 {/* Additional Info */}
@@ -206,15 +206,15 @@ export default function Pricing() {
         <div className="text-center mt-16 space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8">
             <div className="flex items-center space-x-2 text-gray-600">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              {Icons.CheckCircle && <Icons.CheckCircle className="h-5 w-5 text-green-500" />}
               <span className="text-sm">{t('pricing.guarantee')}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+                {Icons.CheckCircle && <Icons.CheckCircle className="h-5 w-5 text-green-500" />}
               <span className="text-sm">{t('pricing.securePayment')}</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-600">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+                {Icons.CheckCircle && <Icons.CheckCircle className="h-5 w-5 text-green-500" />}
               <span className="text-sm">{t('pricing.satisfiedLearners')}</span>
             </div>
           </div>
