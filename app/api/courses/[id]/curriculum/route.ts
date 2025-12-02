@@ -82,16 +82,22 @@ export async function GET(
     const filteredCurriculum = {
       modules: modules
         .map((module: any) => {
+          // For enrolled/admin users, show all items; for preview, only show published items
           const moduleItems = (module.items || [])
-            .filter((item: any) => item.isPublished)
+            .filter((item: any) => {
+              // Enrolled and admin users see all items
+              if (isEnrolled || isAdmin) return true;
+              // Non-enrolled users only see published items for preview
+              return item.isPublished;
+            })
             .map((item: any) => {
               itemCount++;
-              const itemObj = item.toObject();
+              const itemObj = item.toObject ? item.toObject() : item;
 
               // Determine if user has access to this item
               let hasAccess = false;
               if (isEnrolled) {
-                // Enrolled users get full access
+                // Enrolled users get full access to all items
                 hasAccess = true;
               } else if (course.allowFreePreview) {
                 // Non-enrolled users get free preview access
@@ -107,7 +113,7 @@ export async function GET(
             });
           
           return {
-            ...module.toObject(),
+            ...module.toObject ? module.toObject() : module,
             items: moduleItems,
             hasUnlockedItems: moduleItems.some((item: any) => item.hasAccess)
           };

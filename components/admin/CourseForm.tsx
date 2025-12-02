@@ -118,19 +118,17 @@ export default function CourseForm() {
         return;
       }
 
-      console.log('🔥 SAVING ADVANCED DATA TO COURSE DOCUMENT');
+      console.log('🔥 SAVING ADVANCED DATA TO COURSE MANAGEMENT');
       console.log('📍 Course ID:', formData._id);
       console.log('📦 Management Data:', JSON.stringify(managementData, null, 2));
 
-      // Update the course document directly with advanced field
-      const response = await fetch(`/api/admin/courses/${formData._id}`, {
-        method: 'PATCH',
+      // Use the dedicated management endpoint instead of PATCH
+      const response = await fetch(`/api/admin/courses/${formData._id}/management`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          advanced: managementData
-        }),
+        body: JSON.stringify(managementData),
       });
 
       console.log('📡 Response Status:', response.status);
