@@ -396,12 +396,6 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
                           {t('admin.view')}
                         </Link>
                       </Button>
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/admin-dashboard/courses/edit/${course._id}`}>
-                          <IconEdit className="size-4 mr-1" />
-                          {t('admin.edit')}
-                        </Link>
-                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
