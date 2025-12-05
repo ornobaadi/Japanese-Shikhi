@@ -902,14 +902,6 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                       </div>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={openEditModule}
-                        >
-                          <IconPencil className="size-4 mr-2" />
-                          Edit Module
-                        </Button>
-                        <Button
                           variant={activeModule.isPublished ? "default" : "outline"}
                           size="sm"
                           onClick={() => toggleModulePublish(activeModuleId)}
