@@ -1,12 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Course from '@/lib/models/Course';
+import Blog from '@/lib/models/Blog';
 
 export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 
-    // Fetch all published courses that have blog posts
+    // Fetch published blog posts from Blog collection
+    const publishedBlogs = await Blog.find({
+      isPublished: true
+    })
+      .sort({ publishDate: -1 })
+      .lean() as any[];
+
+    // Format blog posts
+    const formattedBlogs = publishedBlogs.map((blog) => ({
+      _id: blog._id?.toString(),
+      id: blog._id?.toString(),
+      title: blog.title,
+      content: blog.content,
+      excerpt: blog.excerpt,
+      author: blog.author,
+      publishDate: blog.publishDate,
+      tags: blog.tags || [],
+      isPublished: blog.isPublished,
+      featuredImage: blog.featuredImage || '',
+      videoLink: blog.videoLink || '',
+      videoFile: blog.videoFile || '',
+      slug: blog.slug,
+    }));
+
+    // Also fetch from courses for backward compatibility
     const courses = await Course.find({
       isPublished: true,
       blogPosts: { $exists: true, $ne: [] }
@@ -14,8 +39,7 @@ export async function GET(request: NextRequest) {
       .select('title blogPosts')
       .lean() as any[];
 
-    // Extract and flatten all blog posts
-    const allBlogs = courses.flatMap(course =>
+    const courseBlogs = courses.flatMap(course =>
       (course.blogPosts || [])
         .filter((blog: any) => blog.publishImmediately)
         .map((blog: any) => ({
@@ -32,7 +56,8 @@ export async function GET(request: NextRequest) {
         }))
     );
 
-    // Sort by publish date (newest first)
+    // Combine and sort all blogs
+    const allBlogs = [...formattedBlogs, ...courseBlogs];
     allBlogs.sort((a, b) => 
       new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
     );
@@ -40,6 +65,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: allBlogs,
+      blogs: allBlogs,
       count: allBlogs.length
     });
   } catch (error) {
