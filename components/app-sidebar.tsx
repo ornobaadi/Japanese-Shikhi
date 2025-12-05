@@ -14,6 +14,7 @@ import {
   IconTrendingUp,
   IconInbox,
   IconMail,
+  IconArticle,
 } from "@tabler/icons-react"
 import { useUser } from "@clerk/nextjs"
 import { usePathname } from "next/navigation"
@@ -135,6 +136,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Analytics",
       url: "/admin-dashboard/analytics",
       icon: IconChartBar,
+    },
+    {
+      title: "Blog",
+      url: "/admin-dashboard/blog",
+      icon: IconArticle,
     },
   ]
 

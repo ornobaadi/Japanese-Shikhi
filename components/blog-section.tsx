@@ -8,16 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Calendar, User, ArrowRight } from "lucide-react";
 
 interface BlogPost {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   content: string;
   excerpt: string;
   author: string;
   publishDate: string;
   tags: string[];
-  publishImmediately: boolean;
+  isPublished?: boolean;
+  publishImmediately?: boolean;
+  featuredImage?: string;
   featuredImageUrl?: string;
+  videoLink?: string;
   courseName?: string;
+  slug?: string;
 }
 
 export default function BlogSection() {
@@ -31,8 +36,11 @@ export default function BlogSection() {
         const data = await response.json();
         
         if (data.success) {
-          // Show only first 3 blogs on landing page
-          setBlogs(data.data.slice(0, 3));
+          // Filter published blogs and show only first 3
+          const publishedBlogs = (data.data || data.blogs || [])
+            .filter((blog: BlogPost) => blog.isPublished || blog.publishImmediately)
+            .slice(0, 3);
+          setBlogs(publishedBlogs);
         }
       } catch (error) {
         console.error('Failed to load blogs:', error);
@@ -73,22 +81,28 @@ export default function BlogSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {blogs.map((blog) => {
-            // Validate image URL
-            const isValidImageUrl = blog.featuredImageUrl && (
-              blog.featuredImageUrl.startsWith('http://') || 
-              blog.featuredImageUrl.startsWith('https://') ||
-              blog.featuredImageUrl.startsWith('/')
+            // Validate image URL - support both featuredImage and featuredImageUrl
+            const imageUrl = blog.featuredImage || blog.featuredImageUrl;
+            const isValidImageUrl = imageUrl && (
+              imageUrl.startsWith('http://') || 
+              imageUrl.startsWith('https://') ||
+              imageUrl.startsWith('/')
             );
 
             return (
-            <Card key={blog.id} className="flex flex-col hover:shadow-lg transition-shadow">
+            <Card key={blog._id || blog.id} className="flex flex-col hover:shadow-lg transition-shadow">
               {isValidImageUrl && (
-                <div className="relative h-48 overflow-hidden rounded-t-lg">
+                <div className="relative h-48 overflow-hidden rounded-t-lg bg-muted">
                   <img
-                    src={blog.featuredImageUrl}
+                    src={imageUrl}
                     alt={blog.title}
                     className="w-full h-full object-cover"
                   />
+                  {blog.videoLink && (
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <div className="text-white text-4xl">▶</div>
+                    </div>
+                  )}
                 </div>
               )}
               

@@ -515,34 +515,6 @@ export default function CourseForm() {
             </div>
           </div>
 
-          {/* Advanced Course Management Button */}
-          <div className="space-y-4">
-            <div className="border-t pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  console.log('🔍 DEBUGGING Advanced Modal Button:');
-                  console.log('📍 formData._id:', formData._id);
-                  console.log('📋 formData.title:', formData.title);
-                  console.log('📦 Full formData:', formData);
-                  if (!formData._id) {
-                    toast.error('Please save the course first before opening Advanced Management!');
-                    return;
-                  }
-                  setShowAdvancedModal(true);
-                }}
-              >
-                <IconSettings className="size-4 mr-2" />
-                Advanced Course Management
-              </Button>
-              <p className="text-sm text-muted-foreground mt-2 text-center">
-                Manage class modules, links, resources, and enrolled students
-              </p>
-            </div>
-          </div>
-
           {/* Advanced Course Management Modal */}
           <AdvancedCourseManagementModal
             isOpen={showAdvancedModal}

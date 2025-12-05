@@ -488,22 +488,6 @@ export default function EditCoursePage({ params }: { params: Promise<{ id: strin
                   <Label htmlFor="premium">{t('admin.premiumCourse')}</Label>
                 </div>
 
-                {/* Advanced Course Management Button */}
-                <div className="border-t pt-6">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setShowAdvancedModal(true)}
-                  >
-                    <IconSettings className="size-4 mr-2" />
-                    Advanced Course Management
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-2 text-center">
-                    Manage weekly content, class links, blog posts, and enrolled students
-                  </p>
-                </div>
-
                 {/* Action Buttons */}
                 <div className="flex gap-4 pt-4">
                   <Button
