@@ -81,12 +81,13 @@ export default function BlogSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {blogs.map((blog) => {
-            // Validate image URL - support both featuredImage and featuredImageUrl
+            // Validate image URL - support both featuredImage and featuredImageUrl, including data URLs
             const imageUrl = blog.featuredImage || blog.featuredImageUrl;
             const isValidImageUrl = imageUrl && (
               imageUrl.startsWith('http://') || 
               imageUrl.startsWith('https://') ||
-              imageUrl.startsWith('/')
+              imageUrl.startsWith('/') ||
+              imageUrl.startsWith('data:')
             );
 
             return (
@@ -139,7 +140,7 @@ export default function BlogSection() {
               </CardContent>
 
               <CardFooter>
-                <Link href={`/blog`} className="w-full">
+                <Link href={`/blog/${blog.slug || blog._id || blog.id}`} className="w-full">
                   <Button variant="outline" className="w-full group">
                     Read More
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { SiteHeader } from "@/components/site-header";
 import Footer from "@/components/footer";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +65,12 @@ export default function BlogPostPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-        <SiteHeader />
+        <div className="container mx-auto px-4 py-6">
+          <Link href="/blog" className="text-blue-600 hover:underline flex items-center gap-2 mb-8">
+            <IconArrowLeft className="size-4" />
+            Back to Blog
+          </Link>
+        </div>
         <div className="flex items-center justify-center py-32">
           <IconLoader2 className="size-8 animate-spin text-muted-foreground" />
         </div>
@@ -78,15 +82,14 @@ export default function BlogPostPage() {
   if (error || !post) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-        <SiteHeader />
+        <div className="container mx-auto px-4 py-6">
+          <Link href="/blog" className="text-blue-600 hover:underline flex items-center gap-2 mb-8">
+            <IconArrowLeft className="size-4" />
+            Back to Blog
+          </Link>
+        </div>
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-2xl mx-auto">
-            <Link href="/blog">
-              <Button variant="ghost" className="mb-8">
-                <IconArrowLeft className="size-4 mr-2" />
-                Back to Blog
-              </Button>
-            </Link>
             <Card className="p-8 text-center">
               <p className="text-muted-foreground mb-4">{error || 'Blog post not found'}</p>
               <Link href="/blog">
@@ -102,8 +105,6 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      <SiteHeader />
-      
       <div className="container mx-auto px-4 py-8 md:py-12">
         <Link href="/blog">
           <Button variant="ghost" className="mb-8">
