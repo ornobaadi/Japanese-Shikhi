@@ -7,6 +7,45 @@ export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 
+    const { searchParams } = new URL(request.url);
+    const slug = searchParams.get('slug');
+
+    // If slug is provided, fetch specific blog post
+    if (slug) {
+      const blog = await Blog.findOne({
+        slug: slug
+      }).lean();
+
+      if (!blog) {
+        return NextResponse.json({
+          success: false,
+          data: [],
+          error: 'Blog post not found'
+        });
+      }
+
+      const formattedBlog = {
+        _id: blog._id?.toString(),
+        id: blog._id?.toString(),
+        title: blog.title,
+        content: blog.content,
+        excerpt: blog.excerpt,
+        author: blog.author,
+        publishDate: blog.publishDate,
+        tags: blog.tags || [],
+        isPublished: blog.isPublished,
+        featuredImage: blog.featuredImage || '',
+        videoLink: blog.videoLink || '',
+        videoFile: blog.videoFile || '',
+        slug: blog.slug,
+      };
+
+      return NextResponse.json({
+        success: true,
+        data: [formattedBlog]
+      });
+    }
+
     // Fetch published blog posts from Blog collection
     const publishedBlogs = await Blog.find({
       isPublished: true

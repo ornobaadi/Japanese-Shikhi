@@ -19,6 +19,7 @@ interface BlogPost {
     tags: string[];
     isPublished: boolean;
     featuredImage: string;
+    slug?: string;
     courseName?: string;
 }
 
@@ -211,6 +212,7 @@ function BlogPageContent() {
                             const isValidImageUrl = blog.featuredImage && (
                                 blog.featuredImage.startsWith('http://') || 
                                 blog.featuredImage.startsWith('https://') ||
+                                blog.featuredImage.startsWith('data:') ||
                                 blog.featuredImage.startsWith('/')
                             );
 
@@ -218,17 +220,27 @@ function BlogPageContent() {
                             <Card key={blog.id} className="group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden bg-white/90 backdrop-blur-sm border-0 shadow-lg rounded-2xl">
                                 {isValidImageUrl && (
                                     <div className="relative h-96 w-full overflow-hidden rounded-t-2xl">
-                                        <Image
-                                            src={blog.featuredImage}
-                                            alt={blog.title}
-                                            fill
-                                            className="object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                            onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.style.display = 'none';
-                                            }}
-                                        />
+                                        {blog.featuredImage.startsWith('data:') ? (
+                                            // Use regular img tag for data URLs
+                                            <img
+                                                src={blog.featuredImage}
+                                                alt={blog.title}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
+                                            />
+                                        ) : (
+                                            // Use Next.js Image for HTTP URLs
+                                            <Image
+                                                src={blog.featuredImage}
+                                                alt={blog.title}
+                                                fill
+                                                className="object-cover group-hover:scale-110 transition-transform duration-700 rounded-t-2xl"
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                onError={(e) => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.style.display = 'none';
+                                                }}
+                                            />
+                                        )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
                                     </div>
                                 )}
@@ -276,15 +288,14 @@ function BlogPageContent() {
                                         <Button
                                             variant="default"
                                             className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 rounded-xl h-12 font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-                                            onClick={() => {
-                                                // TODO: Navigate to individual blog post page
-                                                alert('Individual blog post view coming soon!');
-                                            }}
+                                            asChild
                                         >
-                                            {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'আরও পড়ুন' : 'Read More'}
-                                            <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                            </svg>
+                                            <Link href={`/blog/${blog.slug || blog.id}`}>
+                                                {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'আরও পড়ুন' : 'Read More'}
+                                                <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                </svg>
+                                            </Link>
                                         </Button>
                                     </div>
                                 </CardContent>
