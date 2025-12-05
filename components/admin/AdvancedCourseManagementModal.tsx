@@ -105,24 +105,31 @@ export default function AdvancedCourseManagementModal({
 
     const [data, setData] = useState<CourseManagementData>(getInitialData());
 
-    // Load existing data when modal opens
+    // Load existing data when modal opens or courseId changes
     useEffect(() => {
-        if (isOpen && (courseId || courseSlug)) {
+        if (isOpen && courseId) {
             loadCourseData();
         }
-    }, [isOpen, courseId, courseSlug]);
+    }, [isOpen, courseId]);
 
     const loadCourseData = async () => {
         try {
-            // Use slug if available, otherwise fallback to ID
-            const endpoint = courseSlug
-                ? `/api/courses/${courseSlug}/management`
-                : `/api/courses/${courseId}/management`;
+            // Use admin endpoint to load management data
+            const endpoint = `/api/admin/courses/${courseId}/management`;
 
+            console.log('📥 Loading course management data from:', endpoint);
             const response = await fetch(endpoint);
+            
             if (response.ok) {
-                const courseData = await response.json();
-                setData({ ...getInitialData(), ...courseData });
+                const responseData = await response.json();
+                console.log('📦 Loaded course data:', responseData);
+                
+                // Extract the actual data from response
+                const courseData = responseData.data || responseData;
+                setData(courseData);
+            } else {
+                console.warn('Failed to load course data, using initial data');
+                setData(getInitialData());
             }
         } catch (error) {
             console.error('Error loading course data:', error);

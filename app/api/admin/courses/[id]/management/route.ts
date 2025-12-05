@@ -190,6 +190,22 @@ export async function POST(
         classLinks: processedData.classLinks,
         blogPosts: processedData.blogPosts,
         enrolledStudents: processedData.enrolledStudents,
+        settings: managementData.settings || {
+          allowStudentComments: true,
+          autoPublishContent: false,
+          requireInstructorApproval: true,
+          emailNotifications: true,
+          maxStudentsPerClass: 50
+        },
+        statistics: managementData.statistics || {
+          totalVideos: processedData.weeklyContent?.reduce((sum: number, week: any) => sum + (week.videoLinks?.length || 0), 0) || 0,
+          totalDocuments: processedData.weeklyContent?.reduce((sum: number, week: any) => sum + (week.documents?.length || 0), 0) || 0,
+          totalClasses: processedData.classLinks?.length || 0,
+          totalBlogs: processedData.blogPosts?.length || 0,
+          totalStudents: processedData.enrolledStudents?.length || 0,
+          averageProgress: 0,
+          lastUpdated: new Date()
+        },
         updatedAt: new Date()
       },
       { 
