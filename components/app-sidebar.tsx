@@ -142,6 +142,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/admin-dashboard/blog",
       icon: IconArticle,
     },
+    {
+      title: "Ratings",
+      url: "/admin-dashboard/ratings",
+      icon: IconTrendingUp,
+    },
   ]
 
   // Student navigation items

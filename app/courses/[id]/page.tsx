@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VideoPlayer } from '@/components/video-player';
 import { PaymentForm } from '@/components/PaymentForm';
+import RatingForm from '@/components/RatingForm';
+import ReviewsList from '@/components/ReviewsList';
 import { toast } from 'sonner';
 import { 
   Clock, BookOpen, CheckCircle, Video, FileText, 
@@ -203,6 +205,29 @@ export default function CourseDetailPage() {
           </div>
 
           <div className="mt-6 flex space-x-4">
+            {/* Pricing Section */}
+            {(course.actualPrice || course.discountedPrice) && (
+              <div className="flex items-center gap-2 mr-auto">
+                {course.discountedPrice && course.actualPrice ? (
+                  <>
+                    <span className="text-3xl font-bold text-green-600">
+                      ৳{course.discountedPrice}
+                    </span>
+                    <span className="text-lg text-gray-400 line-through">
+                      ৳{course.actualPrice}
+                    </span>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      Save {Math.round(((course.actualPrice - course.discountedPrice) / course.actualPrice) * 100)}%
+                    </Badge>
+                  </>
+                ) : (
+                  <span className="text-3xl font-bold text-gray-900">
+                    ৳{course.actualPrice || course.discountedPrice}
+                  </span>
+                )}
+              </div>
+            )}
+            
             {isEnrolled ? (
               <>
                 <Button 
@@ -283,11 +308,12 @@ export default function CourseDetailPage() {
 
         {/* Tabs for Additional Content */}
         <Tabs defaultValue="objectives" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white">
+          <TabsList className="grid w-full grid-cols-5 bg-white">
             <TabsTrigger value="objectives">Learning Objectives</TabsTrigger>
             <TabsTrigger value="weekly">Weekly Content</TabsTrigger>
             <TabsTrigger value="classes">Live Classes</TabsTrigger>
             <TabsTrigger value="blogs">Related Blogs</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
           </TabsList>
 
           {/* Learning Objectives Tab */}
@@ -464,6 +490,43 @@ export default function CourseDetailPage() {
                   </div>
                 ) : (
                   <p className="text-gray-500">No blog posts available.</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Reviews Tab */}
+          <TabsContent value="reviews">
+            <Card>
+              <CardHeader>
+                <CardTitle>Student Reviews & Ratings</CardTitle>
+                <CardDescription>See what students think about this course</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isEnrolled ? (
+                  <div className="space-y-6">
+                    {/* Rating Form for Enrolled Students */}
+                    <div className="border-b pb-6">
+                      <h3 className="text-lg font-semibold mb-4">Share Your Review</h3>
+                      <RatingForm courseId={course._id} onRatingSubmitted={() => {}} />
+                    </div>
+
+                    {/* Reviews List */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">All Reviews</h3>
+                      <ReviewsList courseId={course._id} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 mb-4">Enroll in this course to leave a review and see student ratings.</p>
+                    <Button 
+                      onClick={() => setShowPaymentForm(true)}
+                      className="bg-gradient-to-r from-blue-500 to-purple-500"
+                    >
+                      Enroll Now
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>

@@ -269,11 +269,11 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
           <Alert className="mb-6 border-blue-200 bg-blue-50">
             <AlertCircle className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
-              <strong>🎁 Free Preview Available!</strong> You can access the first {course.accessInfo.freePreviewCount} items (videos, PDFs, quizzes, or assignments) completely free. 
+              <strong>🎁 Free Preview Available!</strong> You can preview the first item in the first {course.accessInfo.freePreviewCount} sections completely free. 
               {!course.accessInfo.isLoggedIn ? (
-                <> <strong>Sign in and enroll</strong> to get full access to all {course.curriculum.modules.reduce((acc: number, m: Module) => acc + m.items.length, 0)} course items!</>
+                <> <strong>Sign in and enroll</strong> to get full access to all course sections and materials!</>
               ) : (
-                <> <strong>Enroll now</strong> to unlock all {course.curriculum.modules.reduce((acc: number, m: Module) => acc + m.items.length, 0)} course materials!</>
+                <> <strong>Enroll now</strong> to unlock all course sections and materials!</>
               )}
             </AlertDescription>
           </Alert>

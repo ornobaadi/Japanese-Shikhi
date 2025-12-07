@@ -73,7 +73,6 @@ export async function GET(
     }
 
     // Filter content based on enrollment and free preview settings
-    let itemCount = 0;
     // Ensure modules are in order
     const modules = Array.isArray(course.curriculum.modules)
       ? course.curriculum.modules.slice().sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
@@ -81,8 +80,9 @@ export async function GET(
 
     const filteredCurriculum = {
       modules: modules
-        .map((module: any) => {
-          // For enrolled/admin users, show all items; for preview, only show published items
+        .slice(0, isEnrolled ? modules.length : 4) // Show only first 4 modules to non-enrolled users
+        .map((module: any, moduleIndex: number) => {
+          // For enrolled/admin users, show all items; for preview, show only published items
           const moduleItems = (module.items || [])
             .filter((item: any) => {
               // Enrolled and admin users see all items
@@ -90,8 +90,7 @@ export async function GET(
               // Non-enrolled users only see published items for preview
               return item.isPublished;
             })
-            .map((item: any) => {
-              itemCount++;
+            .map((item: any, itemIndex: number) => {
               const itemObj = item.toObject ? item.toObject() : item;
 
               // Determine if user has access to this item
@@ -100,8 +99,8 @@ export async function GET(
                 // Enrolled users get full access to all items
                 hasAccess = true;
               } else if (course.allowFreePreview) {
-                // Non-enrolled users get free preview access
-                hasAccess = item.isFreePreview || itemCount <= (course.freePreviewCount || 2);
+                // Non-enrolled users get access to first item (itemIndex === 0) of each module
+                hasAccess = itemIndex === 0;
               }
 
               return {
@@ -138,7 +137,7 @@ export async function GET(
         isEnrolled,
         hasAccess: isEnrolled,
         canPreview: course.allowFreePreview,
-        freePreviewCount: course.freePreviewCount || 0,
+        freePreviewCount: 4, // Show first 4 modules to non-enrolled users
         isLoggedIn: !!userId
       }
     });

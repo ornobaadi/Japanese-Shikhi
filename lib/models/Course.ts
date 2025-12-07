@@ -155,7 +155,7 @@ const CourseSchema = new Schema<ICourse>({
     type: Number,
     required: true,
     min: 5,
-    max: 600 // 10 hours max
+    max: 1440 // 24 hours max
   },
   difficulty: {
     type: Number,
