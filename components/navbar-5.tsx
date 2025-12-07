@@ -35,39 +35,6 @@ export const Navbar5 = () => {
   const isAdmin = useIsAdmin();
   const { t } = useLanguage();
 
-  const features = [
-    {
-      title: t('features.interactive.title'),
-      description: t('features.interactive.description'),
-      href: "#",
-    },
-    {
-      title: t('features.progress.title'),
-      description: t('features.progress.description'),
-      href: "#",
-    },
-    {
-      title: t('admin.settings'),
-      description: t('common.loading'),
-      href: "#",
-    },
-    {
-      title: t('footer.community'),
-      description: t('footer.help'),
-      href: "#",
-    },
-    {
-      title: t('common.upload'),
-      description: t('common.download'),
-      href: "#",
-    },
-    {
-      title: t('footer.support'),
-      description: t('footer.help'),
-      href: "#",
-    },
-  ];
-
   return (
     <section className="pointer-events-none">
       <div className="fixed left-1/2 top-6 transform -translate-x-1/2 w-[min(1100px,calc(100%-48px))] rounded-2xl bg-white/60 backdrop-blur-md shadow-2xl border border-white/10 z-50 pointer-events-auto">
@@ -87,29 +54,19 @@ export const Navbar5 = () => {
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   <NavigationMenuItem>
-                    <NavigationMenuTrigger className={`${navigationMenuTriggerStyle()} px-3 py-2 rounded-md hover:bg-white/10 transition-colors bg-transparent`}>
+                    <NavigationMenuLink
+                      href="#features"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const element = document.getElementById('features');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                      className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
+                    >
                       {t('nav.features')}
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <div className="grid w-[600px] grid-cols-2 p-3">
-                        {features.map((feature, index) => (
-                          <NavigationMenuLink
-                            href={feature.href}
-                            key={index}
-                            className="rounded-md p-3 transition-colors hover:bg-white/5"
-                          >
-                            <div>
-                              <p className="mb-1 font-semibold text-foreground">
-                                {feature.title}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {feature.description}
-                              </p>
-                            </div>
-                          </NavigationMenuLink>
-                        ))}
-                      </div>
-                    </NavigationMenuContent>
+                    </NavigationMenuLink>
                   </NavigationMenuItem>
 
                   <NavigationMenuItem>
@@ -117,25 +74,39 @@ export const Navbar5 = () => {
                       href="/blog"
                       className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
-                      {t('nav.products')}
+                      Blog
                     </NavigationMenuLink>
                   </NavigationMenuItem>
 
                   <NavigationMenuItem>
                     <NavigationMenuLink
-                      href="#"
+                      href="#courses"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const element = document.getElementById('courses');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
                       className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
-                      {t('nav.resources')}
+                      Courses
                     </NavigationMenuLink>
                   </NavigationMenuItem>
 
                   <NavigationMenuItem>
                     <NavigationMenuLink
-                      href="#"
+                      href="#contact"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const element = document.getElementById('contact');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
                       className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
-                      {t('nav.contact')}
+                      Contact
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                 </NavigationMenuList>
@@ -198,28 +169,10 @@ export const Navbar5 = () => {
                       <Accordion type="single" collapsible className="mt-4 mb-2">
                         <AccordionItem value="solutions" className="border-none">
                           <AccordionTrigger className="text-base hover:no-underline">
-                            {t('nav.features')}
+                            <a href="#features" className="w-full">
+                              {t('nav.features')}
+                            </a>
                           </AccordionTrigger>
-                          <AccordionContent>
-                            <div className="grid md:grid-cols-2">
-                              {features.map((feature, index) => (
-                                <a
-                                  href={feature.href}
-                                  key={index}
-                                  className="rounded-md p-3 transition-colors hover:bg-white/5"
-                                >
-                                  <div>
-                                    <p className="mb-1 font-semibold text-foreground">
-                                      {feature.title}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {feature.description}
-                                    </p>
-                                  </div>
-                                </a>
-                              ))}
-                            </div>
-                          </AccordionContent>
                         </AccordionItem>
                       </Accordion>
 

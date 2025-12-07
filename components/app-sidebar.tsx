@@ -15,6 +15,7 @@ import {
   IconInbox,
   IconMail,
   IconArticle,
+  IconPhone,
 } from "@tabler/icons-react"
 import { useUser } from "@clerk/nextjs"
 import { usePathname } from "next/navigation"
@@ -146,6 +147,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Ratings",
       url: "/admin-dashboard/ratings",
       icon: IconTrendingUp,
+    },
+    {
+      title: "Contact",
+      url: "/admin-dashboard/contact",
+      icon: IconPhone,
     },
   ]
 

@@ -7,7 +7,7 @@ import Features from "@/components/features";
 import Courses from "@/components/courses";
 import BlogSection from "@/components/blog-section";
 import Testimonials from "@/components/testimonials";
-import Pricing from "@/components/pricing";
+import ContactSection from "@/components/contact-section";
 import Footer from "@/components/footer";
 
 export default function Home() {
@@ -31,7 +31,7 @@ export default function Home() {
         <Courses />
         <BlogSection />
         <Testimonials />
-        <Pricing />
+        <ContactSection />
         <Footer />
       </main>
     </>
