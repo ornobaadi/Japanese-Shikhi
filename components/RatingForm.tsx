@@ -25,7 +25,7 @@ export default function RatingForm({ courseId, onRatingSubmitted }: RatingFormPr
       return;
     }
 
-    if (!user?.emailAddresses[0]?.emailAddress) {
+    if (!user) {
       toast.error('Please sign in to submit a review');
       return;
     }
@@ -37,9 +37,11 @@ export default function RatingForm({ courseId, onRatingSubmitted }: RatingFormPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           courseId,
+          userId: user.id,
+          userName: user.fullName || user.username || user.emailAddresses[0]?.emailAddress || 'Anonymous',
+          userEmail: user.emailAddresses[0]?.emailAddress,
           rating,
           review,
-          userEmail: user.emailAddresses[0].emailAddress,
         }),
       });
 

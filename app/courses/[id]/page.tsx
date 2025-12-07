@@ -503,29 +503,31 @@ export default function CourseDetailPage() {
                 <CardDescription>See what students think about this course</CardDescription>
               </CardHeader>
               <CardContent>
-                {isEnrolled ? (
-                  <div className="space-y-6">
-                    {/* Rating Form for Enrolled Students */}
-                    <div className="border-b pb-6">
-                      <h3 className="text-lg font-semibold mb-4">Share Your Review</h3>
-                      <RatingForm courseId={course._id} onRatingSubmitted={() => {}} />
-                    </div>
+                {/* Reviews List - visible to everyone */}
+                <div className="mb-6">
+                  <ReviewsList courseId={course._id} />
+                </div>
 
-                    {/* Reviews List */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">All Reviews</h3>
-                      <ReviewsList courseId={course._id} />
-                    </div>
+                {/* Rating Form - only for enrolled students */}
+                {isEnrolled && (
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold mb-4">Share Your Review</h3>
+                    <RatingForm courseId={course._id} onRatingSubmitted={() => {}} />
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600 mb-4">Enroll in this course to leave a review and see student ratings.</p>
-                    <Button 
-                      onClick={() => setShowPaymentForm(true)}
-                      className="bg-gradient-to-r from-blue-500 to-purple-500"
-                    >
-                      Enroll Now
-                    </Button>
+                )}
+
+                {/* Enrollment prompt - for non-enrolled users */}
+                {!isEnrolled && (
+                  <div className="border-t pt-6">
+                    <p className="text-gray-600 text-center mb-4">Enroll in this course to leave a review.</p>
+                    <div className="flex justify-center">
+                      <Button 
+                        onClick={() => setShowPaymentForm(true)}
+                        className="bg-gradient-to-r from-blue-500 to-purple-500"
+                      >
+                        Enroll Now
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>

@@ -155,7 +155,7 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
       // Show enrollment prompt with toast
       if (!user) {
         toast.error('Please sign in to access more content', {
-          description: 'You can preview the first 2 items (videos, PDFs, quizzes, assignments) for free',
+          description: 'You can preview one of each content type (Live Class, Quiz, Assignment, Announcement, Resource) from the first section for free',
           action: {
             label: 'Sign In',
             onClick: () => router.push('/sign-in')
@@ -269,7 +269,7 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
           <Alert className="mb-6 border-blue-200 bg-blue-50">
             <AlertCircle className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
-              <strong>🎁 Free Preview Available!</strong> You can preview the first item in the first {course.accessInfo.freePreviewCount} sections completely free. 
+              <strong>🎁 Free Preview Available!</strong> You can preview one of each content type (Live Class, Quiz, Assignment, Announcement, Resource) from the first section completely free. 
               {!course.accessInfo.isLoggedIn ? (
                 <> <strong>Sign in and enroll</strong> to get full access to all course sections and materials!</>
               ) : (

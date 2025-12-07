@@ -21,16 +21,40 @@ interface LandingSettings {
 export default function Testimonials() {
   const { t } = useLanguage();
   const [settings, setSettings] = useState<LandingSettings | null>(null);
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/landing-settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setSettings(data.data);
+    setLoading(true);
+    Promise.all([
+      fetch('/api/landing-settings').then(res => res.json()),
+      fetch('/api/ratings').then(res => res.json())
+    ])
+      .then(([settingsData, ratingsData]) => {
+        if (settingsData.success) {
+          setSettings(settingsData.data);
+        }
+        if (ratingsData.success && Array.isArray(ratingsData.data)) {
+          // Get top rated reviews, sorted by rating (descending)
+          const topRatings = ratingsData.data
+            .filter((r: any) => r.rating >= 4 && r.review) // Only 4+ star reviews with text
+            .sort((a: any, b: any) => b.rating - a.rating)
+            .slice(0, 3)
+            .map((r: any) => ({
+              name: r.userName,
+              role: r.courseName,
+              content: r.review,
+              rating: r.rating,
+              avatar: r.userName.charAt(0).toUpperCase(),
+              gradient: 'from-green-500 to-emerald-500',
+              achievement: 'Verified Student',
+              verified: r.verified
+            }));
+          setRatings(topRatings);
         }
       })
-      .catch(err => console.error('Failed to load landing settings:', err));
+      .catch(err => console.error('Failed to load data:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   const defaultTestimonials = [
@@ -124,7 +148,10 @@ export default function Testimonials() {
 
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {(settings?.testimonials || defaultTestimonials).map((testimonial, index) => (
+          {(ratings.length > 0
+            ? [...ratings, ...(settings?.testimonials || defaultTestimonials).slice(0, 3 - ratings.length)]
+            : (settings?.testimonials || defaultTestimonials)
+          ).map((testimonial, index) => (
             <Card
               key={index}
               className="group bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 relative overflow-hidden"

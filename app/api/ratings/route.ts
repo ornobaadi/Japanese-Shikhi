@@ -4,41 +4,47 @@ import { NextRequest, NextResponse } from "next/server";
 import Rating, { IRating } from "@/lib/models/Rating";
 import Course from "@/lib/models/Course";
 
-// GET - Fetch all ratings for a course
+// GET - Fetch all ratings for a course or all ratings
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const courseId = searchParams.get('courseId');
 
-    if (!courseId) {
-      return NextResponse.json(
-        { error: "courseId is required" },
-        { status: 400 }
-      );
-    }
-
     await connectToDatabase();
 
-    const ratings = await Rating.find({
-      courseId: courseId,
+    let query = Rating.find({
       $or: [
         { isFakeRating: false },
         { isFakeRating: true }
       ]
-    })
+    });
+
+    if (courseId) {
+      // Fetch ratings for specific course
+      query = query.where('courseId', courseId);
+    }
+
+    const ratings = await query
+      .populate('courseId', 'title')
       .sort({ createdAt: -1 })
       .lean();
 
+    // Map ratings to include courseName
+    const mappedRatings = ratings.map((r: any) => ({
+      ...r,
+      courseName: r.courseId?.title || 'Unknown Course'
+    }));
+
     // Calculate average rating
-    const avgRating = ratings.length > 0
-      ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
+    const avgRating = mappedRatings.length > 0
+      ? (mappedRatings.reduce((sum: number, r: any) => sum + r.rating, 0) / mappedRatings.length).toFixed(1)
       : 0;
 
     return NextResponse.json({
       success: true,
-      data: ratings,
+      data: mappedRatings,
       stats: {
-        totalRatings: ratings.length,
+        totalRatings: mappedRatings.length,
         averageRating: parseFloat(avgRating as string),
       }
     });

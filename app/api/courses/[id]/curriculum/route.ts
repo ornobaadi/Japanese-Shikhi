@@ -80,9 +80,12 @@ export async function GET(
 
     const filteredCurriculum = {
       modules: modules
-        .slice(0, isEnrolled ? modules.length : 4) // Show only first 4 modules to non-enrolled users
+        .slice(0, isEnrolled ? modules.length : 1) // Non-enrolled users see only first module (section)
         .map((module: any, moduleIndex: number) => {
-          // For enrolled/admin users, show all items; for preview, show only published items
+          // Track which item types have been shown for non-enrolled users
+          const shownItemTypes = new Set<string>();
+
+          // For enrolled/admin users, show all items; for preview, show only one of each type
           const moduleItems = (module.items || [])
             .filter((item: any) => {
               // Enrolled and admin users see all items
@@ -92,15 +95,17 @@ export async function GET(
             })
             .map((item: any, itemIndex: number) => {
               const itemObj = item.toObject ? item.toObject() : item;
+              const itemType = itemObj.type || 'other'; // Get item type (Live Class, Quiz, etc.)
 
               // Determine if user has access to this item
               let hasAccess = false;
               if (isEnrolled) {
                 // Enrolled users get full access to all items
                 hasAccess = true;
-              } else if (course.allowFreePreview) {
-                // Non-enrolled users get access to first item (itemIndex === 0) of each module
-                hasAccess = itemIndex === 0;
+              } else if (course.allowFreePreview && !shownItemTypes.has(itemType)) {
+                // Non-enrolled users get access to first item of each type only
+                hasAccess = true;
+                shownItemTypes.add(itemType); // Mark this type as shown
               }
 
               return {
@@ -137,7 +142,7 @@ export async function GET(
         isEnrolled,
         hasAccess: isEnrolled,
         canPreview: course.allowFreePreview,
-        freePreviewCount: 4, // Show first 4 modules to non-enrolled users
+        freePreviewCount: 1, // Show one item of each type from first module to non-enrolled users
         isLoggedIn: !!userId
       }
     });

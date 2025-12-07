@@ -11,6 +11,8 @@ interface Course {
   estimatedDuration?: number;
   lessons?: Array<any>;
   learningObjectives?: string[];
+  averageRating?: number;
+  totalRatings?: number;
 }
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,7 @@ export default function Courses() {
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [enrolledCourseIds, setEnrolledCourseIds] = React.useState<string[]>([]);
+  const [courseRatings, setCourseRatings] = React.useState<Record<string, { avg: number; count: number }>>({});
   const { isSignedIn, user } = useUser();
   const router = useRouter();
   React.useEffect(() => {
@@ -69,6 +72,41 @@ export default function Courses() {
     };
     fetchCourses();
   }, []);
+
+  // Fetch ratings for all courses
+  React.useEffect(() => {
+    const fetchRatings = async () => {
+      if (courses.length === 0) return;
+
+      try {
+        const ratings: Record<string, { avg: number; count: number }> = {};
+        
+        for (const course of courses) {
+          if (!course._id) continue;
+          
+          const res = await fetch(`/api/ratings?courseId=${course._id}`);
+          if (res.ok) {
+            const data = await res.json();
+            const courseRatings = data.data || [];
+            
+            if (courseRatings.length > 0) {
+              const avgRating = courseRatings.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / courseRatings.length;
+              ratings[course._id] = {
+                avg: Math.round(avgRating * 10) / 10,
+                count: courseRatings.length
+              };
+            }
+          }
+        }
+        
+        setCourseRatings(ratings);
+      } catch (error) {
+        console.error('Failed to fetch ratings:', error);
+      }
+    };
+
+    fetchRatings();
+  }, [courses]);
 
   // Fetch user's enrolled courses
   React.useEffect(() => {
@@ -141,6 +179,30 @@ export default function Courses() {
                     <Badge variant="outline">{course.level}</Badge>
                     <h3 className="text-2xl font-bold">{course.title}</h3>
                     <div className="space-y-2 text-sm text-gray-600">
+                      {courseRatings[course._id || ''] && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <span
+                                key={i}
+                                className={`text-lg ${
+                                  i < Math.round(courseRatings[course._id || ''].avg)
+                                    ? 'text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <span className="font-semibold">
+                            {courseRatings[course._id || ''].avg.toFixed(1)}
+                          </span>
+                          <span className="text-gray-500">
+                            ({courseRatings[course._id || ''].count} {courseRatings[course._id || ''].count === 1 ? 'review' : 'reviews'})
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2" />
                         {course.estimatedDuration ? `${Math.floor(course.estimatedDuration / 60)}h ${course.estimatedDuration % 60}m` : ''}

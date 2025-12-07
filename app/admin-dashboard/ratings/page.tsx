@@ -25,7 +25,8 @@ interface Rating {
   courseId: string;
   courseName?: string;
   userId: string;
-  studentName: string;
+  userName: string;
+  userEmail?: string;
   rating: number;
   review: string;
   isVerified: boolean;
@@ -41,7 +42,7 @@ export default function AdminRatingsPage() {
   const [formData, setFormData] = useState<Rating>({
     courseId: '',
     userId: '',
-    studentName: '',
+    userName: '',
     rating: 5,
     review: '',
     isVerified: true,
@@ -86,7 +87,7 @@ export default function AdminRatingsPage() {
     setFormData({
       courseId: '',
       userId: 'admin-' + Date.now(),
-      studentName: '',
+      userName: '',
       rating: 5,
       review: '',
       isVerified: true,
@@ -99,7 +100,7 @@ export default function AdminRatingsPage() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.courseId || !formData.studentName || formData.rating === 0) {
+    if (!formData.courseId || !formData.userName || formData.rating === 0) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -189,7 +190,7 @@ export default function AdminRatingsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold">{rating.studentName}</h3>
+                          <h3 className="font-semibold">{rating.userName}</h3>
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <IconStar
@@ -263,12 +264,12 @@ export default function AdminRatingsPage() {
               </div>
 
               <div>
-                <Label htmlFor="studentName">Student Name *</Label>
+                <Label htmlFor="userName">Student Name *</Label>
                 <Input
-                  id="studentName"
+                  id="userName"
                   placeholder="e.g., Ahmed Rahman"
-                  value={formData.studentName}
-                  onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
+                  value={formData.userName}
+                  onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
                 />
               </div>
 
