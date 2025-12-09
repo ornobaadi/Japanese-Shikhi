@@ -336,7 +336,6 @@ const translations = {
         'form.thumbnailUrlOptional': 'থাম্বনেইল URL (ঐচ্ছিক)',
         'form.instructorNotesOptional': 'প্রশিক্ষকের নোট (ঐচ্ছিক)',
         'form.premiumCourse': 'প্রিমিয়াম কোর্স',
-        'form.thumbnailPlaceholder': 'https://example.com/image.jpg',
         'form.instructorNotesPlaceholder': 'প্রশিক্ষকদের জন্য অতিরিক্ত নোট...',
         'form.whatYoullLearn': 'আপনি কী শিখবেন',
         'form.whatYoullLearnPlaceholder': 'শিক্ষার্থীরা এই কোর্স থেকে কী শিখবে...',
