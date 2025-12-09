@@ -12,9 +12,9 @@ export async function GET(request: NextRequest) {
 
     // If slug is provided, fetch specific blog post
     if (slug) {
-      const blog = await Blog.findOne({
+      const blog = (await Blog.findOne({
         slug: slug
-      }).lean();
+      }).lean()) as any;
 
       if (!blog) {
         return NextResponse.json({
