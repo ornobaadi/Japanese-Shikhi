@@ -8,9 +8,10 @@ import { clerkClient } from "@clerk/nextjs/server";
 // DELETE - Delete a rating
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await currentUser();
 
     if (!user) {
@@ -31,7 +32,7 @@ export async function DELETE(
 
     await connectToDatabase();
 
-    const rating = await Rating.findById(params.id);
+    const rating = await Rating.findById(id);
 
     if (!rating) {
       return NextResponse.json(
@@ -41,7 +42,7 @@ export async function DELETE(
     }
 
     const courseId = rating.courseId;
-    await Rating.findByIdAndDelete(params.id);
+    await Rating.findByIdAndDelete(id);
 
     // Update course average rating
     const allRatings = await Rating.find({ courseId });
