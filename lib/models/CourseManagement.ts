@@ -455,6 +455,22 @@ export type CourseManagementData = {
   classLinks: IClassLink[];
   blogPosts: IBlogPost[];
   enrolledStudents: IEnrolledStudent[];
+  settings?: {
+    allowStudentComments?: boolean;
+    autoPublishContent?: boolean;
+    requireInstructorApproval?: boolean;
+    emailNotifications?: boolean;
+    maxStudentsPerClass?: number;
+  };
+  statistics?: {
+    totalVideos?: number;
+    totalDocuments?: number;
+    totalClasses?: number;
+    totalBlogs?: number;
+    totalStudents?: number;
+    averageProgress?: number;
+    lastUpdated?: Date;
+  };
 };
 
 export type CreateCourseManagementData = Omit<CourseManagementData, 'courseId'>;
