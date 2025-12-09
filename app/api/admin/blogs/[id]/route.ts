@@ -7,9 +7,10 @@ import { Types } from "mongoose";
 // PATCH - Update a blog post
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await currentUser();
     
     if (!user) {
@@ -30,7 +31,7 @@ export async function PATCH(
     const slug = body.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
     const updatedBlog = await Blog.findByIdAndUpdate(
-      params.id,
+      id,
       {
         ...body,
         slug,
@@ -62,9 +63,10 @@ export async function PATCH(
 // DELETE - Delete a blog post
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const user = await currentUser();
     
     if (!user) {
@@ -73,7 +75,7 @@ export async function DELETE(
 
     await connectToDatabase();
 
-    const deletedBlog = await Blog.findByIdAndDelete(params.id);
+    const deletedBlog = await Blog.findByIdAndDelete(id);
 
     if (!deletedBlog) {
       return NextResponse.json(
