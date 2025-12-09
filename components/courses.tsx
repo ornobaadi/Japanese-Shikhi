@@ -13,6 +13,7 @@ interface Course {
   learningObjectives?: string[];
   averageRating?: number;
   totalRatings?: number;
+  thumbnailUrl?: string;
 }
 
 import { Button } from "@/components/ui/button";
@@ -175,7 +176,16 @@ export default function Courses() {
               <Card key={course._id || index} className="overflow-hidden">
                 <div className={`h-2 bg-gradient-to-r from-green-500 to-teal-500`}></div>
                 <div className="grid md:grid-cols-4 gap-6 p-8">
-                  <div className="space-y-4">
+                  {course.thumbnailUrl && (
+                    <div className="md:col-span-1 flex items-center justify-center">
+                      <img
+                        src={course.thumbnailUrl}
+                        alt={course.title}
+                        className="w-full h-auto rounded-lg object-cover max-h-48"
+                      />
+                    </div>
+                  )}
+                  <div className={`space-y-4 ${course.thumbnailUrl ? 'md:col-span-1' : 'md:col-span-1'}`}>
                     <Badge variant="outline">{course.level}</Badge>
                     <h3 className="text-2xl font-bold">{course.title}</h3>
                     <div className="space-y-2 text-sm text-gray-600">

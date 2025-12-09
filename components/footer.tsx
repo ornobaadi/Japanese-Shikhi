@@ -55,38 +55,8 @@ export default function Footer() {
 
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-
+      {/* Decorative background elements removed for clean footer */}
       <div className="relative">
-        {/* Newsletter Section */}
-        <div className="border-b border-gray-700/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <Card className="bg-gradient-to-r from-red-500 to-orange-500 border-0 shadow-2xl">
-              <CardContent className="p-8 text-center text-white">
-                <h3 className="text-2xl font-bold mb-4">{t('footer.newsletter.title')}</h3>
-                <p className="text-red-100 mb-6 max-w-2xl mx-auto">
-                  {t('footer.newsletter.subtitle')} {t('footer.newsletter.community')}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-                  <input
-                    type="email"
-                    placeholder={t('footer.newsletter.placeholder')}
-                    className="flex-1 px-4 py-3 rounded-lg text-gray-900 placeholder-gray-500 border-0 focus:ring-2 focus:ring-white/50"
-                  />
-                  <Button className="bg-white text-red-600 hover:bg-gray-100 px-6 py-3 font-semibold">
-                    {t('footer.newsletter.subscribe')}
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-                <p className="text-xs text-red-100 mt-4">
-                  {t('footer.newsletter.noSpam')}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
 
         {/* Main Footer Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">

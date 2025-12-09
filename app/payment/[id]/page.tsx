@@ -11,6 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentForm } from '@/components/PaymentForm';
+
+interface EnrollmentRequest {
+  _id: string;
+  courseId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string;
+}
 import { ArrowLeft, Clock, Users, BookOpen, CheckCircle } from 'lucide-react';
 
 // Facebook Pixel tracking helper
@@ -39,6 +46,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [pendingRequest, setPendingRequest] = useState<EnrollmentRequest | null>(null);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -46,13 +54,12 @@ export default function PaymentPage() {
       return;
     }
 
-    const fetchCourse = async () => {
+    const fetchCourseAndEnrollment = async () => {
       try {
         const res = await fetch(`/api/courses/${params?.id}`);
         const data = await res.json();
         if (data.success) {
           setCourse(data.data);
-          
           // Track InitiateCheckout when user reaches payment page
           trackFBEvent('InitiateCheckout', {
             content_name: data.data.title,
@@ -63,8 +70,25 @@ export default function PaymentPage() {
             currency: 'BDT',
             num_items: 1
           });
+        } else setError(data.error || 'Course not found');
+
+        // Check for pending enrollment request for this course
+        const enrollRes = await fetch('/api/enrollments');
+        const enrollData = await enrollRes.json();
+        if (enrollData.success && Array.isArray(enrollData.data)) {
+          // Find the latest request for this course
+          const courseRequests = enrollData.data.filter((r: EnrollmentRequest) => r.courseId === params?.id);
+          // Only block if there is a pending request
+          const pending = courseRequests.find((r: EnrollmentRequest) => r.status === 'pending');
+          if (pending) setPendingRequest(pending);
+          else setPendingRequest(null);
+          // If rejected, show the latest rejection reason
+          const rejected = courseRequests.filter((r: EnrollmentRequest) => r.status === 'rejected');
+          if (!pending && rejected.length > 0) {
+            // Show the most recent rejection
+            setPendingRequest(rejected[0]);
+          }
         }
-        else setError(data.error || 'Course not found');
       } catch (error) {
         setError('Failed to load course');
       } finally {
@@ -72,7 +96,7 @@ export default function PaymentPage() {
       }
     };
 
-    fetchCourse();
+    fetchCourseAndEnrollment();
   }, [params?.id, isSignedIn, router]);
 
   const formatBDT = (amount: number) => `৳${amount.toLocaleString()}`;
@@ -233,19 +257,40 @@ export default function PaymentPage() {
                 </div>
 
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg">
-                  <h3 className="font-semibold mb-4 text-center">
-                    Complete Payment to Enroll
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4 text-center">
-                    Pay via bKash, Nagad, Upay, or Rocket
-                  </p>
-                  <Button 
-                    size="lg"
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                    onClick={() => setShowPaymentForm(true)}
-                  >
-                    Proceed to Payment ({formatBDT(finalPrice)})
-                  </Button>
+                  {pendingRequest && pendingRequest.status === 'pending' ? (
+                    <div className="text-center py-8">
+                      <span className="inline-block mb-4">
+                        <svg width="48" height="48" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FDE68A"/><path d="M8 12l2 2 4-4" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </span>
+                      <h3 className="font-semibold text-xl mb-2 text-yellow-700">Enrollment Pending Approval</h3>
+                      <p className="text-gray-700">Your payment is under review. You will get access to the course after admin approval.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {pendingRequest && pendingRequest.status === 'rejected' && (
+                        <div className="text-center py-8 mb-6">
+                          <span className="inline-block mb-4">
+                            <svg width="48" height="48" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FCA5A5"/><path d="M8 8l8 8M16 8l-8 8" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </span>
+                          <h3 className="font-semibold text-xl mb-2 text-red-700">Enrollment Rejected</h3>
+                          <p className="text-gray-700">{pendingRequest.rejectionReason ? pendingRequest.rejectionReason : 'Your enrollment request was rejected by the admin.'}</p>
+                        </div>
+                      )}
+                      <h3 className="font-semibold mb-4 text-center">
+                        Complete Payment to Enroll
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4 text-center">
+                        Pay via bKash, Nagad, Upay, or Rocket
+                      </p>
+                      <Button 
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                        onClick={() => setShowPaymentForm(true)}
+                      >
+                        Proceed to Payment ({formatBDT(finalPrice)})
+                      </Button>
+                    </>
+                  )}
                 </div>
 
                 <p className="text-xs text-gray-500 text-center">

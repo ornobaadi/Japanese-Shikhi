@@ -71,30 +71,24 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Check if user already has pending request for this course
-    const existingRequest = await EnrollmentRequest.findOne({
+
+    // Only block if there is a pending or approved request
+    const existing = await EnrollmentRequest.findOne({
       userId,
       courseId,
-      status: 'pending'
+      status: { $in: ['pending', 'approved'] }
     });
-
-    if (existingRequest) {
-      return NextResponse.json({ 
-        error: 'You already have a pending enrollment request for this course' 
-      }, { status: 400 });
-    }
-
-    // Check if user already enrolled (approved request)
-    const approvedRequest = await EnrollmentRequest.findOne({
-      userId,
-      courseId,
-      status: 'approved'
-    });
-
-    if (approvedRequest) {
-      return NextResponse.json({ 
-        error: 'You are already enrolled in this course' 
-      }, { status: 400 });
+    if (existing) {
+      if (existing.status === 'pending') {
+        return NextResponse.json({
+          error: 'You already have a pending enrollment request for this course'
+        }, { status: 400 });
+      }
+      if (existing.status === 'approved') {
+        return NextResponse.json({
+          error: 'You are already enrolled in this course'
+        }, { status: 400 });
+      }
     }
 
     // Create enrollment request

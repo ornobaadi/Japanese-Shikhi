@@ -32,7 +32,6 @@ export default function Home() {
         <BlogSection />
         <Testimonials />
         <ContactSection />
-        <Footer />
       </main>
     </>
   );

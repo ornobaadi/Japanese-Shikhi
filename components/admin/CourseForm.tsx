@@ -19,7 +19,6 @@ interface CourseFormData {
   title: string;
   description: string;
   level: string;
-  category: string;
   estimatedDuration: string;
   difficulty: string;
   isPremium: boolean;
@@ -27,8 +26,8 @@ interface CourseFormData {
   allowFreePreview: boolean;
   freePreviewCount: string;
   learningObjectives: string[];
-  links: string[];
   thumbnailUrl: string;
+  thumbnailFile?: File;
   instructorNotes: string;
   whatYoullLearn: string;
   courseLessonModule: string;
@@ -37,33 +36,34 @@ interface CourseFormData {
   enrollmentLastDate: string;
 }
 
-export default function CourseForm() {
+export default function CourseForm({ initialCourse }: { initialCourse?: any }) {
   const router = useRouter();
   const { t, language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [showAdvancedModal, setShowAdvancedModal] = useState(false);
+  const isEditMode = !!initialCourse?._id;
 
   // Course form data
   const getInitialCourseData = (): CourseFormData => ({
-    title: '',
-    description: '',
-    level: '',
-    category: 'language',
-    estimatedDuration: '',
-    difficulty: '5',
-    isPremium: false,
-    isPublished: false,
-    allowFreePreview: true,
-    freePreviewCount: '2',
-    learningObjectives: [''],
-    links: [''],
-    thumbnailUrl: '',
-    instructorNotes: '',
-    whatYoullLearn: '',
-    courseLessonModule: '',
-    actualPrice: '',
-    discountedPrice: '',
-    enrollmentLastDate: '',
+    title: initialCourse?.title || '',
+    description: initialCourse?.description || '',
+    level: initialCourse?.level || 'beginner',
+    estimatedDuration: initialCourse?.estimatedDuration?.toString() || '60',
+    difficulty: initialCourse?.difficulty?.toString() || '5',
+    isPremium: initialCourse?.isPremium || false,
+    isPublished: initialCourse?.isPublished || false,
+    allowFreePreview: initialCourse?.allowFreePreview ?? true,
+    freePreviewCount: initialCourse?.freePreviewCount?.toString() || '2',
+    learningObjectives: initialCourse?.learningObjectives?.length > 0 ? initialCourse.learningObjectives : [''],
+    thumbnailUrl: initialCourse?.thumbnailUrl || '',
+    thumbnailFile: undefined,
+    instructorNotes: initialCourse?.instructorNotes || '',
+    whatYoullLearn: initialCourse?.whatYoullLearn || '',
+    courseLessonModule: initialCourse?.courseLessonModule || '',
+    actualPrice: initialCourse?.actualPrice?.toString() || '',
+    discountedPrice: initialCourse?.discountedPrice?.toString() || '',
+    enrollmentLastDate: initialCourse?.enrollmentLastDate || '',
+    _id: initialCourse?._id
   });
 
   const [formData, setFormData] = useState<CourseFormData>(getInitialCourseData());
@@ -94,19 +94,15 @@ export default function CourseForm() {
     }
   };
 
-  const addLink = () => {
-    handleInputChange('links', [...formData.links, '']);
-  };
-
-  const removeLink = (index: number) => {
-    const newLinks = formData.links.filter((_, i) => i !== index);
-    handleInputChange('links', newLinks);
-  };
-
-  const updateLink = (index: number, value: string) => {
-    const newLinks = [...formData.links];
-    newLinks[index] = value;
-    handleInputChange('links', newLinks);
+  const handleThumbnailChange = (file: File | null) => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        handleInputChange('thumbnailUrl', e.target?.result as string);
+        handleInputChange('thumbnailFile', file);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Handler for Advanced Course Management Modal
@@ -156,6 +152,15 @@ export default function CourseForm() {
     setIsLoading(true);
 
     try {
+      console.log('🔍 Form data before validation:', {
+        title: formData.title,
+        description: formData.description,
+        level: formData.level,
+        estimatedDuration: formData.estimatedDuration,
+        difficulty: formData.difficulty,
+        learningObjectives: formData.learningObjectives
+      });
+
       // Validate required fields
       if (!formData.title.trim()) {
         toast.error('Title is required');
@@ -172,11 +177,6 @@ export default function CourseForm() {
         return;
       }
 
-      if (!formData.category) {
-        toast.error('Category is required');
-        return;
-      }
-
       if (!formData.estimatedDuration || parseInt(formData.estimatedDuration) <= 0) {
         toast.error('Valid estimated duration is required');
         return;
@@ -189,26 +189,52 @@ export default function CourseForm() {
         return;
       }
 
+      // Handle thumbnail upload if file is selected
+      let thumbnailUrl = formData.thumbnailUrl;
+      if (formData.thumbnailFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', formData.thumbnailFile);
+        formDataUpload.append('type', 'course-thumbnail');
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formDataUpload,
+        });
+
+        if (!uploadResponse.ok) {
+          const uploadError = await uploadResponse.json();
+          throw new Error(`Failed to upload thumbnail: ${uploadError.error || 'Unknown error'}`);
+        }
+
+        const uploadResult = await uploadResponse.json();
+        thumbnailUrl = uploadResult.url;
+      }
+
       const courseData = {
         ...formData,
-        isPublished: publishImmediately,
+        thumbnailUrl,
+        isPublished: isEditMode ? formData.isPublished : publishImmediately,
         learningObjectives: validObjectives,
-        links: formData.links.filter((link: string) => link.trim()),
         estimatedDuration: parseInt(formData.estimatedDuration),
-        difficulty: parseInt(formData.difficulty)
-        ,
+        difficulty: parseInt(formData.difficulty),
         allowFreePreview: formData.allowFreePreview,
         freePreviewCount: parseInt(formData.freePreviewCount || '0')
       };
 
-      console.log('Submitting course:', courseData);
+      // Remove thumbnailFile from courseData as it's not needed in DB
+      const { thumbnailFile, ...courseDataWithoutFile } = courseData;
 
-      const response = await fetch('/api/admin/courses', {
-        method: 'POST',
+      console.log('Submitting course:', JSON.stringify(courseDataWithoutFile, null, 2));
+
+      const url = isEditMode ? `/api/admin/courses/${formData._id}` : '/api/admin/courses';
+      const method = isEditMode ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(courseData),
+        body: JSON.stringify(courseDataWithoutFile),
       });
 
       const result = await response.json();
@@ -223,8 +249,8 @@ export default function CourseForm() {
         throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // Update form with returned course ID
-      if (result.course && result.course._id) {
+      // Update form with returned course ID if creating
+      if (!isEditMode && result.course && result.course._id) {
         setFormData(prev => {
           console.log('🆔 Setting course ID:', result.course._id);
           console.log('🔄 Previous formData._id:', prev._id);
@@ -232,15 +258,14 @@ export default function CourseForm() {
           console.log('✅ Updated formData._id:', updated._id);
           return updated;
         });
-      } else {
-        console.log('❌ No course ID in response:', result);
       }
 
-      toast.success(`Successfully ${publishImmediately ? 'published' : 'saved'} course!`);
+      const actionText = isEditMode ? 'updated' : publishImmediately ? 'published' : 'saved';
+      toast.success(`Successfully ${actionText} course!`);
 
       // Don't reset form or navigate if user might want to use Advanced Course Management
-      // Only navigate if explicitly publishing
-      if (publishImmediately) {
+      // Only navigate if explicitly publishing or editing
+      if (publishImmediately || isEditMode) {
         setFormData(getInitialCourseData());
         setShowAdvancedModal(false);
         router.push('/admin-dashboard/courses');
@@ -269,34 +294,14 @@ export default function CourseForm() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">{t('form.basicInformation')}</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="title">{t('form.courseTitle')} *</Label>
-                <Input
-                  id="title"
-                  placeholder={t('form.courseTitlePlaceholder')}
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="category">{t('form.category')} *</Label>
-                <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('form.selectCategory')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vocabulary">Vocabulary</SelectItem>
-                    <SelectItem value="grammar">Grammar</SelectItem>
-                    <SelectItem value="conversation">Conversation</SelectItem>
-                    <SelectItem value="reading">Reading</SelectItem>
-                    <SelectItem value="writing">Writing</SelectItem>
-                    <SelectItem value="culture">Culture</SelectItem>
-                    <SelectItem value="kanji">Kanji</SelectItem>
-                    <SelectItem value="language">Language</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="title">{t('form.courseTitle')} *</Label>
+              <Input
+                id="title"
+                placeholder={t('form.courseTitlePlaceholder')}
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+              />
             </div>
 
             <div>
@@ -310,7 +315,7 @@ export default function CourseForm() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="level">{t('form.level')} *</Label>
                 <Select value={formData.level} onValueChange={(value) => handleInputChange('level', value)}>
@@ -332,17 +337,6 @@ export default function CourseForm() {
                   placeholder={t('form.durationPlaceholder')}
                   value={formData.estimatedDuration}
                   onChange={(e) => handleInputChange('estimatedDuration', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="difficulty">{t('form.difficulty')} (1-10)</Label>
-                <Input
-                  id="difficulty"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.difficulty}
-                  onChange={(e) => handleInputChange('difficulty', e.target.value)}
                 />
               </div>
             </div>
@@ -381,34 +375,66 @@ export default function CourseForm() {
             )}
           </div>
 
-          {/* Course Links */}
+          {/* Additional Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{t('form.courseLinks')}</h3>
-            {formData.links.map((link, index) => (
-              <div key={index} className="flex gap-2">
+            <h3 className="text-lg font-semibold">{t('form.additionalInformation')}</h3>
+
+            <div>
+              <Label htmlFor="thumbnail">Course Thumbnail</Label>
+              <div className="space-y-4">
+                {formData.thumbnailUrl && (
+                  <div className="relative w-full h-48 bg-gray-200 rounded-lg overflow-hidden">
+                    <img 
+                      src={formData.thumbnailUrl} 
+                      alt="Course Thumbnail" 
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleInputChange('thumbnailUrl', '');
+                        handleInputChange('thumbnailFile', undefined);
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
                 <Input
-                  type="url"
-                  placeholder={t('form.linkPlaceholder')}
-                  value={link}
-                  onChange={(e) => updateLink(index, e.target.value)}
-                  className="flex-1"
+                  id="thumbnail"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleThumbnailChange(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => removeLink(index)}
-                >
-                  Remove
-                </Button>
+                <p className="text-sm text-gray-600">
+                  Upload a course thumbnail image (recommended: 1200x675px or higher)
+                </p>
               </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addLink}
-            >
-              {t('form.addLink')}
-            </Button>
+            </div>
+
+            <div>
+              <Label htmlFor="whatYoullLearn">What Will Students Learn?</Label>
+              <Textarea
+                id="whatYoullLearn"
+                placeholder="Describe what students will learn from this course"
+                rows={3}
+                value={formData.whatYoullLearn}
+                onChange={(e) => handleInputChange('whatYoullLearn', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="instructorNotes">Instructor Notes (Optional)</Label>
+              <Textarea
+                id="instructorNotes"
+                placeholder="Add any additional notes for instructors"
+                rows={3}
+                value={formData.instructorNotes}
+                onChange={(e) => handleInputChange('instructorNotes', e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Pricing */}
@@ -447,74 +473,6 @@ export default function CourseForm() {
             </div>
           </div>
 
-          {/* Free Preview Settings */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Free Preview</h3>
-            <div className="flex items-center space-x-4">
-              <Checkbox checked={formData.allowFreePreview} onCheckedChange={(checked) => handleInputChange('allowFreePreview', !!checked)} />
-              <div>
-                <div className="font-medium">Allow free preview</div>
-                <p className="text-sm text-gray-600">Enable preview access for the first few items (videos, PDFs, quizzes).</p>
-              </div>
-            </div>
-
-            {formData.allowFreePreview && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <div>
-                  <Label htmlFor="freePreviewCount">Free preview count</Label>
-                  <Input
-                    id="freePreviewCount"
-                    type="number"
-                    min={0}
-                    max={20}
-                    placeholder="2"
-                    value={formData.freePreviewCount}
-                    onChange={(e) => handleInputChange('freePreviewCount', e.target.value)}
-                  />
-                </div>
-                <div className="md:col-span-2 text-sm text-gray-600">Users who are not enrolled will be able to access the first N items. They must sign in and enroll to unlock all content.</div>
-              </div>
-            )}
-          </div>
-
-          {/* Additional Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{t('form.additionalInformation')}</h3>
-
-            <div>
-              <Label htmlFor="thumbnailUrl">{t('form.thumbnailUrlOptional')}</Label>
-              <Input
-                id="thumbnailUrl"
-                type="url"
-                placeholder={t('form.thumbnailPlaceholder')}
-                value={formData.thumbnailUrl}
-                onChange={(e) => handleInputChange('thumbnailUrl', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="whatYoullLearn">{t('form.whatYoullLearn')}</Label>
-              <Textarea
-                id="whatYoullLearn"
-                placeholder={t('form.whatYoullLearnPlaceholder')}
-                rows={3}
-                value={formData.whatYoullLearn}
-                onChange={(e) => handleInputChange('whatYoullLearn', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="instructorNotes">{t('form.instructorNotesOptional')}</Label>
-              <Textarea
-                id="instructorNotes"
-                placeholder={t('form.instructorNotesPlaceholder')}
-                rows={3}
-                value={formData.instructorNotes}
-                onChange={(e) => handleInputChange('instructorNotes', e.target.value)}
-              />
-            </div>
-          </div>
-
           {/* Advanced Course Management Modal */}
           <AdvancedCourseManagementModal
             isOpen={showAdvancedModal}
@@ -532,43 +490,72 @@ export default function CourseForm() {
                 checked={formData.isPremium}
                 onCheckedChange={(checked) => handleInputChange('isPremium', checked)}
               />
-              <Label htmlFor="premium">{t('form.premiumCourse')}</Label>
+              <Label htmlFor="premium">Premium Course</Label>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => handleSubmit(false)}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <IconLoader2 className="size-4 mr-2 animate-spin" />
-              ) : (
-                <IconDeviceFloppy className="size-4 mr-2" />
-              )}
-              {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
-                ? 'খসড়া হিসেবে সংরক্ষণ'
-                : 'Save as Draft'}
-            </Button>
-            <Button
-              type="button"
-              className="flex-1"
-              onClick={() => handleSubmit(true)}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <IconLoader2 className="size-4 mr-2 animate-spin" />
-              ) : (
-                <IconDeviceFloppy className="size-4 mr-2" />
-              )}
-              {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
-                ? 'প্রকাশ করুন'
-                : 'Publish Course'}
-            </Button>
+            {isEditMode ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => router.push('/admin-dashboard/courses')}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={() => handleSubmit(false)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <IconLoader2 className="size-4 mr-2 animate-spin" />
+                  ) : (
+                    <IconDeviceFloppy className="size-4 mr-2" />
+                  )}
+                  Update Course
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleSubmit(false)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <IconLoader2 className="size-4 mr-2 animate-spin" />
+                  ) : (
+                    <IconDeviceFloppy className="size-4 mr-2" />
+                  )}
+                  {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                    ? 'খসড়া হিসেবে সংরক্ষণ'
+                    : 'Save as Draft'}
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={() => handleSubmit(true)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <IconLoader2 className="size-4 mr-2 animate-spin" />
+                  ) : (
+                    <IconDeviceFloppy className="size-4 mr-2" />
+                  )}
+                  {t('nav.features') === 'বৈশিষ্ট্যসমূহ'
+                    ? 'প্রকাশ করুন'
+                    : 'Publish Course'}
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

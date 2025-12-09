@@ -77,7 +77,6 @@ export interface ICourse extends Document {
   enrollmentDeadline?: Date;
   instructorNotes?: string;
   learningObjectives: string[];
-  links: string[];
   whatYoullLearn?: string;
   courseLessonModule?: string;
   // Free Preview Settings
@@ -236,16 +235,6 @@ const CourseSchema = new Schema<ICourse>({
         return validObjectives.length >= 1 && validObjectives.length <= 10;
       },
       message: 'Course must have 1-10 learning objectives'
-    }
-  },
-  links: {
-    type: [String],
-    default: [],
-    validate: {
-      validator: function(links: string[]) {
-        return links.length <= 10;
-      },
-      message: 'Course cannot have more than 10 links'
     }
   },
   lessons: [{
@@ -507,11 +496,6 @@ CourseSchema.pre('save', function(next) {
   // Clean up learningObjectives - remove empty strings
   if (this.learningObjectives) {
     this.learningObjectives = this.learningObjectives.filter((obj: string) => obj && obj.trim());
-  }
-  
-  // Clean up links - remove empty strings
-  if (this.links) {
-    this.links = this.links.filter((link: string) => link && link.trim());
   }
   
   next();

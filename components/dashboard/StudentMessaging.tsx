@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { IconUser, IconLoader2, IconMessages, IconMessageCircle } from '@tabler/icons-react';
+import { IconUser, IconLoader2, IconMessages, IconMessageCircle, IconAlertCircle } from '@tabler/icons-react';
 import { ChatInterface } from '@/components/admin/ChatInterface';
 
 interface Admin {
@@ -23,9 +23,12 @@ export default function StudentMessaging() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [rejectionMessageCounts, setRejectionMessageCounts] = useState<{ [key: string]: number }>({});
+  const [totalRejections, setTotalRejections] = useState(0);
 
   useEffect(() => {
     fetchAdmins();
+    fetchRejectionMessages();
   }, []);
 
   const fetchAdmins = async () => {
@@ -50,6 +53,31 @@ export default function StudentMessaging() {
       setAdmins([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRejectionMessages = async () => {
+    try {
+      const response = await fetch('/api/messages?type=rejections');
+      if (response.ok) {
+        const data = await response.json();
+        const counts: { [key: string]: number } = {};
+        let total = 0;
+        
+        if (Array.isArray(data.data)) {
+          data.data.forEach((msg: any) => {
+            if (msg.messageType === 'rejection' || msg.subject?.includes('Rejected')) {
+              counts[msg.senderId] = (counts[msg.senderId] || 0) + 1;
+              total++;
+            }
+          });
+        }
+        
+        setRejectionMessageCounts(counts);
+        setTotalRejections(total);
+      }
+    } catch (error) {
+      console.error('Error fetching rejection messages:', error);
     }
   };
 
@@ -106,6 +134,9 @@ export default function StudentMessaging() {
           <CardTitle className="text-base md:text-lg flex items-center gap-2">
             <IconMessageCircle className="h-5 w-5" />
             Support Team
+            {totalRejections > 0 && (
+              <Badge variant="destructive" className="ml-auto">{totalRejections}</Badge>
+            )}
           </CardTitle>
           <CardDescription className="text-xs md:text-sm">Chat with our team</CardDescription>
         </CardHeader>
@@ -127,10 +158,17 @@ export default function StudentMessaging() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-sm truncate">{admin.name}</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-semibold text-sm truncate">{admin.name}</p>
+                    <div className="flex items-center gap-2">
+                      {rejectionMessageCounts[admin.clerkId] > 0 && (
+                        <Badge variant="destructive" className="text-xs px-1.5 py-0 h-5">
+                          {rejectionMessageCounts[admin.clerkId]}
+                        </Badge>
+                      )}
                       <Badge variant="secondary" className="text-xs px-2 py-0">Admin</Badge>
                     </div>
+                  </div>
                     <p className="text-xs text-muted-foreground truncate">{admin.email}</p>
                     <div className="flex items-center gap-1 mt-1">
                       <div className="h-2 w-2 rounded-full bg-green-500"></div>

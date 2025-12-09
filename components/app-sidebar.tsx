@@ -42,6 +42,39 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [mounted, setMounted] = React.useState(false)
   const [unreadCount, setUnreadCount] = React.useState(0)
   const [adminUnreadCount, setAdminUnreadCount] = React.useState(0)
+  const [pendingEnrollments, setPendingEnrollments] = React.useState<number>(0)
+    // Fetch pending enrollments count for admin sidebar
+    React.useEffect(() => {
+      if (mounted && user && pathname?.startsWith('/admin-dashboard')) {
+        const fetchPendingEnrollments = async () => {
+          try {
+            const response = await fetch('/api/admin/enrollments?status=pending');
+            if (response.ok) {
+              const data = await response.json();
+              setPendingEnrollments(data.count || 0);
+            }
+          } catch (error) {
+            console.error('Failed to fetch pending enrollments:', error);
+          }
+        };
+        fetchPendingEnrollments();
+        // Refresh every 5 seconds instead of 30
+        const interval = setInterval(fetchPendingEnrollments, 5000);
+        
+        // Also listen for visibility changes to refresh when user returns to tab
+        const handleVisibilityChange = () => {
+          if (!document.hidden) {
+            fetchPendingEnrollments();
+          }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        return () => {
+          clearInterval(interval);
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+      }
+    }, [mounted, user, pathname]);
   
   React.useEffect(() => {
     setMounted(true)
@@ -127,6 +160,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Enrollments",
       url: "/admin-dashboard/enrollments",
       icon: IconUsers,
+      badge: pendingEnrollments > 0 ? pendingEnrollments : undefined,
     },
     {
       title: "Users",

@@ -38,6 +38,9 @@ export async function POST(request: NextRequest) {
         'text/plain'
       ];
       maxSize = 10 * 1024 * 1024; // 10MB for documents
+    } else if (type === 'course-thumbnail') {
+      allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      maxSize = 3 * 1024 * 1024; // 3MB for thumbnails
     } else {
       // Image
       allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];

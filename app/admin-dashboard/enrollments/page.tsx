@@ -142,6 +142,7 @@ export default function EnrollmentManagementPage() {
 
     setProcessing(true);
     try {
+      // 1. Reject the enrollment
       const response = await fetch(`/api/admin/enrollments/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -154,7 +155,34 @@ export default function EnrollmentManagementPage() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Enrollment rejected');
+        // 2. Send message to student
+        const req = allRequests.find(r => r._id === requestId);
+        if (req) {
+          try {
+            const msgResponse = await fetch('/api/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                receiverId: req.userId,
+                subject: `Enrollment Rejected for ${req.courseName}`,
+                message: adminNotes,
+                contextType: 'course',
+                contextId: req.courseId?._id || req.courseId,
+                contextTitle: req.courseName,
+                messageType: 'rejection'
+              })
+            });
+            
+            if (msgResponse.ok) {
+              toast.success('Enrollment rejected and student notified');
+            } else {
+              toast.success('Enrollment rejected (message notification failed)');
+            }
+          } catch (msgError) {
+            console.error('Message send error:', msgError);
+            toast.success('Enrollment rejected (message notification had an issue)');
+          }
+        }
         fetchRequests(activeTab);
         setShowDetails(false);
         setAdminNotes('');
@@ -232,12 +260,13 @@ export default function EnrollmentManagementPage() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {filteredRequests.map((request) => (
+              {filteredRequests.map((request, idx) => (
                 <Card key={request._id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="flex items-center gap-2">
+                          <span className="inline-block w-6 h-6 rounded-full bg-gray-200 text-center font-bold text-gray-700 mr-2">{idx + 1}</span>
                           {request.userName}
                           <Badge className={getStatusColor(request.status)}>
                             {request.status.toUpperCase()}

@@ -121,10 +121,11 @@ export async function POST(request: NextRequest) {
       isPremium,
       isPublished,
       learningObjectives,
-      links,
       thumbnailUrl,
       instructorNotes,
-      courseSummary
+      courseSummary,
+      actualPrice,
+      discountedPrice
     } = body;
 
     console.log('Received course data:', { title, description, level, category, estimatedDuration, difficulty });
@@ -138,9 +139,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validation
-    if (!title || !description || !level || !category || !estimatedDuration || !difficulty || !learningObjectives) {
+    if (!title || !description || !level || !estimatedDuration || !difficulty || !learningObjectives) {
       return NextResponse.json({ 
-        error: 'Missing required fields: title, description, level, category, estimatedDuration, difficulty, learningObjectives' 
+        error: 'Missing required fields: title, description, level, estimatedDuration, difficulty, learningObjectives' 
       }, { status: 400 });
     }
 
@@ -150,16 +151,17 @@ export async function POST(request: NextRequest) {
       title: title.trim(),
       description: description.trim(),
       level,
-      category,
+      category: category || 'vocabulary',
       estimatedDuration: parseInt(estimatedDuration),
       difficulty: parseInt(difficulty),
       isPremium: isPremium || false,
       isPublished: isPublished || false,
       learningObjectives: learningObjectives || [],
-      links: links || [],
       thumbnailUrl: thumbnailUrl || '',
       instructorNotes: instructorNotes || '',
       courseSummary: courseSummary || '',
+      actualPrice: actualPrice ? parseFloat(actualPrice) : undefined,
+      discountedPrice: discountedPrice ? parseFloat(discountedPrice) : undefined,
       lessons: [],
       totalLessons: 0,
       averageRating: 0,

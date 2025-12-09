@@ -31,6 +31,7 @@ export function PaymentForm({ open, onOpenChange, courseId, courseTitle, courseP
   const [screenshot, setScreenshot] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showPending, setShowPending] = useState(false);
 
   const paymentNumbers = {
     bkash: '01XXXXXXXXX',
@@ -123,13 +124,18 @@ export function PaymentForm({ open, onOpenChange, courseId, courseTitle, courseP
           currency: 'BDT',
           payment_method: paymentMethod
         });
-        
-        toast.success('Enrollment request submitted! Admin will review it soon.');
-        onOpenChange(false);
+        // Show pending approval message
+        setShowPending(true);
         // Reset form
         setTransactionId('');
         setSenderNumber('');
         setScreenshot('');
+        
+        // Auto-close dialog and refresh page after 3 seconds
+        setTimeout(() => {
+          onOpenChange(false);
+          window.location.reload();
+        }, 3000);
       } else {
         toast.error(data.error || 'Failed to submit request');
       }
@@ -150,119 +156,130 @@ export function PaymentForm({ open, onOpenChange, courseId, courseTitle, courseP
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Payment Method Selection */}
-          <div className="space-y-3">
-            <Label>Select Payment Method</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {(['bkash', 'nagad', 'upay', 'rocket'] as const).map((method) => (
-                <Card 
-                  key={method}
-                  className={`p-4 cursor-pointer transition-all ${
-                    paymentMethod === method ? 'border-blue-500 border-2 bg-blue-50' : 'hover:border-gray-400'
-                  }`}
-                  onClick={() => setPaymentMethod(method)}
-                >
-                  <div className="flex flex-col items-center">
-                    <div className="text-2xl font-bold uppercase mb-1">{method}</div>
-                    {paymentMethod === method && <Check className="w-5 h-5 text-blue-500" />}
-                  </div>
-                </Card>
-              ))}
+        {showPending ? (
+          <div className="py-12 text-center">
+            <Check className="mx-auto mb-4 w-12 h-12 text-green-500" />
+            <h2 className="text-2xl font-bold mb-2">Enrollment Request Submitted!</h2>
+            <p className="mb-4">Your payment is under review. You will get access to the course after admin approval.</p>
+            <Button onClick={() => { setShowPending(false); onOpenChange(false); }}>
+              Close
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Payment Method Selection */}
+            <div className="space-y-3">
+              <Label>Select Payment Method</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {(['bkash', 'nagad', 'upay', 'rocket'] as const).map((method) => (
+                  <Card 
+                    key={method}
+                    className={`p-4 cursor-pointer transition-all ${
+                      paymentMethod === method ? 'border-blue-500 border-2 bg-blue-50' : 'hover:border-gray-400'
+                    }`}
+                    onClick={() => setPaymentMethod(method)}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="text-2xl font-bold uppercase mb-1">{method}</div>
+                      {paymentMethod === method && <Check className="w-5 h-5 text-blue-500" />}
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Payment Instructions */}
-          <Card className="p-4 bg-yellow-50 border-yellow-200">
-            <h4 className="font-semibold mb-2">Payment Instructions:</h4>
-            <ol className="list-decimal list-inside space-y-1 text-sm">
-              <li>Send ৳{coursePrice} to: <strong>{paymentNumbers[paymentMethod]}</strong> via {paymentMethod.toUpperCase()}</li>
-              <li>Save the transaction ID and take a screenshot</li>
-              <li>Fill the form below with transaction details</li>
-              <li>Submit and wait for admin approval</li>
-            </ol>
-          </Card>
+            {/* Payment Instructions */}
+            <Card className="p-4 bg-yellow-50 border-yellow-200">
+              <h4 className="font-semibold mb-2">Payment Instructions:</h4>
+              <ol className="list-decimal list-inside space-y-1 text-sm">
+                <li>Send ৳{coursePrice} to: <strong>{paymentNumbers[paymentMethod]}</strong> via {paymentMethod.toUpperCase()}</li>
+                <li>Save the transaction ID and take a screenshot</li>
+                <li>Fill the form below with transaction details</li>
+                <li>Submit and wait for admin approval</li>
+              </ol>
+            </Card>
 
-          {/* Transaction ID */}
-          <div className="space-y-2">
-            <Label htmlFor="transactionId">Transaction ID *</Label>
-            <Input
-              id="transactionId"
-              value={transactionId}
-              onChange={(e) => setTransactionId(e.target.value)}
-              placeholder="e.g., BKX123456789"
-              required
-            />
-          </div>
-
-          {/* Sender Number */}
-          <div className="space-y-2">
-            <Label htmlFor="senderNumber">Your Phone Number *</Label>
-            <Input
-              id="senderNumber"
-              type="tel"
-              value={senderNumber}
-              onChange={(e) => setSenderNumber(e.target.value)}
-              placeholder="01XXXXXXXXX"
-              required
-            />
-          </div>
-
-          {/* Screenshot Upload */}
-          <div className="space-y-2">
-            <Label htmlFor="screenshot">Payment Screenshot *</Label>
-            <div className="flex gap-2">
+            {/* Transaction ID */}
+            <div className="space-y-2">
+              <Label htmlFor="transactionId">Transaction ID *</Label>
               <Input
-                id="screenshot"
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                onChange={handleScreenshotUpload}
-                disabled={uploading}
-                className="hidden"
+                id="transactionId"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                placeholder="e.g., BKX123456789"
+                required
               />
-              <label
-                htmlFor="screenshot"
-                className={`flex-1 cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {uploading ? 'Uploading...' : screenshot ? '✓ Screenshot Uploaded' : 'Upload Screenshot'}
-              </label>
-              {screenshot && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => window.open(screenshot, '_blank')}
-                >
-                  Preview
-                </Button>
-              )}
             </div>
-            {screenshot && (
-              <p className="text-xs text-green-600">✓ Screenshot uploaded successfully</p>
-            )}
-            <p className="text-xs text-muted-foreground">Supported: JPG, PNG, GIF, WebP (Max 5MB)</p>
-          </div>
 
-          {/* Submit Button */}
-          <div className="flex gap-3">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="flex-1"
-              disabled={submitting || uploading || !screenshot}
-            >
-              {submitting ? 'Submitting...' : 'Submit Enrollment Request'}
-            </Button>
-          </div>
-        </form>
+            {/* Sender Number */}
+            <div className="space-y-2">
+              <Label htmlFor="senderNumber">Your Phone Number *</Label>
+              <Input
+                id="senderNumber"
+                type="tel"
+                value={senderNumber}
+                onChange={(e) => setSenderNumber(e.target.value)}
+                placeholder="01XXXXXXXXX"
+                required
+              />
+            </div>
+
+            {/* Screenshot Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="screenshot">Payment Screenshot *</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="screenshot"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={handleScreenshotUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="screenshot"
+                  className={`flex-1 cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? 'Uploading...' : screenshot ? '✓ Screenshot Uploaded' : 'Upload Screenshot'}
+                </label>
+                {screenshot && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => window.open(screenshot, '_blank')}
+                  >
+                    Preview
+                  </Button>
+                )}
+              </div>
+              {screenshot && (
+                <p className="text-xs text-green-600">✓ Screenshot uploaded successfully</p>
+              )}
+              <p className="text-xs text-muted-foreground">Supported: JPG, PNG, GIF, WebP (Max 5MB)</p>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => onOpenChange(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1"
+                disabled={submitting || uploading || !screenshot}
+              >
+                {submitting ? 'Submitting...' : 'Submit Enrollment Request'}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

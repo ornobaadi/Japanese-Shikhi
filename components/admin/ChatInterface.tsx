@@ -26,10 +26,12 @@ interface Message {
   senderName: string;
   receiverId: string;
   message: string;
-  messageType?: 'text' | 'image' | 'video' | 'audio' | 'file';
+  messageType?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'rejection';
   isRead: boolean;
   sentAt: string;
   isDeleted?: boolean;
+  subject?: string;
+  contextTitle?: string;
   attachments?: {
     type: string;
     url: string;
@@ -403,25 +405,43 @@ export function ChatInterface({
 
                 <div className={`flex flex-col max-w-[75%] sm:max-w-[70%] ${isRightSide ? 'items-end' : 'items-start'}`}>
                   <div className="relative">
-                    <div
-                      className={`rounded-2xl px-3 py-2 md:px-4 md:py-2.5 ${
-                        isRightSide
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-muted text-foreground'
-                      }`}
-                    >
-                      {message.message && message.message !== '📎 Attachment' && (
-                        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.message}</p>
-                      )}
-
-                      {message.attachments && message.attachments.length > 0 && (
-                        <div className="space-y-2 mt-2">
-                          {message.attachments.map((attachment, idx) => (
-                            <div key={idx}>{renderAttachment(attachment)}</div>
-                          ))}
+                    {/* Rejection Message */}
+                    {message.messageType === 'rejection' ? (
+                      <div className="bg-red-50 border-2 border-red-300 rounded-2xl px-3 py-2 md:px-4 md:py-2.5">
+                        <div className="flex items-start gap-2 mb-2">
+                          <div className="text-red-600">⚠️</div>
+                          <div>
+                            <p className="font-semibold text-red-700 text-sm">Enrollment Rejected</p>
+                            {message.contextTitle && (
+                              <p className="text-xs text-red-600 mt-0.5">{message.contextTitle}</p>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        <p className="text-sm text-red-800 whitespace-pre-wrap break-words leading-relaxed border-t border-red-200 pt-2 mt-2">
+                          {message.message}
+                        </p>
+                      </div>
+                    ) : (
+                      <div
+                        className={`rounded-2xl px-3 py-2 md:px-4 md:py-2.5 ${
+                          isRightSide
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-muted text-foreground'
+                        }`}
+                      >
+                        {message.message && message.message !== '📎 Attachment' && (
+                          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.message}</p>
+                        )}
+
+                        {message.attachments && message.attachments.length > 0 && (
+                          <div className="space-y-2 mt-2">
+                            {message.attachments.map((attachment, idx) => (
+                              <div key={idx}>{renderAttachment(attachment)}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Delete button - appears on hover */}
                     {canDeleteMsg && (
