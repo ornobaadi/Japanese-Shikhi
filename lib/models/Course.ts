@@ -38,9 +38,11 @@ interface CurriculumItem {
   meetingLink?: string;
   meetingPlatform?: 'zoom' | 'google-meet' | 'other';
   duration?: number;
-  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'other';
+  resourceType?: 'pdf' | 'image' | 'video' | 'youtube' | 'drive' | 'recording' | 'other';
   resourceUrl?: string;
   resourceFile?: string; // File path for uploaded files
+  attachments?: Array<{ url: string; name: string; type: string }>; // Multiple file attachments
+  driveLinks?: Array<{ link: string; title: string }>; // Google Drive embedded links
   announcementType?: 'important' | 'cancellation' | 'general';
   validUntil?: Date;
   isPinned?: boolean;
@@ -308,10 +310,19 @@ const CourseSchema = new Schema<ICourse>({
         duration: Number,
         resourceType: {
           type: String,
-          enum: ['pdf', 'video', 'youtube', 'recording', 'other']
+          enum: ['pdf', 'image', 'video', 'youtube', 'drive', 'recording', 'other']
         },
         resourceUrl: String,
         resourceFile: String,
+        attachments: [{
+          url: String,
+          name: String,
+          type: String
+        }],
+        driveLinks: [{
+          link: String,
+          title: String
+        }],
         isFreePreview: {
           type: Boolean,
           default: false

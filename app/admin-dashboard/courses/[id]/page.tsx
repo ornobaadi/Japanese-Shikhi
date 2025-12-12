@@ -65,13 +65,16 @@ import {
   IconPencil,
   IconCheck,
   IconSettings,
+  IconPaperclip,
 } from "@tabler/icons-react";
 
 // Type definitions
+
 interface MCQOption {
   text: string;
   isCorrect: boolean;
 }
+
 
 interface MCQQuestion {
   question: string;
@@ -105,9 +108,11 @@ interface CurriculumItem {
   meetingLink?: string;
   meetingPlatform?: 'zoom' | 'google-meet' | 'other';
   duration?: number;
-  resourceType?: 'pdf' | 'video' | 'youtube' | 'recording' | 'other';
+  resourceType?: 'pdf' | 'image' | 'video' | 'youtube' | 'drive' | 'recording' | 'other';
   resourceUrl?: string;
   resourceFile?: string;
+  attachments?: Array<{ url: string; name: string; type: string }>;
+  driveLinks?: Array<{ link: string; title: string }>;
   announcementType?: 'important' | 'cancellation' | 'general';
   validUntil?: Date;
   isPinned?: boolean;
@@ -148,6 +153,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Temporary state for adding drive links
+  const [tempDriveLink, setTempDriveLink] = useState('');
+  const [tempDriveTitle, setTempDriveTitle] = useState('');
+
   // Form states
   const [moduleForm, setModuleForm] = useState({
     name: '',
@@ -162,7 +171,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     meetingLink: '',
     meetingPlatform: 'zoom' as 'zoom' | 'google-meet' | 'other',
     duration: 60,
-    resourceType: 'pdf' as 'pdf' | 'video' | 'youtube' | 'recording' | 'other',
+    resourceType: 'pdf' as 'pdf' | 'image' | 'video' | 'youtube' | 'drive' | 'recording' | 'other',
     resourceUrl: '',
     resourceFile: '',
     announcementType: 'general' as 'important' | 'cancellation' | 'general',
@@ -170,7 +179,15 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     isPinned: false,
     dueDate: '',
     dueTime: '23:59',
+    attachments: [] as Array<{ url: string; name: string; type: string }>,
+    driveLinks: [] as Array<{ link: string; title: string }>,
   });
+
+  // Use ref to always have latest formData in callbacks
+  const formDataRef = useRef(formData);
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
   // Quiz specific states
   const [quizForm, setQuizForm] = useState({
@@ -239,6 +256,62 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     fetchData();
   }, [params]);
 
+  // Auto-save curriculum when modules change
+  useEffect(() => {
+    if (!courseId || loading) return; // Don't save during initial load
+
+    const timer = setTimeout(async () => {
+      try {
+        // DEBUG: Log the raw modules state
+        console.log('=== AUTO-SAVE TRIGGERED ===');
+        console.log('Raw modules state:', modules);
+        console.log('Modules JSON:', JSON.stringify(modules, null, 2));
+        
+        // Check each item for attachments
+        modules.forEach((mod, modIdx) => {
+          mod.items?.forEach((item, itemIdx) => {
+            console.log(`[AutoSave] Module ${modIdx} Item ${itemIdx}: type=${item.type}, attachments=${JSON.stringify(item.attachments)}`);
+          });
+        });
+        
+        // Deep clone modules to ensure attachments are included
+        const modulesToSave = JSON.parse(JSON.stringify(modules));
+        console.log('Auto-saving curriculum with modules:', modulesToSave);
+        
+        // Log each item's attachments for debugging
+        modulesToSave.forEach((mod: any, modIdx: number) => {
+          mod.items?.forEach((item: any, itemIdx: number) => {
+            if (item.attachments && item.attachments.length > 0) {
+              console.log(`Module ${modIdx} Item ${itemIdx} attachments:`, item.attachments);
+            }
+          });
+        });
+        
+        const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            curriculum: { modules: modulesToSave }
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Curriculum auto-saved successfully:', result);
+          toast.success('Curriculum saved!');
+        } else {
+          const error = await response.json();
+          console.error('Auto-save failed:', error);
+          toast.error('Auto-save failed!');
+        }
+      } catch (error) {
+        console.error('Auto-save error:', error);
+      }
+    }, 1000); // Debounce 1 second
+
+    return () => clearTimeout(timer);
+  }, [modules, courseId, loading]);
+
   const testApiConnection = async () => {
     try {
       console.log('Testing API connection...');
@@ -259,10 +332,15 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     try {
       setSaving(true);
       console.log('Saving curriculum for course:', courseId);
-      console.log('Modules to save:', modules);
+      
+      // Deep clone modules to ensure all nested data including attachments is captured
+      const modulesToSave = JSON.parse(JSON.stringify(modules));
+      console.log('Modules to save:', modulesToSave);
 
-      const requestBody = { curriculum: { modules } };
-      console.log('Request body:', JSON.stringify(requestBody, null, 2)); const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+      const requestBody = { curriculum: { modules: modulesToSave } };
+      console.log('Request body:', JSON.stringify(requestBody, null, 2));
+      
+      const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -296,14 +374,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  useEffect(() => {
-    if (modules.length > 0 && courseId) {
-      const timer = setTimeout(() => {
-        saveCurriculum();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [modules, courseId]);
+  // Removed duplicate auto-save - using only the first useEffect for auto-save
 
   const handleAddModule = () => {
     const newModule: Module = {
@@ -350,29 +421,86 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    console.log('handleFileUpload - files selected:', files.length);
 
     try {
       setUploading(true);
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
+      const uploadedFiles: Array<{ url: string; name: string; type: string }> = [];
 
-      const response = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formDataUpload,
-      });
+      // Upload each file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        console.log(`Uploading file ${i + 1}/${files.length}:`, file.name);
+        
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', file);
+        formDataUpload.append('type', selectedType === 'resource' && formData.resourceType === 'video' ? 'video' : 'document');
 
-      if (!response.ok) throw new Error('Upload failed');
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formDataUpload,
+        });
 
-      const data = await response.json();
-      setFormData(prev => ({ ...prev, resourceUrl: data.url, resourceFile: data.filename }));
-      toast.success('File uploaded successfully');
+        if (!response.ok) {
+          console.error(`Upload failed for ${file.name}:`, response.status);
+          toast.error(`Failed to upload ${file.name}`);
+          continue;
+        }
+
+        const data = await response.json();
+        console.log(`Upload successful for ${file.name}:`, data);
+        uploadedFiles.push({
+          url: data.url,
+          name: file.name,
+          type: file.type
+        });
+      }
+
+      if (uploadedFiles.length > 0) {
+        const newAttachments = [...(formDataRef.current.attachments || []), ...uploadedFiles];
+        
+        // Update formData state
+        setFormData(prev => {
+          const updated = {
+            ...prev,
+            attachments: newAttachments
+          };
+          console.log('Updated formData.attachments:', updated.attachments);
+          return updated;
+        });
+        
+        // CRITICAL: Update ref immediately so handleSubmit gets the latest attachments
+        formDataRef.current = { ...formDataRef.current, attachments: newAttachments };
+        
+        toast.success(`${uploadedFiles.length} file(s) uploaded successfully`);
+
+        // If editing an existing resource, also update modules state immediately
+        if (showAddDialog && editingItemIndex !== null && (selectedType === 'resource' || selectedType === 'assignment')) {
+          setModules(prevModules => prevModules.map((module, idx) => {
+            if (idx !== activeModuleId) return module;
+            return {
+              ...module,
+              items: module.items.map((item, i) =>
+                i === editingItemIndex
+                  ? { ...item, attachments: newAttachments }
+                  : item
+              )
+            };
+          }));
+        }
+      }
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload file');
+      toast.error('Failed to upload files');
     } finally {
       setUploading(false);
+      // Reset file input
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
@@ -396,7 +524,13 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       isPinned: false,
       dueDate: '',
       dueTime: '23:59',
+      attachments: [],
+      driveLinks: [],
     });
+
+    // Reset temp drive link inputs
+    setTempDriveLink('');
+    setTempDriveTitle('');
 
     // Reset quiz form when adding new quiz
     if (type === 'quiz') {
@@ -435,6 +569,35 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     setEditingItemIndex(itemIdx);
 
     const schedDate = new Date(item.scheduledDate);
+    
+    // Safely parse dueDate
+    let dueDateStr = '';
+    let dueTimeStr = '23:59';
+    if (item.dueDate) {
+      try {
+        const dueDateTime = new Date(item.dueDate);
+        if (!isNaN(dueDateTime.getTime())) {
+          dueDateStr = dueDateTime.toISOString().split('T')[0];
+          dueTimeStr = dueDateTime.toTimeString().slice(0, 5);
+        }
+      } catch (e) {
+        console.error('Invalid dueDate:', item.dueDate);
+      }
+    }
+
+    // Safely parse validUntil
+    let validUntilStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    if (item.validUntil) {
+      try {
+        const validUntilDate = new Date(item.validUntil);
+        if (!isNaN(validUntilDate.getTime())) {
+          validUntilStr = validUntilDate.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error('Invalid validUntil:', item.validUntil);
+      }
+    }
+
     setFormData({
       title: item.title,
       description: item.description || '',
@@ -447,10 +610,12 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       resourceUrl: item.resourceUrl || '',
       resourceFile: item.resourceFile || '',
       announcementType: item.announcementType || 'general',
-      validUntil: item.validUntil ? new Date(item.validUntil).toISOString().split('T')[0] : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      validUntil: validUntilStr,
       isPinned: item.isPinned || false,
-      dueDate: item.dueDate ? new Date(item.dueDate).toISOString().split('T')[0] : '',
-      dueTime: item.dueDate ? new Date(item.dueDate).toTimeString().slice(0, 5) : '23:59',
+      dueDate: dueDateStr,
+      dueTime: dueTimeStr,
+      attachments: (item as any).attachments || [],
+      driveLinks: (item as any).driveLinks || [],
     });
 
     // Load quiz data if editing a quiz
@@ -473,35 +638,86 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       });
     }
 
+    // Load assignment data if editing an assignment
+    if (item.type === 'assignment' && (item as any).quizData) {
+      const assignmentData = (item as any).quizData;
+      setQuizForm({
+        ...quizForm,
+        totalPoints: assignmentData.totalPoints || 100,
+        acceptTextAnswer: assignmentData.acceptTextAnswer !== false,
+        acceptFileUpload: assignmentData.acceptFileUpload !== false,
+      });
+    }
+
     setShowAddDialog(true);
   };
 
   const handleSubmit = () => {
-    const scheduledDateTime = new Date(`${formData.scheduledDate}T${formData.scheduledTime}`);
+    // Use ref to get latest formData (avoid stale closure)
+    const currentFormData = formDataRef.current;
+    
+    console.log('handleSubmit called - selectedType:', selectedType);
+    console.log('Current formData from ref:', currentFormData);
+    console.log('Current formData.attachments:', currentFormData.attachments);
+    console.log('Current formData.driveLinks:', currentFormData.driveLinks);
+    
+    const scheduledDateTime = new Date(`${currentFormData.scheduledDate}T${currentFormData.scheduledTime}`);
+
+    // Deep clone attachments and driveLinks to ensure they are properly copied
+    const attachmentsCopy = currentFormData.attachments ? JSON.parse(JSON.stringify(currentFormData.attachments)) : [];
+    const driveLinksCopy = currentFormData.driveLinks ? JSON.parse(JSON.stringify(currentFormData.driveLinks)) : [];
 
     const newItem: CurriculumItem = {
       type: selectedType,
-      title: formData.title,
-      description: formData.description,
+      title: currentFormData.title,
+      description: currentFormData.description,
       scheduledDate: scheduledDateTime,
       createdAt: new Date(),
       isPublished: true,
+      // Always include attachments and driveLinks
+      attachments: attachmentsCopy,
+      driveLinks: driveLinksCopy,
     };
 
     if (selectedType === 'live-class') {
-      newItem.meetingLink = formData.meetingLink;
-      newItem.meetingPlatform = formData.meetingPlatform;
-      newItem.duration = formData.duration;
+      console.log('Processing live-class');
+      newItem.meetingLink = currentFormData.meetingLink;
+      newItem.meetingPlatform = currentFormData.meetingPlatform;
+      newItem.duration = currentFormData.duration;
     } else if (selectedType === 'resource') {
-      newItem.resourceType = formData.resourceType;
-      newItem.resourceUrl = formData.resourceUrl;
-      newItem.resourceFile = formData.resourceFile;
+      console.log('Processing resource - attachments:', attachmentsCopy.length, 'driveLinks:', driveLinksCopy.length);
+      newItem.resourceType = currentFormData.resourceType as 'pdf' | 'image' | 'video' | 'youtube' | 'drive' | 'recording' | 'other';
+      newItem.resourceUrl = currentFormData.resourceUrl;
+      newItem.resourceFile = currentFormData.resourceFile;
+      
+      // Debug log
+      console.log('Saving resource with:', {
+        attachments: attachmentsCopy,
+        driveLinks: driveLinksCopy,
+        resourceType: currentFormData.resourceType
+      });
     } else if (selectedType === 'announcement') {
-      newItem.announcementType = formData.announcementType;
-      newItem.validUntil = new Date(formData.validUntil);
-      newItem.isPinned = formData.isPinned;
+      newItem.announcementType = currentFormData.announcementType;
+      newItem.validUntil = new Date(currentFormData.validUntil);
+      newItem.isPinned = currentFormData.isPinned;
     } else if (selectedType === 'assignment' || selectedType === 'quiz') {
-      newItem.dueDate = new Date(`${formData.dueDate}T${formData.dueTime}`);
+      newItem.dueDate = new Date(`${currentFormData.dueDate}T${currentFormData.dueTime}`);
+      
+      // Add assignment file data
+      if (selectedType === 'assignment') {
+        console.log('Processing assignment - attachments:', attachmentsCopy.length);
+        newItem.resourceUrl = currentFormData.resourceUrl;
+        newItem.resourceFile = currentFormData.resourceFile;
+        
+        console.log('Saving assignment with attachments:', attachmentsCopy);
+        
+        // Add assignment quiz data for submission format and points
+        (newItem as any).quizData = {
+          totalPoints: quizForm.totalPoints || 100,
+          acceptTextAnswer: quizForm.acceptTextAnswer,
+          acceptFileUpload: quizForm.acceptFileUpload,
+        };
+      }
     }
 
     // Add quiz data if it's a quiz
@@ -538,24 +754,71 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
     if (editingItemIndex !== null) {
       // Update existing item
-      setModules(prev => prev.map((module, idx) =>
-        idx === activeModuleId
-          ? { ...module, items: module.items.map((item, i) => i === editingItemIndex ? newItem : item).sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()) }
-          : module
-      ));
+      console.log('SAVING ITEM WITH ATTACHMENTS:', newItem.attachments);
+      console.log('newItem object:', JSON.stringify(newItem, null, 2));
+      toast.info(`Saving with ${newItem.attachments?.length || 0} attachments`);
+      
+      setModules(prev => {
+        console.log('INSIDE setModules callback - prev:', JSON.stringify(prev, null, 2));
+        console.log('INSIDE setModules callback - newItem:', JSON.stringify(newItem, null, 2));
+        console.log('INSIDE setModules callback - newItem.attachments:', newItem.attachments);
+        
+        const updated = prev.map((module, idx) =>
+          idx === activeModuleId
+            ? { ...module, items: module.items.map((item, i) => i === editingItemIndex ? newItem : item).sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()) }
+            : module
+        );
+        console.log('Updated modules after edit:', JSON.stringify(updated, null, 2));
+        console.log('Attachments in updated:', updated[activeModuleId]?.items[editingItemIndex]?.attachments);
+        return updated;
+      });
       toast.success('Content updated successfully');
     } else {
       // Add new item
-      setModules(prev => prev.map((module, idx) =>
-        idx === activeModuleId
-          ? { ...module, items: [...module.items, newItem].sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()) }
-          : module
-      ));
+      console.log('SAVING NEW ITEM WITH ATTACHMENTS:', newItem.attachments);
+      console.log('newItem object:', JSON.stringify(newItem, null, 2));
+      toast.info(`Saving with ${newItem.attachments?.length || 0} attachments`);
+      
+      setModules(prev => {
+        console.log('INSIDE setModules callback - prev:', JSON.stringify(prev, null, 2));
+        console.log('INSIDE setModules callback - newItem:', JSON.stringify(newItem, null, 2));
+        console.log('INSIDE setModules callback - newItem.attachments:', newItem.attachments);
+        
+        const updated = prev.map((module, idx) =>
+          idx === activeModuleId
+            ? { ...module, items: [...module.items, newItem].sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()) }
+            : module
+        );
+        console.log('Updated modules after add:', JSON.stringify(updated, null, 2));
+        console.log('Attachments in last item:', updated[activeModuleId]?.items[updated[activeModuleId]?.items.length - 1]?.attachments);
+        return updated;
+      });
       toast.success('Content added successfully');
     }
 
     setShowAddDialog(false);
     setEditingItemIndex(null);
+    
+    // Reset form data
+    setFormData({
+      title: '',
+      description: '',
+      scheduledDate: new Date().toISOString().split('T')[0],
+      scheduledTime: '21:00',
+      meetingLink: '',
+      meetingPlatform: 'zoom',
+      duration: 60,
+      resourceType: 'pdf',
+      resourceUrl: '',
+      resourceFile: '',
+      announcementType: 'general',
+      validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      isPinned: false,
+      dueDate: '',
+      dueTime: '23:59',
+      attachments: [],
+      driveLinks: [],
+    });
   };
 
   const confirmDeleteItem = (itemId: string | number) => {
@@ -1393,53 +1656,204 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                     onChange={(e) => setFormData({ ...formData, resourceType: e.target.value as any })}
                   >
                     <option value="pdf">PDF Document</option>
+                    <option value="image">Image</option>
                     <option value="video">Video File</option>
                     <option value="youtube">YouTube Video</option>
+                    <option value="drive">Google Drive (Embedded)</option>
                     <option value="recording">Class Recording</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
 
-                {formData.resourceType !== 'youtube' ? (
-                  <div>
-                    <Label htmlFor="file-upload">Upload File</Label>
-                    <div className="flex gap-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        accept={formData.resourceType === 'pdf' ? '.pdf' : 'video/*'}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        className="flex-1"
-                      >
-                        <IconUpload className="size-4 mr-2" />
-                        {uploading ? 'Uploading...' : formData.resourceFile ? 'Change File' : 'Upload File'}
-                      </Button>
-                      {formData.resourceFile && (
-                        <Badge variant="secondary" className="self-center">
-                          {formData.resourceFile}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ) : (
+                {/* YouTube URL Input */}
+                {formData.resourceType === 'youtube' && (
                   <div>
                     <Label htmlFor="resourceUrl">YouTube URL *</Label>
                     <Input
                       id="resourceUrl"
                       type="url"
-                      placeholder="https://youtube.com/..."
+                      placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."
                       value={formData.resourceUrl}
                       onChange={(e) => setFormData({ ...formData, resourceUrl: e.target.value })}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Paste the YouTube video URL
+                    </p>
                   </div>
                 )}
+
+                {/* Drive Links & File Upload Section - Available for all resource types */}
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <IconPaperclip className="size-5" />
+                    <h3 className="font-semibold">Attach Files & Links</h3>
+                  </div>
+
+                  {/* Add Drive Link Section */}
+                  <div className="p-3 border rounded-lg bg-blue-50/50">
+                    <Label className="text-sm font-medium mb-2 block">Add Google Drive Link</Label>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Link Title (e.g., Lecture Notes, Exercise PDF)"
+                        value={tempDriveTitle}
+                        onChange={(e) => setTempDriveTitle(e.target.value)}
+                      />
+                      <Textarea
+                        placeholder='Paste Google Drive embed code: <iframe src="https://drive.google.com/file/d/.../preview"></iframe>'
+                        value={tempDriveLink}
+                        onChange={(e) => setTempDriveLink(e.target.value)}
+                        rows={2}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          if (tempDriveLink.trim()) {
+                            setFormData({
+                              ...formData,
+                              driveLinks: [
+                                ...formData.driveLinks,
+                                {
+                                  link: tempDriveLink.trim(),
+                                  title: tempDriveTitle.trim() || 'Drive Link'
+                                }
+                              ]
+                            });
+                            setTempDriveLink('');
+                            setTempDriveTitle('');
+                            toast.success('Drive link added');
+                          } else {
+                            toast.error('Please paste a drive link');
+                          }
+                        }}
+                        className="w-full"
+                      >
+                        <IconPlus className="size-4 mr-2" />
+                        Add Drive Link
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Display Added Drive Links */}
+                  {formData.driveLinks.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm">Drive Links ({formData.driveLinks.length})</Label>
+                      {formData.driveLinks.map((item, index) => (
+                        <div key={index} className="flex items-start gap-2 p-3 border rounded-lg bg-white">
+                          <IconFileText className="size-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{item.title}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {item.link.substring(0, 80)}...
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                driveLinks: formData.driveLinks.filter((_, i) => i !== index)
+                              });
+                              toast.success('Drive link removed');
+                            }}
+                          >
+                            <IconX className="size-4 text-red-600" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* File Upload Section */}
+                  {!['youtube'].includes(formData.resourceType) && (
+                    <div className="pt-3 border-t">
+                      <Label>Upload Additional Files</Label>
+                      
+                      {/* Display uploaded files */}
+                      {formData.attachments && formData.attachments.length > 0 && (
+                        <div className="space-y-2 mt-3 mb-3">
+                          <p className="text-sm font-medium">Uploaded Files ({formData.attachments.length})</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {formData.attachments.map((file, index) => {
+                              const isImage = file.url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+                              
+                              return (
+                                <div key={index} className="relative border rounded-lg p-2 group">
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => {
+                                      setFormData({
+                                        ...formData,
+                                        attachments: formData.attachments.filter((_, i) => i !== index)
+                                      });
+                                    }}
+                                  >
+                                    <IconX className="h-3 w-3" />
+                                  </Button>
+                                  
+                                  {isImage ? (
+                                    <img 
+                                      src={file.url} 
+                                      alt={file.name}
+                                      className="w-full h-20 object-cover rounded"
+                                    />
+                                  ) : (
+                                    <div className="flex items-center justify-center h-20 bg-muted rounded">
+                                      <IconFileText className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                  
+                                  <p className="text-xs mt-1 truncate" title={file.name}>
+                                    {file.name}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 mt-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          accept={
+                            formData.resourceType === 'pdf' ? '.pdf,.doc,.docx' : 
+                            formData.resourceType === 'image' ? 'image/*' :
+                            formData.resourceType === 'video' ? 'video/*' : 
+                            '*'
+                          }
+                          multiple
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="flex-1"
+                        >
+                          <IconUpload className="size-4 mr-2" />
+                          {uploading ? 'Uploading...' : formData.attachments.length > 0 ? 'Add More Files' : 'Upload Files'}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        You can select multiple files. Accepted: {
+                          formData.resourceType === 'pdf' ? 'PDF, Word documents' : 
+                          formData.resourceType === 'image' ? 'Images (JPG, PNG, GIF, WebP, SVG)' :
+                          formData.resourceType === 'video' ? 'Video files (MP4, WebM, AVI, MOV)' : 
+                          'All file types'
+                        }
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 {formData.resourceType === 'other' && !formData.resourceFile && (
                   <div>
@@ -1513,6 +1927,229 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                     type="time"
                     value={formData.dueTime}
                     onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Assignment Attachments */}
+            {selectedType === 'assignment' && (
+              <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <IconPaperclip className="size-5" />
+                  <h3 className="font-semibold">Assignment Instructions & Attachments</h3>
+                </div>
+
+                <div>
+                  <Label htmlFor="assignmentInstructions">Detailed Instructions</Label>
+                  <Textarea
+                    id="assignmentInstructions"
+                    placeholder="Provide detailed instructions for students..."
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <Label>Attach Files (Multiple files allowed)</Label>
+                  
+                  {/* Multiple Files Preview */}
+                  {formData.attachments.length > 0 && (
+                    <div className="mb-3 space-y-2">
+                      <Label className="text-sm">Uploaded Files ({formData.attachments.length})</Label>
+                      {formData.attachments.map((attachment, idx) => (
+                        <div key={idx} className="border rounded-lg p-3 bg-white">
+                          <div className="flex items-center gap-3">
+                            {attachment.url.startsWith('data:image/') || attachment.type?.startsWith('image/') ? (
+                              <div className="w-16 h-16 bg-gray-50 rounded border overflow-hidden flex-shrink-0">
+                                <img
+                                  src={attachment.url}
+                                  alt={attachment.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : attachment.url.startsWith('data:application/pdf') ? (
+                              <div className="w-16 h-16 bg-red-100 rounded flex items-center justify-center flex-shrink-0">
+                                <IconFileText className="size-8 text-red-600" />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+                                <IconFileText className="size-8 text-blue-600" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{attachment.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {attachment.type?.startsWith('image/') ? 'Image' : 
+                                 attachment.type === 'application/pdf' ? 'PDF' : 'Document'}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  attachments: prev.attachments.filter((_, i) => i !== idx)
+                                }));
+                                toast.success('File removed');
+                              }}
+                            >
+                              <IconX className="size-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Legacy single file support (backward compatibility) */}
+                  {formData.resourceUrl && formData.resourceFile && formData.attachments.length === 0 && (
+                    <div className="mb-3 border rounded-lg p-3 bg-white">
+                      <div className="flex items-center gap-3">
+                        {formData.resourceUrl.startsWith('data:image/') ? (
+                          <div className="w-16 h-16 bg-gray-50 rounded border overflow-hidden flex-shrink-0">
+                            <img
+                              src={formData.resourceUrl}
+                              alt={formData.resourceFile}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : formData.resourceUrl.startsWith('data:application/pdf') ? (
+                          <div className="w-16 h-16 bg-red-100 rounded flex items-center justify-center flex-shrink-0">
+                            <IconFileText className="size-8 text-red-600" />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+                            <IconFileText className="size-8 text-blue-600" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{formData.resourceFile}</p>
+                          <p className="text-xs text-muted-foreground">Legacy file</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setFormData(prev => ({ ...prev, resourceFile: '', resourceUrl: '' }))}
+                        >
+                          <IconX className="size-4 text-red-600" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (files.length === 0) return;
+
+                        setUploading(true);
+                        const uploadedFiles: Array<{ url: string; name: string; type: string }> = [];
+
+                        try {
+                          for (const file of files) {
+                            const uploadFormData = new FormData();
+                            uploadFormData.append('file', file);
+                            uploadFormData.append('type', 'document');
+
+                            const response = await fetch('/api/upload', {
+                              method: 'POST',
+                              body: uploadFormData,
+                            });
+                            const data = await response.json();
+
+                            if (data.success) {
+                              uploadedFiles.push({
+                                url: data.url,
+                                name: file.name,
+                                type: file.type
+                              });
+                            } else {
+                              throw new Error(data.error || 'Upload failed');
+                            }
+                          }
+
+                          setFormData(prev => ({
+                            ...prev,
+                            attachments: [...prev.attachments, ...uploadedFiles]
+                          }));
+                          
+                          toast.success(`${files.length} file(s) uploaded successfully`);
+                          
+                          // Reset file input
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
+                        } catch (error) {
+                          toast.error('Failed to upload some files');
+                          console.error('Upload error:', error);
+                        } finally {
+                          setUploading(false);
+                        }
+                      }}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.zip,image/*"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="flex-1"
+                    >
+                      <IconUpload className="size-4 mr-2" />
+                      {uploading ? 'Uploading...' : formData.attachments.length > 0 ? 'Add More Files' : 'Upload Files'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You can select multiple files at once. Accepted: PDF, Word, PowerPoint, Excel, images, ZIP files (max 20MB each)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Student Submission Format</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="acceptAssignmentText"
+                      checked={quizForm.acceptTextAnswer}
+                      onChange={(e) => setQuizForm({ ...quizForm, acceptTextAnswer: e.target.checked })}
+                      className="rounded"
+                    />
+                    <Label htmlFor="acceptAssignmentText" className="cursor-pointer">
+                      Accept text answer (in textbox)
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="acceptAssignmentFile"
+                      checked={quizForm.acceptFileUpload}
+                      onChange={(e) => setQuizForm({ ...quizForm, acceptFileUpload: e.target.checked })}
+                      className="rounded"
+                    />
+                    <Label htmlFor="acceptAssignmentFile" className="cursor-pointer">
+                      Accept file upload (PDF, images, documents)
+                    </Label>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Total Points for Assignment *</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={quizForm.totalPoints || 100}
+                    onChange={(e) => setQuizForm({ ...quizForm, totalPoints: parseInt(e.target.value) || 100 })}
                   />
                 </div>
               </div>
@@ -1786,12 +2423,12 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                             const file = e.target.files?.[0];
                             if (file) {
                               setUploading(true);
-                              const formData = new FormData();
-                              formData.append('file', file);
+                              const uploadFormData = new FormData();
+                              uploadFormData.append('file', file);
                               try {
                                 const response = await fetch('/api/admin/upload', {
                                   method: 'POST',
-                                  body: formData,
+                                  body: uploadFormData,
                                 });
                                 const data = await response.json();
                                 setQuizForm(prev => ({ ...prev, openEndedQuestionFile: data.url }));

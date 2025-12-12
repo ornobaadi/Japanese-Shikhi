@@ -356,7 +356,6 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                                     Free
                                   </Badge>
                                 )}
-                                
                                 {item.isLocked ? (
                                   <Lock className="h-4 w-4 text-gray-400" />
                                 ) : (
@@ -364,6 +363,35 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                                 )}
                               </div>
                             </div>
+
+                            {/* Attachments rendering */}
+                            {Array.isArray((item as any).attachments) && (item as any).attachments.length > 0 && (
+                              <div className="mt-3 space-y-1">
+                                <div className="text-xs font-semibold text-gray-700 mb-1">Attachments:</div>
+                                <ul className="space-y-1">
+                                  {(item as any).attachments.map((att: any, i: number) => (
+                                    <li key={i} className="flex items-center gap-2">
+                                      {/* Icon by type */}
+                                      {att.type === 'file' && <FileText className="h-4 w-4 text-blue-500" />}
+                                      {att.type === 'pdf' && <FileText className="h-4 w-4 text-orange-500" />}
+                                      {att.type === 'drive' && <ExternalLink className="h-4 w-4 text-green-600" />}
+                                      {att.type === 'youtube' && <Youtube className="h-4 w-4 text-red-600" />}
+                                      {att.type === 'link' && <ExternalLink className="h-4 w-4 text-blue-600" />}
+                                      {/* Attachment link */}
+                                      <a
+                                        href={att.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-700 underline hover:text-blue-900 text-xs"
+                                        download={att.type === 'file' || att.type === 'pdf' ? att.name : undefined}
+                                      >
+                                        {att.name || att.url}
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}

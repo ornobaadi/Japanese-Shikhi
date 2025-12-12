@@ -27,6 +27,7 @@ export default function AssignmentForm({ courseId, week, onClose, onSuccess }: A
     const [points, setPoints] = useState('100');
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [saving, setSaving] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     // Dialog states for adding attachments
     const [showDriveDialog, setShowDriveDialog] = useState(false);
@@ -74,16 +75,100 @@ export default function AssignmentForm({ courseId, week, onClose, onSuccess }: A
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // In a real app, you'd upload to cloud storage (S3, Cloudinary, etc.)
-        // For now, we'll simulate with a placeholder URL
         toast.info('Uploading file...');
 
-        // Simulate upload delay
-        setTimeout(() => {
-            const mockUrl = `https://storage.example.com/${file.name}`;
-            setAttachments([...attachments, { type: 'file', url: mockUrl, name: file.name }]);
-            toast.success(`File "${file.name}" uploaded`);
-        }, 1000);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', 'document');
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Upload failed');
+            }
+
+            const newAttachment = { type: 'file' as const, url: data.url, name: file.name };
+            const newAttachments = [...attachments, newAttachment];
+            setAttachments(newAttachments);
+            toast.success(`File "${file.name}" uploaded successfully`);
+
+            // Auto-save draft with new attachment
+            await fetch(`/api/courses/${courseId}/assignments/draft`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    week,
+                    title,
+                    instructions,
+                    dueDate: dueDate ? new Date(dueDate) : undefined,
+                    points: parseInt(points) || 100,
+                    attachments: newAttachments.map(a => ({ type: a.type, url: a.url, name: a.name })),
+                    isDraft: true
+                }),
+            });
+
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to upload file');
+        }
+    };
+
+    // Handle drag and drop
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            toast.info('Uploading file...');
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', 'document');
+
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.error || 'Upload failed');
+                    }
+                    setAttachments([...attachments, { type: 'file', url: data.url, name: file.name }]);
+                    toast.success(`File "${file.name}" uploaded successfully`);
+                })
+                .catch(error => {
+                    console.error('Upload error:', error);
+                    toast.error(error instanceof Error ? error.message : 'Failed to upload file');
+                });
+        }
     };
 
     // Remove attachment
@@ -244,7 +329,7 @@ export default function AssignmentForm({ courseId, week, onClose, onSuccess }: A
                                     type="file"
                                     className="hidden"
                                     onChange={handleFileUpload}
-                                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                                    accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.zip,image/*"
                                 />
 
                                 <button
@@ -259,6 +344,26 @@ export default function AssignmentForm({ courseId, week, onClose, onSuccess }: A
                                     </div>
                                     <span className="text-xs">Link</span>
                                 </button>
+                            </div>
+
+                            {/* Drag and Drop Zone */}
+                            <div
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                                    isDragOver
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                                }`}
+                            >
+                                <div className="flex flex-col items-center gap-2">
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <p className="text-sm font-medium text-gray-700">Drag and drop files here</p>
+                                    <p className="text-xs text-gray-500">or click the Upload button above</p>
+                                </div>
                             </div>
 
                             {/* Display attached files */}

@@ -101,12 +101,19 @@ export default function StudentCurriculumPage() {
     const [loading, setLoading] = useState(true);
     const [activeModuleId, setActiveModuleId] = useState(0);
     const [selectedQuiz, setSelectedQuiz] = useState<CurriculumItem | null>(null);
+    const [selectedAssignment, setSelectedAssignment] = useState<CurriculumItem | null>(null);
+    const [selectedResource, setSelectedResource] = useState<CurriculumItem | null>(null);
     const [selectedAnswers, setSelectedAnswers] = useState<{ [questionIndex: number]: number }>({});
     const [showResults, setShowResults] = useState(false);
     const [quizResults, setQuizResults] = useState<{ [quizId: string]: any }>({});
     const [savingQuiz, setSavingQuiz] = useState(false);
     const [completedQuizzes, setCompletedQuizzes] = useState<Set<string>>(new Set());
     const [isAdmin, setIsAdmin] = useState(false);
+    
+    // Assignment submission states
+    const [assignmentText, setAssignmentText] = useState('');
+    const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
+    const [uploadingAssignment, setUploadingAssignment] = useState(false);
 
     const handleAnswerSelect = (questionIndex: number, optionIndex: number) => {
         setSelectedAnswers(prev => ({
@@ -223,6 +230,67 @@ export default function StudentCurriculumPage() {
     const resetQuiz = () => {
         setSelectedAnswers({});
         setShowResults(false);
+    };
+
+    const handleAssignmentSubmit = async () => {
+        if (!selectedAssignment || (!assignmentText && !assignmentFile)) {
+            alert('Please provide either text answer or upload a file');
+            return;
+        }
+
+        setUploadingAssignment(true);
+
+        try {
+            let fileUrl = '';
+            
+            // Upload file if provided
+            if (assignmentFile) {
+                const formData = new FormData();
+                formData.append('file', assignmentFile);
+                formData.append('type', 'document');
+
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const uploadData = await uploadResponse.json();
+                if (!uploadData.success) {
+                    throw new Error(uploadData.error || 'Failed to upload file');
+                }
+                fileUrl = uploadData.url;
+            }
+
+            // Submit assignment
+            const response = await fetch('/api/assignments/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    courseId: params?.courseId,
+                    assignmentId: selectedAssignment._id || `assignment-${Date.now()}`,
+                    assignmentTitle: selectedAssignment.title,
+                    textAnswer: assignmentText,
+                    fileUrl: fileUrl,
+                    fileName: assignmentFile?.name || '',
+                }),
+            });
+
+            if (response.ok) {
+                alert('✅ Assignment submitted successfully!');
+                setSelectedAssignment(null);
+                setAssignmentText('');
+                setAssignmentFile(null);
+            } else {
+                throw new Error('Failed to submit assignment');
+            }
+        } catch (error) {
+            console.error('Error submitting assignment:', error);
+            alert('❌ Failed to submit assignment. Please try again.');
+        } finally {
+            setUploadingAssignment(false);
+        }
     };
 
     useEffect(() => {
@@ -630,7 +698,67 @@ export default function StudentCurriculumPage() {
                                                                                             </div>
                                                                                             <h3 className="text-lg font-bold mb-2">{item.title}</h3>
                                                                                             {item.description && (
-                                                                                                <p className="text-sm mb-3 opacity-90">{item.description}</p>
+                                                                                                <p className="text-sm mb-3 opacity-90 whitespace-pre-wrap">{item.description}</p>
+                                                                                            )}
+
+                                                                                            {/* Assignment Files Preview - Multiple attachments */}
+                                                                                            {item.type === 'assignment' && (item as any).attachments && (item as any).attachments.length > 0 && (
+                                                                                                <div className="mb-3 space-y-2">
+                                                                                                    <p className="text-xs font-semibold text-purple-900 mb-2">📎 Instructor uploaded {(item as any).attachments.length} file(s):</p>
+                                                                                                    {(item as any).attachments.map((attachment: any, idx: number) => (
+                                                                                                        <div key={idx} className="p-2 bg-purple-50 border border-purple-200 rounded-lg">
+                                                                                                            <div className="flex items-center gap-2">
+                                                                                                                {attachment.url?.startsWith('data:image/') ? (
+                                                                                                                    <div className="w-12 h-12 rounded border border-purple-300 overflow-hidden flex-shrink-0 bg-white">
+                                                                                                                        <img src={attachment.url} alt={attachment.filename || ''} className="w-full h-full object-cover" />
+                                                                                                                    </div>
+                                                                                                                ) : attachment.url?.startsWith('data:application/pdf') ? (
+                                                                                                                    <div className="w-12 h-12 rounded bg-red-100 flex items-center justify-center flex-shrink-0">
+                                                                                                                        <FileText className="size-6 text-red-600" />
+                                                                                                                    </div>
+                                                                                                                ) : (
+                                                                                                                    <div className="w-12 h-12 rounded bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                                                                                        <FileText className="size-6 text-blue-600" />
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                                <div className="flex-1 min-w-0">
+                                                                                                                    <p className="text-xs font-medium text-purple-800 truncate">{attachment.filename}</p>
+                                                                                                                    <p className="text-xs text-purple-600">{attachment.type}</p>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            )}
+
+                                                                                            {/* Assignment File Preview - Legacy single file */}
+                                                                                            {item.type === 'assignment' && (item.resourceUrl || item.resourceFile) && (!(item as any).attachments || (item as any).attachments.length === 0) && (
+                                                                                                <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                                                                                                    <div className="flex items-start gap-3">
+                                                                                                        {item.resourceUrl?.startsWith('data:image/') ? (
+                                                                                                            <div className="w-20 h-20 rounded border-2 border-purple-300 overflow-hidden flex-shrink-0 bg-white">
+                                                                                                                <img src={item.resourceUrl} alt={item.resourceFile || ''} className="w-full h-full object-cover" />
+                                                                                                            </div>
+                                                                                                        ) : item.resourceUrl?.startsWith('data:application/pdf') ? (
+                                                                                                            <div className="w-20 h-20 rounded border-2 border-red-300 bg-red-100 flex items-center justify-center flex-shrink-0">
+                                                                                                                <FileText className="size-10 text-red-600" />
+                                                                                                            </div>
+                                                                                                        ) : (
+                                                                                                            <div className="w-20 h-20 rounded border-2 border-blue-300 bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                                                                                <FileText className="size-10 text-blue-600" />
+                                                                                                            </div>
+                                                                                                        )}
+                                                                                                        <div className="flex-1 min-w-0">
+                                                                                                            <p className="text-xs font-semibold text-purple-900 mb-1">📎 Instructor uploaded:</p>
+                                                                                                            <p className="text-sm font-medium text-purple-800 truncate">{item.resourceFile || 'Assignment File'}</p>
+                                                                                                            <p className="text-xs text-purple-600 mt-1">
+                                                                                                                {item.resourceUrl?.startsWith('data:image/') ? 'Image File' :
+                                                                                                                 item.resourceUrl?.startsWith('data:application/pdf') ? 'PDF Document' :
+                                                                                                                 'Document File'}
+                                                                                                            </p>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
                                                                                             )}
 
                                                                                             {/* Type-specific details */}
@@ -662,7 +790,94 @@ export default function StudentCurriculumPage() {
                                                                                                             {getResourceIcon(item.resourceType)}
                                                                                                             <span className="capitalize">{item.resourceType}</span>
                                                                                                         </Badge>
-                                                                                                        {(item.resourceUrl || item.resourceFile) && (
+                                                                                                        
+                                                                                                        <Button 
+                                                                                                            variant="default" 
+                                                                                                            size="sm"
+                                                                                                            onClick={() => {
+                                                                                                                console.log('Resource clicked:', {
+                                                                                                                    title: item.title,
+                                                                                                                    driveLinks: (item as any).driveLinks,
+                                                                                                                    attachments: (item as any).attachments,
+                                                                                                                    fullItem: item
+                                                                                                                });
+                                                                                                                setSelectedResource(item);
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            <Eye className="size-3 mr-1" />
+                                                                                                            View Details
+                                                                                                        </Button>
+                                                                                                        
+                                                                                                        {/* Preview info */}
+                                                                                                        <div className="w-full mt-2 text-xs text-green-900 opacity-75">
+                                                                                                            {(item as any).driveLinks?.length > 0 && (
+                                                                                                                <span>📎 {(item as any).driveLinks.length} Drive Link(s)</span>
+                                                                                                            )}
+                                                                                                            {(item as any).attachments?.length > 0 && (
+                                                                                                                <span className="ml-3">📁 {(item as any).attachments.length} File(s)</span>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                        
+                                                                                                        {/* Drive Links - Hidden in card view, shown in dialog */}
+                                                                                                        {false && (item as any).driveLinks && (item as any).driveLinks.length > 0 && (
+                                                                                                            <div className="w-full mt-3 space-y-2">
+                                                                                                                <p className="text-xs font-semibold text-green-900 mb-2">🔗 Google Drive Links ({(item as any).driveLinks.length}):</p>
+                                                                                                                {(item as any).driveLinks.map((driveLink: any, idx: number) => (
+                                                                                                                    <div key={idx} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                                                                                        <p className="text-sm font-medium text-green-800 mb-2">{driveLink.title}</p>
+                                                                                                                        <div 
+                                                                                                                            className="w-full aspect-video rounded border border-green-300 overflow-hidden bg-white"
+                                                                                                                            dangerouslySetInnerHTML={{ __html: driveLink.link }}
+                                                                                                                        />
+                                                                                                                    </div>
+                                                                                                                ))}
+                                                                                                            </div>
+                                                                                                        )}
+
+                                                                                                        {/* Display Uploaded Files */}
+                                                                                                        {(item as any).attachments && (item as any).attachments.length > 0 && (
+                                                                                                            <div className="w-full mt-3 space-y-2">
+                                                                                                                <p className="text-xs font-semibold text-green-900 mb-2">📎 Uploaded Files ({(item as any).attachments.length}):</p>
+                                                                                                                <div className="grid grid-cols-2 gap-2">
+                                                                                                                    {(item as any).attachments.map((attachment: any, idx: number) => (
+                                                                                                                        <div key={idx} className="p-2 bg-green-50 border border-green-200 rounded-lg">
+                                                                                                                            <div className="flex flex-col gap-2">
+                                                                                                                                {attachment.url?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                                                                                                                                    <div className="w-full h-24 rounded border border-green-300 overflow-hidden bg-white">
+                                                                                                                                        <img src={attachment.url} alt={attachment.name || ''} className="w-full h-full object-cover" />
+                                                                                                                                    </div>
+                                                                                                                                ) : attachment.url?.endsWith('.pdf') ? (
+                                                                                                                                    <div className="w-full h-24 rounded bg-red-100 flex items-center justify-center">
+                                                                                                                                        <FileText className="size-10 text-red-600" />
+                                                                                                                                    </div>
+                                                                                                                                ) : (
+                                                                                                                                    <div className="w-full h-24 rounded bg-blue-100 flex items-center justify-center">
+                                                                                                                                        <FileText className="size-10 text-blue-600" />
+                                                                                                                                    </div>
+                                                                                                                                )}
+                                                                                                                                <div>
+                                                                                                                                    <p className="text-xs font-medium text-green-800 truncate">{attachment.name}</p>
+                                                                                                                                    <Button 
+                                                                                                                                        variant="outline" 
+                                                                                                                                        size="sm" 
+                                                                                                                                        className="w-full mt-1 text-xs h-7"
+                                                                                                                                        asChild
+                                                                                                                                    >
+                                                                                                                                        <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                                                                                                                                            <Download className="size-3 mr-1" />
+                                                                                                                                            Download
+                                                                                                                                        </a>
+                                                                                                                                    </Button>
+                                                                                                                                </div>
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    ))}
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        )}
+
+                                                                                                        {/* Legacy single file support */}
+                                                                                                        {(item.resourceUrl || item.resourceFile) && (!(item as any).attachments || (item as any).attachments.length === 0) && (
                                                                                                             <Button variant="outline" size="sm" asChild>
                                                                                                                 <a
                                                                                                                     href={item.resourceUrl}
@@ -708,7 +923,61 @@ export default function StudentCurriculumPage() {
                                                                                                             </Button>
                                                                                                         )}
                                                                                                     </>
-                                                                                                )}                                                                                                {item.type === 'announcement' && item.announcementType !== 'general' && (
+                                                                                                )}
+
+                                                                                                {item.type === 'assignment' && (
+                                                                                                    <>
+                                                                                                        <div className="flex flex-wrap items-center gap-2 w-full">
+                                                                                                            {(item.resourceUrl || item.resourceFile) && (
+                                                                                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 border border-purple-300 rounded-md">
+                                                                                                                    {item.resourceUrl?.startsWith('data:image/') ? (
+                                                                                                                        <>
+                                                                                                                            <div className="w-8 h-8 rounded overflow-hidden bg-white border">
+                                                                                                                                <img src={item.resourceUrl} alt="" className="w-full h-full object-cover" />
+                                                                                                                            </div>
+                                                                                                                            <span className="text-xs font-medium text-purple-900">Image attached</span>
+                                                                                                                        </>
+                                                                                                                    ) : item.resourceUrl?.startsWith('data:application/pdf') ? (
+                                                                                                                        <>
+                                                                                                                            <FileText className="size-4 text-red-600" />
+                                                                                                                            <span className="text-xs font-medium text-purple-900">PDF attached</span>
+                                                                                                                        </>
+                                                                                                                    ) : (
+                                                                                                                        <>
+                                                                                                                            <FileText className="size-4 text-blue-600" />
+                                                                                                                            <span className="text-xs font-medium text-purple-900">File attached</span>
+                                                                                                                        </>
+                                                                                                                    )}
+                                                                                                                </div>
+                                                                                                            )}
+                                                                                                            {(item as any)?.quizData?.totalPoints && (
+                                                                                                                <Badge variant="outline" className="text-xs">
+                                                                                                                    <Target className="size-3 mr-1" />
+                                                                                                                    {(item as any).quizData.totalPoints} points
+                                                                                                                </Badge>
+                                                                                                            )}
+                                                                                                            {((item as any)?.quizData?.acceptTextAnswer || (item as any)?.quizData?.acceptFileUpload) && (
+                                                                                                                <div className="text-xs text-muted-foreground">
+                                                                                                                    Submit: {[
+                                                                                                                        (item as any)?.quizData?.acceptTextAnswer && 'Text',
+                                                                                                                        (item as any)?.quizData?.acceptFileUpload && 'File'
+                                                                                                                    ].filter(Boolean).join(' or ')}
+                                                                                                                </div>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                        <Button
+                                                                                                            variant="default"
+                                                                                                            size="sm"
+                                                                                                            onClick={() => setSelectedAssignment(item)}
+                                                                                                            className="bg-purple-600 hover:bg-purple-700"
+                                                                                                        >
+                                                                                                            <IconClipboardCheck className="size-3 mr-1" />
+                                                                                                            Submit Assignment
+                                                                                                        </Button>
+                                                                                                    </>
+                                                                                                )}
+
+                                                                                                {item.type === 'announcement' && item.announcementType !== 'general' && (
                                                                                                     <Badge
                                                                                                         variant={item.announcementType === 'cancellation' ? 'destructive' : 'default'}
                                                                                                         className="text-xs capitalize"
@@ -1031,6 +1300,380 @@ export default function StudentCurriculumPage() {
                             )}
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Assignment Submission Modal */}
+            <Dialog open={!!selectedAssignment} onOpenChange={(open) => !open && setSelectedAssignment(null)}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <IconClipboardCheck className="size-5 text-purple-600" />
+                            Submit Assignment: {selectedAssignment?.title}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {selectedAssignment?.dueDate && (
+                                <span className="text-sm text-amber-600 font-medium">
+                                    Due: {formatDate(selectedAssignment.dueDate).full} at {formatTime(selectedAssignment.dueDate)}
+                                </span>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        {/* Assignment Instructions */}
+                        {selectedAssignment?.description && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">Instructions</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm whitespace-pre-wrap">{selectedAssignment.description}</p>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Download attached files - Multiple attachments */}
+                        {(selectedAssignment as any)?.attachments && (selectedAssignment as any).attachments.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">Assignment Materials ({(selectedAssignment as any).attachments.length} files)</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {(selectedAssignment as any).attachments.map((attachment: any, idx: number) => (
+                                        <div key={idx} className="border rounded-lg p-3 bg-gray-50">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                {attachment.url?.startsWith('data:image/') ? (
+                                                    <div className="w-20 h-20 rounded border overflow-hidden flex-shrink-0">
+                                                        <img src={attachment.url} alt={attachment.filename} className="w-full h-full object-cover" />
+                                                    </div>
+                                                ) : attachment.url?.startsWith('data:application/pdf') ? (
+                                                    <div className="w-20 h-20 rounded bg-red-100 flex items-center justify-center flex-shrink-0">
+                                                        <FileText className="size-10 text-red-600" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-20 h-20 rounded bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                        <FileText className="size-10 text-blue-600" />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium text-sm truncate">{attachment.filename}</p>
+                                                    <p className="text-xs text-muted-foreground">{attachment.type}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="sm" asChild className="flex-1">
+                                                    <a href={attachment.url} download={attachment.filename}>
+                                                        <Download className="size-3 mr-1" />
+                                                        Download
+                                                    </a>
+                                                </Button>
+                                                {!attachment.url?.startsWith('data:image/') && (
+                                                    <Button variant="outline" size="sm" asChild className="flex-1">
+                                                        <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                                                            <Eye className="size-3 mr-1" />
+                                                            Open
+                                                        </a>
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Download attached files - Legacy single file */}
+                        {(selectedAssignment?.resourceUrl || selectedAssignment?.resourceFile) && (!(selectedAssignment as any)?.attachments || (selectedAssignment as any).attachments.length === 0) && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm">Assignment Materials</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {/* File Preview for Images */}
+                                    {selectedAssignment.resourceUrl && selectedAssignment.resourceUrl.startsWith('data:image/') && (
+                                        <div className="border rounded-lg p-2 bg-gray-50">
+                                            <img
+                                                src={selectedAssignment.resourceUrl}
+                                                alt={selectedAssignment.resourceFile || 'Assignment file'}
+                                                className="max-w-full h-auto max-h-96 mx-auto rounded"
+                                            />
+                                        </div>
+                                    )}
+                                    
+                                    {/* PDF Preview */}
+                                    {selectedAssignment.resourceUrl && selectedAssignment.resourceUrl.startsWith('data:application/pdf') && (
+                                        <div className="border rounded-lg p-4 bg-gray-50 text-center">
+                                            <FileText className="size-12 mx-auto mb-2 text-red-600" />
+                                            <p className="text-sm font-medium">PDF Document</p>
+                                            <p className="text-xs text-muted-foreground">{selectedAssignment.resourceFile}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Word/Excel/Other Documents */}
+                                    {selectedAssignment.resourceUrl && !selectedAssignment.resourceUrl.startsWith('data:image/') && !selectedAssignment.resourceUrl.startsWith('data:application/pdf') && (
+                                        <div className="border rounded-lg p-4 bg-gray-50 text-center">
+                                            <FileText className="size-12 mx-auto mb-2 text-blue-600" />
+                                            <p className="text-sm font-medium">Document File</p>
+                                            <p className="text-xs text-muted-foreground">{selectedAssignment.resourceFile}</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm" asChild className="flex-1">
+                                            <a
+                                                href={selectedAssignment.resourceUrl}
+                                                download={selectedAssignment.resourceFile || 'assignment-file'}
+                                            >
+                                                <Download className="size-4 mr-2" />
+                                                Download File
+                                            </a>
+                                        </Button>
+                                        
+                                        {selectedAssignment.resourceUrl && !selectedAssignment.resourceUrl.startsWith('data:image/') && (
+                                            <Button variant="outline" size="sm" asChild className="flex-1">
+                                                <a
+                                                    href={selectedAssignment.resourceUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <Eye className="size-4 mr-2" />
+                                                    Open in New Tab
+                                                </a>
+                                            </Button>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Text Answer Input */}
+                        {((selectedAssignment as any)?.quizData?.acceptTextAnswer !== false) && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Your Answer (Text)</label>
+                                <textarea
+                                    className="w-full min-h-[150px] p-3 border rounded-md resize-y"
+                                    placeholder="Type your answer here..."
+                                    value={assignmentText}
+                                    onChange={(e) => setAssignmentText(e.target.value)}
+                                />
+                            </div>
+                        )}
+
+                        {/* File Upload */}
+                        {((selectedAssignment as any)?.quizData?.acceptFileUpload !== false) && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Upload File (Optional)</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="file"
+                                        id="assignment-file"
+                                        className="hidden"
+                                        accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.zip"
+                                        onChange={(e) => setAssignmentFile(e.target.files?.[0] || null)}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => document.getElementById('assignment-file')?.click()}
+                                        className="flex-1"
+                                    >
+                                        <FileText className="size-4 mr-2" />
+                                        {assignmentFile ? assignmentFile.name : 'Choose File'}
+                                    </Button>
+                                    {assignmentFile && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setAssignmentFile(null)}
+                                        >
+                                            <X className="size-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Accepted: PDF, Word, PowerPoint, images, ZIP (max 20MB)
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Points Info */}
+                        {(selectedAssignment as any)?.quizData?.totalPoints && (
+                            <Card className="bg-blue-50 border-blue-200">
+                                <CardContent className="py-3">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Total Points:</span>
+                                        <Badge variant="secondary">
+                                            {(selectedAssignment as any).quizData.totalPoints} points
+                                        </Badge>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-4 border-t">
+                        <Button
+                            variant="outline"
+                            onClick={() => setSelectedAssignment(null)}
+                            disabled={uploadingAssignment}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleAssignmentSubmit}
+                            disabled={uploadingAssignment || (!assignmentText && !assignmentFile)}
+                        >
+                            {uploadingAssignment ? 'Submitting...' : 'Submit Assignment'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Resource Details Dialog */}
+            <Dialog open={!!selectedResource} onOpenChange={() => setSelectedResource(null)}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                                {getResourceIcon(selectedResource?.resourceType)}
+                            </div>
+                            <div>
+                                <DialogTitle className="text-2xl">{selectedResource?.title}</DialogTitle>
+                                <DialogDescription className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="text-xs">
+                                        {selectedResource?.resourceType?.toUpperCase()}
+                                    </Badge>
+                                    <span className="text-xs">
+                                        {selectedResource && formatDate(selectedResource.scheduledDate).full} • {selectedResource && formatTime(selectedResource.scheduledDate)}
+                                    </span>
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="space-y-6 mt-4">
+                        {/* Description */}
+                        {selectedResource?.description && (
+                            <div>
+                                <h3 className="font-semibold text-sm text-muted-foreground mb-2">Description</h3>
+                                <p className="text-sm whitespace-pre-wrap">{selectedResource.description}</p>
+                            </div>
+                        )}
+
+                        {/* Google Drive Links */}
+                        {(selectedResource as any)?.driveLinks && (selectedResource as any).driveLinks.length > 0 && (
+                            <div>
+                                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                                    <Link className="size-5 text-blue-600" />
+                                    Google Drive Resources ({(selectedResource as any).driveLinks.length})
+                                </h3>
+                                <div className="space-y-4">
+                                    {(selectedResource as any).driveLinks.map((driveLink: any, idx: number) => (
+                                        <div key={idx} className="border rounded-lg overflow-hidden">
+                                            <div className="bg-blue-50 px-4 py-2 border-b">
+                                                <p className="font-medium text-blue-900">{driveLink.title}</p>
+                                            </div>
+                                            <div className="p-4 bg-white">
+                                                <div 
+                                                    className="w-full aspect-video rounded border overflow-hidden"
+                                                    dangerouslySetInnerHTML={{ __html: driveLink.link }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Uploaded Files */}
+                        {(selectedResource as any)?.attachments && (selectedResource as any).attachments.length > 0 && (
+                            <div>
+                                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                                    <FileText className="size-5 text-green-600" />
+                                    Downloadable Files ({(selectedResource as any).attachments.length})
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {(selectedResource as any).attachments.map((attachment: any, idx: number) => {
+                                        const isImage = attachment.url?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+                                        const isPdf = attachment.url?.endsWith('.pdf');
+                                        
+                                        return (
+                                            <div key={idx} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                                                {isImage ? (
+                                                    <div className="aspect-video bg-gray-100">
+                                                        <img 
+                                                            src={attachment.url} 
+                                                            alt={attachment.name} 
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="aspect-video bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                                                        <FileText className={`size-20 ${isPdf ? 'text-red-500' : 'text-blue-500'}`} />
+                                                    </div>
+                                                )}
+                                                <div className="p-4 space-y-2">
+                                                    <p className="font-medium text-sm truncate" title={attachment.name}>
+                                                        {attachment.name}
+                                                    </p>
+                                                    <Button 
+                                                        variant="default" 
+                                                        size="sm" 
+                                                        className="w-full"
+                                                        asChild
+                                                    >
+                                                        <a href={attachment.url} target="_blank" rel="noopener noreferrer" download>
+                                                            <Download className="size-4 mr-2" />
+                                                            Download
+                                                        </a>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* YouTube URL */}
+                        {selectedResource?.resourceType === 'youtube' && selectedResource.resourceUrl && (
+                            <div>
+                                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                                    <Video className="size-5 text-red-600" />
+                                    YouTube Video
+                                </h3>
+                                <div className="aspect-video rounded-lg overflow-hidden border">
+                                    <iframe
+                                        width="100%"
+                                        height="100%"
+                                        src={selectedResource.resourceUrl.replace('watch?v=', 'embed/')}
+                                        title="YouTube video"
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* No content message */}
+                        {!(selectedResource as any)?.driveLinks?.length && 
+                         !(selectedResource as any)?.attachments?.length && 
+                         selectedResource?.resourceType !== 'youtube' && (
+                            <div className="text-center py-12 text-muted-foreground">
+                                <BookOpen className="size-12 mx-auto mb-4 opacity-50" />
+                                <p>No additional resources available for this item.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end pt-4 border-t mt-6">
+                        <Button variant="outline" onClick={() => setSelectedResource(null)}>
+                            Close
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </SidebarProvider>

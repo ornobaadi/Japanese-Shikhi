@@ -70,7 +70,17 @@ export async function PUT(
     console.log('Updating curriculum for course:', id);
     
     const body = await request.json();
-    console.log('Request body:', JSON.stringify(body, null, 2));
+    console.log('Request body received');
+
+    // Log attachments specifically
+    body.curriculum?.modules?.forEach((mod: any, modIdx: number) => {
+      mod.items?.forEach((item: any, itemIdx: number) => {
+        console.log(`Module ${modIdx} Item ${itemIdx} (${item.title}): attachments=${item.attachments?.length || 0}, driveLinks=${item.driveLinks?.length || 0}`);
+        if (item.attachments && item.attachments.length > 0) {
+          console.log('  Attachments:', JSON.stringify(item.attachments));
+        }
+      });
+    });
 
     // Validate request body
     if (!body.curriculum) {
@@ -94,43 +104,44 @@ export async function PUT(
     console.log('Current course category:', course.category);
     console.log('Current metadata:', course.metadata);
 
-    course.curriculum = body.curriculum;
-    
-    // Ensure metadata exists before updating
-    if (!course.metadata) {
-      course.metadata = {
-        version: '1.0',
-        createdBy: userId,
-        lastUpdated: new Date()
-      };
-    } else {
-      course.metadata.lastUpdated = new Date();
+    // DEBUG: Log the received curriculum before saving
+    console.log('API DEBUG: Received curriculum:', JSON.stringify(body.curriculum, null, 2));
+
+    // Use native MongoDB driver to bypass Mongoose schema casting completely
+    const db = Course.db;
+    const collection = db.collection('courses');
+
+    // DEBUG: Log the update query
+    console.log('API DEBUG: Update query:', {
+      _id: course._id,
+      curriculum: body.curriculum
+    });
+
+    const updateResult = await collection.updateOne(
+      { _id: course._id },
+      {
+        $set: {
+          curriculum: body.curriculum,
+          'metadata.lastUpdated': new Date()
+        }
+      }
+    );
+
+    console.log('API DEBUG: Native MongoDB update result:', updateResult);
+
+    if (updateResult.modifiedCount === 0 && updateResult.matchedCount === 0) {
+      console.error('Failed to update course - no documents matched');
+      return NextResponse.json({ error: 'Failed to update course' }, { status: 500 });
     }
 
-    console.log('Saving course with updated curriculum...');
-    
-    try {
-      // Save with validation disabled temporarily to bypass enum issues
-      await course.save({ validateBeforeSave: false });
-      console.log('Course saved successfully (validation bypassed)');
-    } catch (saveError: any) {
-      console.error('Detailed save error:', saveError);
-      console.error('Validation errors:', saveError.errors);
-      
-      // Try to validate manually to see specific issues
-      try {
-        await course.validate();
-      } catch (validationError: any) {
-        console.error('Manual validation error:', validationError);
-        console.error('Validation error details:', validationError.errors);
-      }
-      
-      throw saveError;
-    }
+    // Verify the save by reading back
+    const updatedCourse = await Course.findById(id).lean();
+    console.log('API DEBUG: Verification - attachments in first item:',
+      (updatedCourse as any)?.curriculum?.modules?.[0]?.items?.[0]?.attachments);
 
     return NextResponse.json({
       success: true,
-      curriculum: course.curriculum
+      curriculum: (updatedCourse as any)?.curriculum
     });
   } catch (error: any) {
     console.error('Error updating curriculum:', error);

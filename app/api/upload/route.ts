@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,9 +37,20 @@ export async function POST(request: NextRequest) {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.ms-powerpoint',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/plain'
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+        'text/csv',
+        'application/zip',
+        'application/x-zip-compressed',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/svg+xml'
       ];
-      maxSize = 10 * 1024 * 1024; // 10MB for documents
+      maxSize = 20 * 1024 * 1024; // 20MB for documents
     } else if (type === 'course-thumbnail') {
       allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       maxSize = 3 * 1024 * 1024; // 3MB for thumbnails
@@ -65,17 +78,36 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Convert file to base64 for serverless environment
+    // Save file to disk in public/uploads folder
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const base64 = buffer.toString('base64');
-    const dataUrl = `data:${file.type};base64,${base64}`;
     
-    console.log(`✅ Successfully converted ${type}: ${file.name} (${(file.size / 1024).toFixed(2)} KB) to base64`);
+    // Create unique filename with timestamp
+    const timestamp = Date.now();
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const uniqueFileName = `${timestamp}_${safeFileName}`;
+    
+    // Ensure uploads directory exists
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+    try {
+      await mkdir(uploadsDir, { recursive: true });
+    } catch (e) {
+      // Directory might already exist
+    }
+    
+    // Write file to disk
+    const filePath = path.join(uploadsDir, uniqueFileName);
+    await writeFile(filePath, buffer);
+    
+    // Return URL path (relative to public folder)
+    const fileUrl = `/uploads/${uniqueFileName}`;
+    
+    console.log(`✅ Successfully saved ${type}: ${file.name} to ${filePath}`);
+    console.log(`📁 File URL: ${fileUrl}`);
     
     return NextResponse.json({ 
       success: true, 
-      url: dataUrl,
+      url: fileUrl,
       filename: file.name,
       type: type 
     }, { status: 200 });
