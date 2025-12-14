@@ -115,6 +115,22 @@ export default function AssignmentForm({ courseId, week, onClose, onSuccess }: A
                 }),
             });
 
+            // Auto-save main assignment as well
+            await fetch(`/api/courses/${courseId}/assignments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    week,
+                    title,
+                    instructions,
+                    dueDate: dueDate ? new Date(dueDate) : undefined,
+                    points: parseInt(points) || 100,
+                    attachments: newAttachments.map(a => ({ type: a.type, url: a.url, name: a.name })),
+                }),
+            });
+
             // Reset file input
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';

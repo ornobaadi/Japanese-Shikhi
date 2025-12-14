@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,38 +77,43 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Save file to disk in public/uploads folder
+    // Upload to Supabase Storage
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    
-    // Create unique filename with timestamp
+    const buffer = new Uint8Array(bytes);
     const timestamp = Date.now();
     const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const uniqueFileName = `${timestamp}_${safeFileName}`;
-    
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (e) {
-      // Directory might already exist
+    const bucket = 'uploads';
+
+    // Upload file to Supabase Storage bucket
+    const { data, error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(uniqueFileName, buffer, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('❌ Supabase upload error:', uploadError.message);
+      return NextResponse.json({
+        error: 'Failed to upload file to Supabase',
+        success: false,
+        details: uploadError.message
+      }, { status: 500 });
     }
-    
-    // Write file to disk
-    const filePath = path.join(uploadsDir, uniqueFileName);
-    await writeFile(filePath, buffer);
-    
-    // Return URL path (relative to public folder)
-    const fileUrl = `/uploads/${uniqueFileName}`;
-    
-    console.log(`✅ Successfully saved ${type}: ${file.name} to ${filePath}`);
-    console.log(`📁 File URL: ${fileUrl}`);
-    
-    return NextResponse.json({ 
-      success: true, 
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(uniqueFileName);
+    const fileUrl = publicUrlData?.publicUrl || '';
+
+    console.log(`✅ Successfully uploaded to Supabase: ${file.name} as ${uniqueFileName}`);
+    console.log(`📁 Supabase File URL: ${fileUrl}`);
+
+    return NextResponse.json({
+      success: true,
       url: fileUrl,
       filename: file.name,
-      type: type 
+      type: type
     }, { status: 200 });
   } catch (error) {
     console.error('❌ Upload error:', error);

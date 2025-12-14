@@ -461,7 +461,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
       if (uploadedFiles.length > 0) {
         const newAttachments = [...(formDataRef.current.attachments || []), ...uploadedFiles];
-        
+
         // Update formData state
         setFormData(prev => {
           const updated = {
@@ -471,25 +471,47 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
           console.log('Updated formData.attachments:', updated.attachments);
           return updated;
         });
-        
+
         // CRITICAL: Update ref immediately so handleSubmit gets the latest attachments
         formDataRef.current = { ...formDataRef.current, attachments: newAttachments };
-        
+
         toast.success(`${uploadedFiles.length} file(s) uploaded successfully`);
 
         // If editing an existing resource, also update modules state immediately
         if (showAddDialog && editingItemIndex !== null && (selectedType === 'resource' || selectedType === 'assignment')) {
-          setModules(prevModules => prevModules.map((module, idx) => {
-            if (idx !== activeModuleId) return module;
-            return {
-              ...module,
-              items: module.items.map((item, i) =>
-                i === editingItemIndex
-                  ? { ...item, attachments: newAttachments }
-                  : item
-              )
-            };
-          }));
+          setModules(prevModules => {
+            const updatedModules = prevModules.map((module, idx) => {
+              if (idx !== activeModuleId) return module;
+              return {
+                ...module,
+                items: module.items.map((item, i) =>
+                  i === editingItemIndex
+                    ? { ...item, attachments: newAttachments }
+                    : item
+                )
+              };
+            });
+
+            // Auto-save to backend immediately after file upload
+            (async () => {
+              try {
+                const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ curriculum: { modules: updatedModules } }),
+                });
+                if (response.ok) {
+                  toast.success('Attachment saved to backend!');
+                } else {
+                  toast.error('Failed to save attachment to backend!');
+                }
+              } catch (err) {
+                toast.error('Error saving attachment to backend!');
+              }
+            })();
+
+            return updatedModules;
+          });
         }
       }
     } catch (error) {
@@ -798,6 +820,25 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
     setShowAddDialog(false);
     setEditingItemIndex(null);
+    
+    // CRITICAL: Save to backend immediately after adding/updating item
+    setTimeout(async () => {
+      try {
+        const modulesToSave = JSON.parse(JSON.stringify(modules));
+        const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ curriculum: { modules: modulesToSave } }),
+        });
+        if (response.ok) {
+          console.log('✅ Item saved to backend immediately after submit');
+        } else {
+          console.error('❌ Failed to save item to backend');
+        }
+      } catch (err) {
+        console.error('❌ Error saving item to backend:', err);
+      }
+    }, 100); // Small delay to ensure modules state is updated
     
     // Reset form data
     setFormData({
