@@ -36,7 +36,9 @@ import {
     Bell,
     Link,
     HelpCircle,
-    X
+    X,
+    Lock,
+    Unlock
 } from 'lucide-react';
 import {
     IconPlayerPlay,
@@ -676,8 +678,15 @@ export default function StudentCurriculumPage() {
                                                             {/* Items for this date */}
                                                             <div className="space-y-4 ml-4 pl-8 border-l-2 border-muted">
                                                                 {items.map((item, itemIdx) => (
-                                                                    <Card key={itemIdx} className={`border-2 overflow-hidden ${getTypeColorBg(item.type)}`}>
+                                                                    <Card key={itemIdx} className={`border-2 overflow-hidden relative ${getTypeColorBg(item.type)}`}>
                                                                         <CardContent className="p-0">
+                                                                            {/* Lock/Unlock Indicator */}
+                                                                            <div className="absolute top-4 right-4 z-10">
+                                                                                <div className="p-2 rounded-full bg-white shadow-md border-2 border-green-200">
+                                                                                    <Unlock className="size-4 text-green-500" />
+                                                                                </div>
+                                                                            </div>
+
                                                                             <div className="flex items-start gap-0">
                                                                                 {/* Icon Section */}
                                                                                 <div className="flex items-center justify-center p-6 border-r-2 border-current/20">
