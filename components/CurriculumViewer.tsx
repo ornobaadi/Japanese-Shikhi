@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription } from '@/components/ui';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { 
   ArrowLeft,
@@ -29,7 +30,11 @@ import {
   FileText,
   Youtube,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  Download,
+  Eye,
+  X,
+  Link as LinkIcon
 } from 'lucide-react';
 
 interface CurriculumItem {
@@ -91,6 +96,7 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<CurriculumItem | null>(null);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -173,65 +179,27 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
       return;
     }
 
-    // Handle different content types based on type
+    // Handle live class - open meeting link directly
     if (item.type === 'live-class' && item.meetingLink) {
-      // Open meeting link
       window.open(item.meetingLink, '_blank');
       toast.success('Opening meeting link');
       return;
     }
 
-    // Handle resources with URLs
-    if (item.resourceUrl) {
-      if (item.resourceType === 'youtube') {
-        window.open(item.resourceUrl, '_blank');
-        toast.success('Opening YouTube video');
-      } else if (item.resourceType === 'drive') {
-        window.open(item.resourceUrl, '_blank');
-        toast.success('Opening Drive link');
-      } else if (item.resourceType === 'pdf' || item.resourceType === 'video') {
-        window.open(item.resourceUrl, '_blank');
-        toast.success('Opening resource');
-      } else {
-        // Handle other resource types
-        window.open(item.resourceUrl, '_blank');
-        toast.success('Opening resource');
-      }
+    // Handle resource type or assignment - show dialog with all resources/attachments
+    if (item.type === 'resource' || item.type === 'assignment') {
+      setSelectedResource(item);
       return;
     }
 
-    // Handle resources with file paths
-    if (item.resourceFile) {
-      window.open(item.resourceFile, '_blank');
-      toast.success('Opening resource file');
-      return;
-    }
-
-    // Handle attachments if no direct URL/file
-    const itemWithAttachments = item as any;
-    if (itemWithAttachments.attachments && itemWithAttachments.attachments.length > 0) {
-      const firstAttachment = itemWithAttachments.attachments[0];
-      window.open(firstAttachment.url, '_blank');
-      toast.success('Opening attachment');
-      return;
-    }
-
-    // Handle Drive links if present
-    if (itemWithAttachments.driveLinks && itemWithAttachments.driveLinks.length > 0) {
-      const firstLink = itemWithAttachments.driveLinks[0];
-      window.open(firstLink.link, '_blank');
-      toast.success('Opening Drive link');
-      return;
-    }
-
-    // If no URL/file but has access, show description
+    // For other types, show info
     if (item.description) {
       toast.info(item.title, {
         description: item.description
       });
     } else {
       toast.info('Content available', {
-        description: 'This content is unlocked but has no attached resources yet.'
+        description: 'This ' + item.type + ' is unlocked!'
       });
     }
   };
@@ -369,7 +337,7 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                       {module.items.map((item, itemIndex) => (
                         <Card 
                           key={item._id || itemIndex}
-                          className={`transition-all ${
+                          className={`transition-all relative ${
                             item.hasAccess 
                               ? 'cursor-pointer hover:shadow-lg hover:border-blue-400 hover:scale-[1.02] border-2 border-blue-200 bg-white' 
                               : 'opacity-60 bg-gray-50 cursor-not-allowed'
@@ -377,10 +345,25 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                           onClick={() => handleItemClick(item)}
                         >
                           <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
+                            {/* Lock/Unlock Indicator */}
+                            <div className="absolute top-3 right-3 z-10">
+                              <div className={`p-1.5 rounded-full shadow-sm border-2 ${
+                                item.hasAccess 
+                                  ? 'bg-green-50 border-green-200' 
+                                  : 'bg-gray-100 border-gray-300'
+                              }`}>
+                                {item.isLocked ? (
+                                  <Lock className="h-3.5 w-3.5 text-gray-400" />
+                                ) : (
+                                  <Unlock className="h-3.5 w-3.5 text-green-500" />
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start space-x-3 flex-1">
                                 {getItemIcon(item)}
-                                <div>
+                                <div className="flex-1">
                                   <h4 className={`font-medium ${
                                     item.isLocked ? 'text-gray-500' : 'text-gray-900'
                                   }`}>
@@ -391,57 +374,97 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                                       {item.description}
                                     </p>
                                   )}
-                                  {item.duration && (
-                                    <div className="flex items-center text-xs text-gray-500 mt-1">
-                                      <Clock className="h-3 w-3 mr-1" />
-                                      {item.duration} min
-                                    </div>
-                                  )}
+                                  
+                                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    {item.duration && (
+                                      <Badge variant="outline" className="text-xs">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        {item.duration} min
+                                      </Badge>
+                                    )}
+                                    
+                                    {item.isFreePreview && (
+                                      <Badge variant="outline" className="text-xs text-green-600 border-green-300">
+                                        🎁 Free Preview
+                                      </Badge>
+                                    )}
+                                    
+                                    {item.type === 'live-class' && item.meetingLink && item.hasAccess && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        <LinkIcon className="h-3 w-3 mr-1" />
+                                        {item.meetingPlatform === 'zoom' ? 'Zoom' : item.meetingPlatform === 'google-meet' ? 'Google Meet' : 'Meeting'}
+                                      </Badge>
+                                    )}
+                                    
+                                    {item.type === 'resource' && item.hasAccess && (
+                                      <>
+                                        <Badge variant="outline" className="text-xs">
+                                          {item.resourceType && <span className="capitalize">{item.resourceType}</span>}
+                                          {!item.resourceType && 'Resource'}
+                                        </Badge>
+                                        {((item as any).driveLinks?.length > 0 || (item as any).attachments?.length > 0) && (
+                                          <div className="text-xs text-green-700 flex items-center gap-2">
+                                            {(item as any).driveLinks?.length > 0 && (
+                                              <span>🔗 {(item as any).driveLinks.length} Link(s)</span>
+                                            )}
+                                            {(item as any).attachments?.length > 0 && (
+                                              <span>📁 {(item as any).attachments.length} File(s)</span>
+                                            )}
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
+                                    
+                                    {item.type === 'assignment' && item.hasAccess && (
+                                      <>
+                                        <Badge variant="outline" className="text-xs">
+                                          Assignment
+                                        </Badge>
+                                        {(item.resourceUrl || item.resourceFile || (item as any).attachments?.length > 0) && (
+                                          <div className="text-xs text-purple-700 flex items-center gap-2">
+                                            <span>📎 Attached File(s)</span>
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               
-                              <div className="flex items-center space-x-2">
-                                {item.isFreePreview && (
-                                  <Badge variant="outline" className="text-green-600">
-                                    Free
-                                  </Badge>
-                                )}
-                                {item.isLocked ? (
-                                  <Lock className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Unlock className="h-4 w-4 text-green-500" />
-                                )}
-                              </div>
+                              {/* Action Buttons */}
+                              {item.hasAccess && (
+                                <div className="flex items-center gap-2">
+                                  {item.type === 'live-class' && item.meetingLink && (
+                                    <Button 
+                                      variant="default" 
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(item.meetingLink, '_blank');
+                                        toast.success('Opening meeting link');
+                                      }}
+                                    >
+                                      <LinkIcon className="h-3 w-3 mr-1" />
+                                      Join
+                                    </Button>
+                                  )}
+                                  
+                                  {(item.type === 'resource' || item.type === 'assignment') && (
+                                    <Button 
+                                      variant="default" 
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedResource(item);
+                                      }}
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      View
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
                             </div>
-
-                            {/* Attachments rendering */}
-                            {Array.isArray((item as any).attachments) && (item as any).attachments.length > 0 && (
-                              <div className="mt-3 space-y-1">
-                                <div className="text-xs font-semibold text-gray-700 mb-1">Attachments:</div>
-                                <ul className="space-y-1">
-                                  {(item as any).attachments.map((att: any, i: number) => (
-                                    <li key={i} className="flex items-center gap-2">
-                                      {/* Icon by type */}
-                                      {att.type === 'file' && <FileText className="h-4 w-4 text-blue-500" />}
-                                      {att.type === 'pdf' && <FileText className="h-4 w-4 text-orange-500" />}
-                                      {att.type === 'drive' && <ExternalLink className="h-4 w-4 text-green-600" />}
-                                      {att.type === 'youtube' && <Youtube className="h-4 w-4 text-red-600" />}
-                                      {att.type === 'link' && <ExternalLink className="h-4 w-4 text-blue-600" />}
-                                      {/* Attachment link */}
-                                      <a
-                                        href={att.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-700 underline hover:text-blue-900 text-xs"
-                                        download={att.type === 'file' || att.type === 'pdf' ? att.name : undefined}
-                                      >
-                                        {att.name || att.url}
-                                      </a>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
                           </CardContent>
                         </Card>
                       ))}
@@ -540,6 +563,211 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
           )}
         </div>
       </div>
+
+      {/* Resource Dialog - Display drive links and attachments */}
+      <Dialog open={!!selectedResource} onOpenChange={() => setSelectedResource(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedResource && getItemIcon(selectedResource)}
+              {selectedResource?.title}
+            </DialogTitle>
+            {selectedResource?.description && (
+              <DialogDescription>{selectedResource.description}</DialogDescription>
+            )}
+          </DialogHeader>
+          
+          {selectedResource && (
+            <div className="space-y-6 mt-4">
+              {/* Assignment Info Badge */}
+              {selectedResource.type === 'assignment' && (
+                <div className="flex items-center gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                  <Target className="h-5 w-5 text-purple-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-purple-900">Assignment</p>
+                    <p className="text-xs text-purple-700">Download the files below to complete your assignment</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Drive Links */}
+              {(selectedResource as any).driveLinks && (selectedResource as any).driveLinks.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
+                    <LinkIcon className="h-4 w-4" />
+                    Google Drive Links ({(selectedResource as any).driveLinks.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {(selectedResource as any).driveLinks.map((driveLink: any, idx: number) => (
+                      <div key={idx} className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <p className="text-sm font-medium text-green-800">{driveLink.title}</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              // Extract URL from iframe HTML if it's an iframe
+                              const match = driveLink.link.match(/src=["']([^"']+)["']/);
+                              const url = match ? match[1] : driveLink.link;
+                              window.open(url, '_blank');
+                            }}
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Open
+                          </Button>
+                        </div>
+                        <div 
+                          className="w-full aspect-video rounded border border-green-300 overflow-hidden bg-white"
+                          dangerouslySetInnerHTML={{ __html: driveLink.link }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Attachments */}
+              {(selectedResource as any).attachments && (selectedResource as any).attachments.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Uploaded Files ({(selectedResource as any).attachments.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(selectedResource as any).attachments.map((attachment: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex flex-col gap-3">
+                          {/* Preview */}
+                          {attachment.url?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                            <div className="w-full h-32 rounded border border-blue-300 overflow-hidden bg-white">
+                              <img src={attachment.url} alt={attachment.name || ''} className="w-full h-full object-cover" />
+                            </div>
+                          ) : attachment.url?.endsWith('.pdf') ? (
+                            <div className="w-full h-32 rounded bg-red-100 flex items-center justify-center">
+                              <FileText className="h-12 w-12 text-red-600" />
+                            </div>
+                          ) : (
+                            <div className="w-full h-32 rounded bg-blue-100 flex items-center justify-center">
+                              <FileText className="h-12 w-12 text-blue-600" />
+                            </div>
+                          )}
+                          
+                          {/* File Info */}
+                          <div>
+                            <p className="text-sm font-medium text-blue-800 truncate mb-2">{attachment.name}</p>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 text-xs"
+                                asChild
+                              >
+                                <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  View
+                                </a>
+                              </Button>
+                              <Button 
+                                variant="default" 
+                                size="sm" 
+                                className="flex-1 text-xs"
+                                asChild
+                              >
+                                <a href={attachment.url} download={attachment.name}>
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Download
+                                </a>
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Legacy single file support */}
+              {(selectedResource.resourceUrl || selectedResource.resourceFile) && 
+               !(selectedResource as any).driveLinks?.length && 
+               !(selectedResource as any).attachments?.length && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    {selectedResource.type === 'assignment' ? 'Assignment File' : 'Resource File'}
+                  </h3>
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    {/* Preview for images */}
+                    {selectedResource.resourceUrl?.startsWith('data:image/') && (
+                      <div className="mb-4">
+                        <img 
+                          src={selectedResource.resourceUrl} 
+                          alt={selectedResource.title}
+                          className="max-w-full h-auto rounded border border-gray-300"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Preview for PDFs */}
+                    {selectedResource.resourceUrl?.startsWith('data:application/pdf') && (
+                      <div className="mb-4 flex items-center justify-center p-8 bg-red-50 border border-red-200 rounded">
+                        <FileText className="h-16 w-16 text-red-600" />
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        asChild
+                        className="flex-1"
+                      >
+                        <a
+                          href={selectedResource.resourceUrl || selectedResource.resourceFile}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </a>
+                      </Button>
+                      <Button 
+                        variant="default" 
+                        asChild
+                        className="flex-1"
+                      >
+                        <a
+                          href={selectedResource.resourceUrl || selectedResource.resourceFile}
+                          download={selectedResource.resourceFile || selectedResource.title}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </a>
+                      </Button>
+                    </div>
+                    
+                    {selectedResource.resourceFile && (
+                      <p className="text-xs text-gray-600 mt-2 text-center">
+                        {selectedResource.resourceFile}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* No content message */}
+              {!(selectedResource as any).driveLinks?.length && 
+               !(selectedResource as any).attachments?.length && 
+               !selectedResource.resourceUrl && 
+               !selectedResource.resourceFile && (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No files or links attached to this resource yet.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
