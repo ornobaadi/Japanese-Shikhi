@@ -15,7 +15,8 @@ export async function GET(
     await connectToDatabase();
     const { id } = await params;
 
-    const course = await Course.findById(id).select('curriculum title description isPublished allowFreePreview freePreviewCount enrolledStudents');
+    // Don't use .select() to ensure all curriculum item fields (driveLinks, attachments, etc.) are included
+    const course = await Course.findById(id);
 
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });

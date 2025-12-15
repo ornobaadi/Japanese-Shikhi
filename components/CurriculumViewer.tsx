@@ -53,6 +53,10 @@ interface CurriculumItem {
   isLocked: boolean;
   requiresEnrollment: boolean;
   isFreePreview?: boolean;
+  driveLinks?: Array<{ title: string; link: string }>;
+  attachments?: Array<{ name: string; url: string; type?: string }>;
+  dueDate?: Date;
+  quizData?: any;
 }
 
 interface Module {
@@ -188,6 +192,15 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
 
     // Handle resource type or assignment - show dialog with all resources/attachments
     if (item.type === 'resource' || item.type === 'assignment') {
+      console.log('Opening resource/assignment viewer:', {
+        title: item.title,
+        type: item.type,
+        driveLinks: item.driveLinks,
+        attachments: item.attachments,
+        resourceUrl: item.resourceUrl,
+        resourceFile: item.resourceFile,
+        fullItem: item
+      });
       setSelectedResource(item);
       return;
     }
