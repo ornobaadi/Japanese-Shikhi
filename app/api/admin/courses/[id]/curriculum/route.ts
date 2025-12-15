@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Course from '@/lib/models/Course';
 import { auth } from '@clerk/nextjs/server';
+import { ObjectId } from 'mongodb';
 
 // GET - Fetch curriculum for a course
 export async function GET(
@@ -17,7 +18,11 @@ export async function GET(
     await connectToDatabase();
     const { id } = await params;
 
-    const course = await Course.findById(id).select('curriculum');
+    // Use native MongoDB driver to avoid Mongoose schema casting issues
+    const db = Course.db;
+    const collection = db.collection('courses');
+    
+    const course = await collection.findOne({ _id: new ObjectId(id) }, { projection: { curriculum: 1 } });
 
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
@@ -25,6 +30,22 @@ export async function GET(
 
     // Initialize curriculum if it doesn't exist
     if (!course.curriculum) {
+      await collection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            curriculum: {
+              modules: [{
+                name: 'Module 1',
+                description: '',
+                items: [],
+                isPublished: false,
+                order: 0
+              }]
+            }
+          }
+        }
+      );
       course.curriculum = {
         modules: [{
           name: 'Module 1',
@@ -34,8 +55,10 @@ export async function GET(
           order: 0
         }]
       };
-      await course.save();
     }
+
+    console.log('GET /curriculum - Returning curriculum with attachments:', 
+      JSON.stringify(course.curriculum, null, 2));
 
     return NextResponse.json({
       success: true,
@@ -134,14 +157,23 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update course' }, { status: 500 });
     }
 
-    // Verify the save by reading back
-    const updatedCourse = await Course.findById(id).lean();
-    console.log('API DEBUG: Verification - attachments in first item:',
-      (updatedCourse as any)?.curriculum?.modules?.[0]?.items?.[0]?.attachments);
+    // Verify the save by reading back using native driver
+    const verifiedCourse = await collection.findOne({ _id: course._id });
+    console.log('API DEBUG: Verification - Full curriculum from DB:', 
+      JSON.stringify(verifiedCourse?.curriculum, null, 2));
+    
+    // Check each module and item for attachments
+    verifiedCourse?.curriculum?.modules?.forEach((mod: any, modIdx: number) => {
+      mod.items?.forEach((item: any, itemIdx: number) => {
+        if (item.attachments && item.attachments.length > 0) {
+          console.log(`API DEBUG: Module ${modIdx} Item ${itemIdx} has ${item.attachments.length} attachments`);
+        }
+      });
+    });
 
     return NextResponse.json({
       success: true,
-      curriculum: (updatedCourse as any)?.curriculum
+      curriculum: verifiedCourse?.curriculum
     });
   } catch (error: any) {
     console.error('Error updating curriculum:', error);

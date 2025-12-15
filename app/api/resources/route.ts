@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getMongoClient } from '@/lib/mongodb';
+import connectToDatabase from '@/lib/mongodb';
 
 // POST /api/resources - Add a new resource
 export async function POST(req) {
@@ -9,8 +9,9 @@ export async function POST(req) {
     if (!courseId || !title) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
-    const client = await getMongoClient();
-    const db = client.db();
+    await connectToDatabase();
+    const mongoose = (await import('mongoose')).default;
+    const db = mongoose.connection;
     const resource = {
       courseId,
       title,
@@ -36,8 +37,9 @@ export async function GET(req) {
     if (!courseId) {
       return NextResponse.json({ success: false, error: 'Missing courseId' }, { status: 400 });
     }
-    const client = await getMongoClient();
-    const db = client.db();
+    await connectToDatabase();
+    const mongoose = (await import('mongoose')).default;
+    const db = mongoose.connection;
     const resources = await db.collection('resources').find({ courseId }).sort({ createdAt: 1 }).toArray();
     return NextResponse.json({ success: true, resources });
   } catch (error) {

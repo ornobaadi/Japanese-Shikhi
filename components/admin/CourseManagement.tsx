@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
+import ResourceForm from "@/components/admin/ResourceForm";
 import {
   BookOpen,
   Plus,
@@ -122,13 +123,6 @@ export default function CourseManagement({ courses, onCourseCreate }: CourseMana
     description: ''
   });
 
-  const [resourceFormData, setResourceFormData] = useState({
-    title: '',
-    url: '',
-    type: 'youtube' as 'youtube' | 'document' | 'website',
-    description: ''
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -179,16 +173,6 @@ export default function CourseManagement({ courses, onCourseCreate }: CourseMana
     setShowLinkForm(false);
   };
 
-  const handleResourceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCourse) return;
-
-    // Here you would make an API call to add the resource
-    console.log('Adding resource:', resourceFormData);
-    setResourceFormData({ title: '', url: '', type: 'youtube', description: '' });
-    setShowResourceForm(false);
-  };
-
   const viewCourseDetails = (course: Course) => {
     setSelectedCourse(course);
   };
@@ -209,6 +193,59 @@ export default function CourseManagement({ courses, onCourseCreate }: CourseMana
                 <h2 className="text-2xl font-bold">{selectedCourse.title}</h2>
                 <p className="text-gray-600">{t('course.details')}</p>
               </div>
+  // Helper to reload course from backend
+  const reloadCourse = async (id: string) => {
+    const res = await fetch(`/api/admin/courses/${id}`);
+    if (res.ok) {
+      const updated = await res.json();
+      setSelectedCourse(updated);
+    }
+  };
+
+  const handleModuleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse) return;
+
+    // Save module to backend
+    await fetch(`/api/admin/courses/${selectedCourse._id}/modules`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(moduleFormData),
+    });
+    await reloadCourse(selectedCourse._id);
+    setModuleFormData({ title: '', content: '', order: 1 });
+    setShowModuleForm(false);
+  };
+
+  const handleLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse) return;
+
+    // Save link to backend
+    await fetch(`/api/admin/courses/${selectedCourse._id}/links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(linkFormData),
+    });
+    await reloadCourse(selectedCourse._id);
+    setLinkFormData({ title: '', meetingUrl: '', schedule: '', description: '' });
+    setShowLinkForm(false);
+  };
+
+  const handleResourceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourse) return;
+
+    // Save resource to backend
+    await fetch(`/api/admin/courses/${selectedCourse._id}/resources`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(resourceFormData),
+    });
+    await reloadCourse(selectedCourse._id);
+    setResourceFormData({ title: '', url: '', type: 'youtube', description: '' });
+    setShowResourceForm(false);
+  };
               <Button variant="outline" onClick={closeCourseDetails}>
                 ✕
               </Button>
@@ -468,60 +505,16 @@ export default function CourseManagement({ courses, onCourseCreate }: CourseMana
                     </Button>
                   </div>
 
-                  {showResourceForm && (
+                  {showResourceForm && selectedCourse && (
                     <Card className="mb-4">
                       <CardContent className="pt-6">
-                        <form onSubmit={handleResourceSubmit} className="space-y-4">
-                          <div>
-                            <Label htmlFor="resourceTitle">{t('course.resourceTitle')}</Label>
-                            <Input
-                              id="resourceTitle"
-                              value={resourceFormData.title}
-                              onChange={(e) => setResourceFormData({ ...resourceFormData, title: e.target.value })}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="resourceUrl">{t('course.resourceUrl')}</Label>
-                            <Input
-                              id="resourceUrl"
-                              type="url"
-                              value={resourceFormData.url}
-                              onChange={(e) => setResourceFormData({ ...resourceFormData, url: e.target.value })}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="resourceType">{t('course.resourceType')}</Label>
-                            <select
-                              id="resourceType"
-                              value={resourceFormData.type}
-                              onChange={(e) => setResourceFormData({ ...resourceFormData, type: e.target.value as 'youtube' | 'document' | 'website' })}
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                            >
-                              <option value="youtube">{t('course.youtube')}</option>
-                              <option value="document">{t('course.document')}</option>
-                              <option value="website">{t('course.website')}</option>
-                            </select>
-                          </div>
-                          <div>
-                            <Label htmlFor="resourceDescription">{t('course.description')}</Label>
-                            <Textarea
-                              id="resourceDescription"
-                              value={resourceFormData.description}
-                              onChange={(e) => setResourceFormData({ ...resourceFormData, description: e.target.value })}
-                              rows={3}
-                            />
-                          </div>
-                          <div className="flex justify-end space-x-2">
-                            <Button type="button" variant="outline" onClick={() => setShowResourceForm(false)}>
-                              {t('course.cancel')}
-                            </Button>
-                            <Button type="submit">
-                              {t('course.addResource')}
-                            </Button>
-                          </div>
-                        </form>
+                        <ResourceForm 
+                          courseId={selectedCourse._id} 
+                          onSuccess={() => {
+                            setShowResourceForm(false);
+                            // Optionally refresh the course data here
+                          }} 
+                        />
                       </CardContent>
                     </Card>
                   )}
@@ -791,3 +784,5 @@ export default function CourseManagement({ courses, onCourseCreate }: CourseMana
     </div>
   );
 }
+
+export default CourseManagement;

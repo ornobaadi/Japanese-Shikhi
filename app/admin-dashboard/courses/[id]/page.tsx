@@ -1,7 +1,11 @@
 'use client';
 
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import React, { useEffect, useState, useRef } from 'react';
+import ResourceForm from '@/components/admin/ResourceForm';
+import ResourceList from '@/components/admin/ResourceList';
+import { toast } from 'sonner';
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -21,6 +25,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,100 +40,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// Additional icons
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Link from "next/link";
-import { useLanguage } from '@/contexts/LanguageContext';
-import { toast } from "sonner";
-import {
-  IconEdit,
   IconArrowLeft,
-  IconClock,
-  IconEye,
-  IconBook,
-  IconTarget,
   IconPlus,
-  IconFileText,
-  IconVideo,
-  IconBrandYoutube,
-  IconMicrophone,
+  IconEdit,
   IconTrash,
+  IconEye,
+  IconPlayerPlay,
   IconSpeakerphone,
+  IconBook,
+  IconClipboardCheck,
+  IconTarget,
+  IconClock,
+  IconLink,
+  IconDownload,
   IconBell,
   IconCalendar,
-  IconLink,
   IconChevronDown,
-  IconPlayerPlay,
-  IconClipboardCheck,
   IconX,
-  IconDownload,
-  IconUpload,
   IconPencil,
   IconCheck,
   IconSettings,
   IconPaperclip,
-} from "@tabler/icons-react";
-
-// Type definitions
-
-interface MCQOption {
-  text: string;
-  isCorrect: boolean;
-}
-
-
-interface MCQQuestion {
-  question: string;
-  options: MCQOption[];
-  points: number;
-  explanation?: string;
-}
-
-interface QuizData {
-  quizType: 'mcq' | 'open-ended';
-  timeLimit?: number;
-  totalPoints: number;
-  passingScore: number;
-  allowMultipleAttempts: boolean;
-  showAnswersAfterSubmission: boolean;
-  randomizeQuestions: boolean;
-  randomizeOptions: boolean;
-  mcqQuestions?: MCQQuestion[];
-  openEndedQuestion?: string;
-  openEndedQuestionFile?: string;
-  acceptFileUpload: boolean;
-  acceptTextAnswer: boolean;
-}
-
-interface CurriculumItem {
-  _id?: string;
-  type: 'live-class' | 'announcement' | 'resource' | 'assignment' | 'quiz';
-  title: string;
-  description?: string;
-  scheduledDate: Date;
-  meetingLink?: string;
-  meetingPlatform?: 'zoom' | 'google-meet' | 'other';
-  duration?: number;
-  resourceType?: 'pdf' | 'image' | 'video' | 'youtube' | 'drive' | 'recording' | 'other';
-  resourceUrl?: string;
-  resourceFile?: string;
-  attachments?: Array<{ url: string; name: string; type: string }>;
-  driveLinks?: Array<{ link: string; title: string }>;
-  announcementType?: 'important' | 'cancellation' | 'general';
-  validUntil?: Date;
-  isPinned?: boolean;
-  dueDate?: Date;
-  quizData?: QuizData;
-  createdAt: Date;
-  isPublished: boolean;
-}
+  IconUpload,
+  IconFileText,
+  IconVideo,
+  IconBrandYoutube,
+  IconMicrophone,
+} from '@tabler/icons-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Module {
-  _id?: string;
   name: string;
   description: string;
   items: CurriculumItem[];
@@ -131,15 +80,40 @@ interface Module {
   order: number;
 }
 
-export default function CourseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+interface CurriculumItem {
+  type: 'live-class' | 'announcement' | 'resource' | 'assignment' | 'quiz';
+  title: string;
+  description?: string;
+  scheduledDate?: Date;
+  createdAt?: Date;
+  isPublished: boolean;
+  meetingLink?: string;
+  meetingPlatform?: 'zoom' | 'google-meet' | 'other';
+  duration?: number;
+  resourceType?: 'pdf' | 'image' | 'video' | 'youtube' | 'drive' | 'recording' | 'other';
+  resourceUrl?: string;
+  resourceFile?: string;
+  announcementType?: 'important' | 'cancellation' | 'general';
+  validUntil?: Date;
+  isPinned?: boolean;
+  dueDate?: Date;
+  attachments?: Array<{ url: string; name: string; type: string }>;
+  driveLinks?: Array<{ link: string; title: string }>;
+}
+
+export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
   const { t } = useLanguage();
+  const [courseId, setCourseId] = useState('');
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [courseId, setCourseId] = useState<string>('');
-  const [activeView, setActiveView] = useState<'curriculum' | 'details'>('curriculum');
   const [modules, setModules] = useState<Module[]>([]);
-  const [activeModuleId, setActiveModuleId] = useState<number>(0);
+  const [activeModuleId, setActiveModuleId] = useState(0);
+  const [activeView, setActiveView] = useState<'curriculum' | 'resources' | 'details'>('curriculum');
+  const [activeTab, setActiveTab] = useState('curriculum');
+  
+  // Resource refresh state for file upload persistence
+  const [resourceRefreshKey, setResourceRefreshKey] = useState(0);
 
   // Dialog states
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -377,17 +351,35 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   // Removed duplicate auto-save - using only the first useEffect for auto-save
 
   const handleAddModule = () => {
-    const newModule: Module = {
-      name: moduleForm.name || `Module ${modules.length + 1}`,
-      description: moduleForm.description,
-      items: [],
-      isPublished: false,
-      order: modules.length,
-    };
-    setModules([...modules, newModule]);
-    setActiveModuleId(modules.length);
-    setShowModuleDialog(false);
-    setModuleForm({ name: '', description: '' });
+    // Use POST endpoint to add module
+    (async () => {
+      try {
+        const response = await fetch(`/api/admin/courses/${courseId}/modules`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: moduleForm.name || `Module ${modules.length + 1}`, description: moduleForm.description }),
+        });
+        if (response.ok) {
+          // Reload curriculum from backend
+          const curriculumResponse = await fetch(`/api/admin/courses/${courseId}/curriculum`);
+          if (curriculumResponse.ok) {
+            const curriculumData = await curriculumResponse.json();
+            if (curriculumData.curriculum?.modules) {
+              setModules(curriculumData.curriculum.modules);
+              setActiveModuleId(curriculumData.curriculum.modules.length - 1);
+            }
+          }
+          toast.success('Module added!');
+        } else {
+          toast.error('Failed to add module');
+        }
+      } catch (err) {
+        toast.error('Error adding module');
+      } finally {
+        setShowModuleDialog(false);
+        setModuleForm({ name: '', description: '' });
+      }
+    })();
   };
 
   const handleEditModule = () => {
@@ -477,41 +469,64 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
         toast.success(`${uploadedFiles.length} file(s) uploaded successfully`);
 
-        // If editing an existing resource, also update modules state immediately
-        if (showAddDialog && editingItemIndex !== null && (selectedType === 'resource' || selectedType === 'assignment')) {
-          setModules(prevModules => {
-            const updatedModules = prevModules.map((module, idx) => {
-              if (idx !== activeModuleId) return module;
-              return {
-                ...module,
-                items: module.items.map((item, i) =>
-                  i === editingItemIndex
-                    ? { ...item, attachments: newAttachments }
-                    : item
-                )
-              };
-            });
-
-            // Auto-save to backend immediately after file upload
-            (async () => {
-              try {
-                const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ curriculum: { modules: updatedModules } }),
-                });
-                if (response.ok) {
-                  toast.success('Attachment saved to backend!');
-                } else {
-                  toast.error('Failed to save attachment to backend!');
-                }
-              } catch (err) {
-                toast.error('Error saving attachment to backend!');
-              }
-            })();
-
-            return updatedModules;
+        // If editing an existing item, update modules state and save to backend
+        if (showAddDialog && editingItemIndex !== null) {
+          // Update modules state first
+          const updatedModules = modules.map((module, idx) => {
+            if (idx !== activeModuleId) return module;
+            return {
+              ...module,
+              items: module.items.map((item, i) =>
+                i === editingItemIndex
+                  ? { ...item, attachments: newAttachments }
+                  : item
+              )
+            };
           });
+          
+          setModules(updatedModules);
+          
+          // Save to backend immediately after state update
+          (async () => {
+            try {
+              console.log('=== SAVING ATTACHMENTS TO BACKEND ===');
+              console.log('Course ID:', courseId);
+              console.log('Module index:', activeModuleId);
+              console.log('Item index:', editingItemIndex);
+              console.log('New attachments:', JSON.stringify(newAttachments, null, 2));
+              
+              const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ curriculum: { modules: updatedModules } }),
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                console.log('Backend save successful:', result);
+                toast.success('Files saved to database!');
+                
+                // Verify the save by fetching back
+                const verifyResponse = await fetch(`/api/admin/courses/${courseId}/curriculum`);
+                if (verifyResponse.ok) {
+                  const verifyData = await verifyResponse.json();
+                  const savedAttachments = verifyData.curriculum?.modules?.[activeModuleId]?.items?.[editingItemIndex]?.attachments;
+                  console.log('Verified attachments from backend:', savedAttachments);
+                  if (savedAttachments?.length !== newAttachments.length) {
+                    console.error('MISMATCH: Saved attachments count does not match!');
+                    toast.error('Warning: Files may not be saved properly!');
+                  }
+                }
+              } else {
+                const error = await response.text();
+                console.error('Backend save failed:', response.status, error);
+                toast.error('Failed to save files to database!');
+              }
+            } catch (err) {
+              console.error('Error saving attachments:', err);
+              toast.error('Error saving files to database!');
+            }
+          })();
         }
       }
     } catch (error) {
@@ -590,7 +605,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     setSelectedType(item.type);
     setEditingItemIndex(itemIdx);
 
-    const schedDate = new Date(item.scheduledDate);
+    const schedDate = item.scheduledDate ? new Date(item.scheduledDate) : new Date();
     
     // Safely parse dueDate
     let dueDateStr = '';
@@ -677,18 +692,17 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   const handleSubmit = () => {
     // Use ref to get latest formData (avoid stale closure)
     const currentFormData = formDataRef.current;
-    
-    console.log('handleSubmit called - selectedType:', selectedType);
-    console.log('Current formData from ref:', currentFormData);
-    console.log('Current formData.attachments:', currentFormData.attachments);
-    console.log('Current formData.driveLinks:', currentFormData.driveLinks);
-    
     const scheduledDateTime = new Date(`${currentFormData.scheduledDate}T${currentFormData.scheduledTime}`);
-
-    // Deep clone attachments and driveLinks to ensure they are properly copied
     const attachmentsCopy = currentFormData.attachments ? JSON.parse(JSON.stringify(currentFormData.attachments)) : [];
     const driveLinksCopy = currentFormData.driveLinks ? JSON.parse(JSON.stringify(currentFormData.driveLinks)) : [];
 
+    console.log('=== HANDLE SUBMIT DEBUG ===');
+    console.log('Current formData attachments:', currentFormData.attachments);
+    console.log('Attachments copy:', attachmentsCopy);
+    console.log('Selected type:', selectedType);
+    console.log('Editing item index:', editingItemIndex);
+
+    // Build newItem as before
     const newItem: CurriculumItem = {
       type: selectedType,
       title: currentFormData.title,
@@ -696,44 +710,28 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       scheduledDate: scheduledDateTime,
       createdAt: new Date(),
       isPublished: true,
-      // Always include attachments and driveLinks
       attachments: attachmentsCopy,
       driveLinks: driveLinksCopy,
     };
-
+    
+    console.log('New item attachments:', newItem.attachments);
     if (selectedType === 'live-class') {
-      console.log('Processing live-class');
       newItem.meetingLink = currentFormData.meetingLink;
       newItem.meetingPlatform = currentFormData.meetingPlatform;
       newItem.duration = currentFormData.duration;
     } else if (selectedType === 'resource') {
-      console.log('Processing resource - attachments:', attachmentsCopy.length, 'driveLinks:', driveLinksCopy.length);
       newItem.resourceType = currentFormData.resourceType as 'pdf' | 'image' | 'video' | 'youtube' | 'drive' | 'recording' | 'other';
       newItem.resourceUrl = currentFormData.resourceUrl;
       newItem.resourceFile = currentFormData.resourceFile;
-      
-      // Debug log
-      console.log('Saving resource with:', {
-        attachments: attachmentsCopy,
-        driveLinks: driveLinksCopy,
-        resourceType: currentFormData.resourceType
-      });
     } else if (selectedType === 'announcement') {
       newItem.announcementType = currentFormData.announcementType;
       newItem.validUntil = new Date(currentFormData.validUntil);
       newItem.isPinned = currentFormData.isPinned;
     } else if (selectedType === 'assignment' || selectedType === 'quiz') {
       newItem.dueDate = new Date(`${currentFormData.dueDate}T${currentFormData.dueTime}`);
-      
-      // Add assignment file data
       if (selectedType === 'assignment') {
-        console.log('Processing assignment - attachments:', attachmentsCopy.length);
         newItem.resourceUrl = currentFormData.resourceUrl;
         newItem.resourceFile = currentFormData.resourceFile;
-        
-        console.log('Saving assignment with attachments:', attachmentsCopy);
-        
-        // Add assignment quiz data for submission format and points
         (newItem as any).quizData = {
           totalPoints: quizForm.totalPoints || 100,
           acceptTextAnswer: quizForm.acceptTextAnswer,
@@ -741,8 +739,6 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
         };
       }
     }
-
-    // Add quiz data if it's a quiz
     if (selectedType === 'quiz') {
       (newItem as any).quizData = {
         quizType: quizForm.quizType,
@@ -762,8 +758,6 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
           acceptTextAnswer: quizForm.acceptTextAnswer,
         })
       };
-
-      // Validate quiz data
       if (quizForm.quizType === 'mcq' && quizForm.mcqQuestions.length === 0) {
         toast.error('Please add at least one question to the quiz');
         return;
@@ -774,92 +768,167 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       }
     }
 
+    // If editing, update local state and PUT as before
     if (editingItemIndex !== null) {
-      // Update existing item
-      console.log('SAVING ITEM WITH ATTACHMENTS:', newItem.attachments);
-      console.log('newItem object:', JSON.stringify(newItem, null, 2));
-      toast.info(`Saving with ${newItem.attachments?.length || 0} attachments`);
-      
       setModules(prev => {
-        console.log('INSIDE setModules callback - prev:', JSON.stringify(prev, null, 2));
-        console.log('INSIDE setModules callback - newItem:', JSON.stringify(newItem, null, 2));
-        console.log('INSIDE setModules callback - newItem.attachments:', newItem.attachments);
-        
         const updated = prev.map((module, idx) =>
           idx === activeModuleId
-            ? { ...module, items: module.items.map((item, i) => i === editingItemIndex ? newItem : item).sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()) }
+            ? { ...module, items: module.items.map((item, i) => i === editingItemIndex ? newItem : item).sort((a, b) => new Date(a.scheduledDate || 0).getTime() - new Date(b.scheduledDate || 0).getTime()) }
             : module
         );
-        console.log('Updated modules after edit:', JSON.stringify(updated, null, 2));
-        console.log('Attachments in updated:', updated[activeModuleId]?.items[editingItemIndex]?.attachments);
+        
+        // Save to backend immediately with the updated modules
+        setTimeout(async () => {
+          try {
+            const modulesToSave = JSON.parse(JSON.stringify(updated));
+            console.log('Saving edited item with attachments:', modulesToSave[activeModuleId].items[editingItemIndex].attachments);
+            const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ curriculum: { modules: modulesToSave } }),
+            });
+            if (response.ok) {
+              console.log('Edit saved successfully to backend');
+            }
+          } catch (err) {
+            console.error('Failed to save edit:', err);
+          }
+        }, 100);
+        
         return updated;
       });
       toast.success('Content updated successfully');
-    } else {
-      // Add new item
-      console.log('SAVING NEW ITEM WITH ATTACHMENTS:', newItem.attachments);
-      console.log('newItem object:', JSON.stringify(newItem, null, 2));
-      toast.info(`Saving with ${newItem.attachments?.length || 0} attachments`);
-      
-      setModules(prev => {
-        console.log('INSIDE setModules callback - prev:', JSON.stringify(prev, null, 2));
-        console.log('INSIDE setModules callback - newItem:', JSON.stringify(newItem, null, 2));
-        console.log('INSIDE setModules callback - newItem.attachments:', newItem.attachments);
-        
-        const updated = prev.map((module, idx) =>
-          idx === activeModuleId
-            ? { ...module, items: [...module.items, newItem].sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()) }
-            : module
-        );
-        console.log('Updated modules after add:', JSON.stringify(updated, null, 2));
-        console.log('Attachments in last item:', updated[activeModuleId]?.items[updated[activeModuleId]?.items.length - 1]?.attachments);
-        return updated;
+      setShowAddDialog(false);
+      setEditingItemIndex(null);
+      setFormData({
+        title: '',
+        description: '',
+        scheduledDate: new Date().toISOString().split('T')[0],
+        scheduledTime: '21:00',
+        meetingLink: '',
+        meetingPlatform: 'zoom',
+        duration: 60,
+        resourceType: 'pdf',
+        resourceUrl: '',
+        resourceFile: '',
+        announcementType: 'general',
+        validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        isPinned: false,
+        dueDate: '',
+        dueTime: '23:59',
+        attachments: [],
+        driveLinks: [],
       });
-      toast.success('Content added successfully');
+      return;
     }
 
-    setShowAddDialog(false);
-    setEditingItemIndex(null);
-    
-    // CRITICAL: Save to backend immediately after adding/updating item
-    setTimeout(async () => {
+    // For new resource, POST to /resources endpoint
+    (async () => {
       try {
-        const modulesToSave = JSON.parse(JSON.stringify(modules));
-        const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ curriculum: { modules: modulesToSave } }),
-        });
-        if (response.ok) {
-          console.log('✅ Item saved to backend immediately after submit');
-        } else {
-          console.error('❌ Failed to save item to backend');
+        let postUrl = '';
+        let postBody: any = {};
+        if (selectedType === 'resource') {
+          postUrl = `/api/admin/courses/${courseId}/resources`;
+          postBody = { moduleIndex: activeModuleId, resource: newItem };
+        } else if (selectedType === 'live-class' || selectedType === 'announcement' || selectedType === 'assignment' || selectedType === 'quiz') {
+          // Fallback: still use curriculum PUT for now
+          setModules(prev => {
+            const updated = prev.map((module, idx) =>
+              idx === activeModuleId
+                ? { ...module, items: [...module.items, newItem].sort((a, b) => new Date(a.scheduledDate || 0).getTime() - new Date(b.scheduledDate || 0).getTime()) }
+                : module
+            );
+            
+            // Save to backend immediately with the updated modules
+            setTimeout(async () => {
+              try {
+                const modulesToSave = JSON.parse(JSON.stringify(updated));
+                console.log('Saving new item with attachments:', newItem.attachments);
+                const response = await fetch(`/api/admin/courses/${courseId}/curriculum`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ curriculum: { modules: modulesToSave } }),
+                });
+                if (response.ok) {
+                  console.log('New item saved successfully to backend');
+                }
+              } catch (err) {
+                console.error('Failed to save new item:', err);
+              }
+            }, 100);
+            
+            return updated;
+          });
+          toast.success('Content added successfully');
+          setShowAddDialog(false);
+          setEditingItemIndex(null);
+          setFormData({
+            title: '',
+            description: '',
+            scheduledDate: new Date().toISOString().split('T')[0],
+            scheduledTime: '21:00',
+            meetingLink: '',
+            meetingPlatform: 'zoom',
+            duration: 60,
+            resourceType: 'pdf',
+            resourceUrl: '',
+            resourceFile: '',
+            announcementType: 'general',
+            validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            isPinned: false,
+            dueDate: '',
+            dueTime: '23:59',
+            attachments: [],
+            driveLinks: [],
+          });
+          return;
+        }
+        if (postUrl) {
+          const response = await fetch(postUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(postBody),
+          });
+          if (response.ok) {
+            // Reload curriculum from backend
+            const curriculumResponse = await fetch(`/api/admin/courses/${courseId}/curriculum`);
+            if (curriculumResponse.ok) {
+              const curriculumData = await curriculumResponse.json();
+              if (curriculumData.curriculum?.modules) {
+                setModules(curriculumData.curriculum.modules);
+              }
+            }
+            toast.success('Resource added!');
+          } else {
+            toast.error('Failed to add resource');
+          }
         }
       } catch (err) {
-        console.error('❌ Error saving item to backend:', err);
+        toast.error('Error adding resource');
+      } finally {
+        setShowAddDialog(false);
+        setEditingItemIndex(null);
+        setFormData({
+          title: '',
+          description: '',
+          scheduledDate: new Date().toISOString().split('T')[0],
+          scheduledTime: '21:00',
+          meetingLink: '',
+          meetingPlatform: 'zoom',
+          duration: 60,
+          resourceType: 'pdf',
+          resourceUrl: '',
+          resourceFile: '',
+          announcementType: 'general',
+          validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          isPinned: false,
+          dueDate: '',
+          dueTime: '23:59',
+          attachments: [],
+          driveLinks: [],
+        });
       }
-    }, 100); // Small delay to ensure modules state is updated
-    
-    // Reset form data
-    setFormData({
-      title: '',
-      description: '',
-      scheduledDate: new Date().toISOString().split('T')[0],
-      scheduledTime: '21:00',
-      meetingLink: '',
-      meetingPlatform: 'zoom',
-      duration: 60,
-      resourceType: 'pdf',
-      resourceUrl: '',
-      resourceFile: '',
-      announcementType: 'general',
-      validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      isPinned: false,
-      dueDate: '',
-      dueTime: '23:59',
-      attachments: [],
-      driveLinks: [],
-    });
+    })();
   };
 
   const confirmDeleteItem = (itemId: string | number) => {
@@ -1072,7 +1141,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   // Group items by date for better visual organization
   const groupedByDate: { [key: string]: CurriculumItem[] } = {};
   activeModule?.items.forEach(item => {
-    const dateKey = new Date(item.scheduledDate).toISOString().split('T')[0];
+    const dateKey = item.scheduledDate ? new Date(item.scheduledDate).toISOString().split('T')[0] : 'no-date';
     if (!groupedByDate[dateKey]) {
       groupedByDate[dateKey] = [];
     }
@@ -1121,6 +1190,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
             <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)}>
               <TabsList>
                 <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+                <TabsTrigger value="resources">Resources</TabsTrigger>
                 <TabsTrigger value="details">Course Details</TabsTrigger>
               </TabsList>
 
@@ -1158,7 +1228,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                   <CardContent className="p-4 py-0">
                     <div className="flex items-center gap-2 overflow-x-auto">
                       {modules.map((module, idx) => (
-                        <div key={idx} className="relative group">
+                        <div key={idx} className="relative group flex items-center gap-1">
                           <button
                             onClick={() => setActiveModuleId(idx)}
                             className={`px-4 py-2 rounded-lg border-2 whitespace-nowrap transition-all ${activeModuleId === idx
@@ -1171,12 +1241,26 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                               {module.isPublished && <IconEye className="size-3" />}
                             </div>
                           </button>
+                          {/* Edit module button */}
+                          <button
+                            onClick={() => {
+                              setModuleForm({ name: module.name, description: module.description });
+                              setActiveModuleId(idx);
+                              setShowEditModuleDialog(true);
+                            }}
+                            className="p-1 ml-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/10"
+                            title="Edit module"
+                          >
+                            <IconPencil className="size-3" />
+                          </button>
+                          {/* Delete module button */}
                           {modules.length > 1 && (
                             <button
                               onClick={() => confirmDeleteModule(idx)}
-                              className="absolute -top-2 -right-2 p-1 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="p-1 ml-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80"
+                              title="Delete module"
                             >
-                              <IconX className="size-3" />
+                              <IconTrash className="size-3" />
                             </button>
                           )}
                         </div>
@@ -1298,7 +1382,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                                                     {item.type.replace('-', ' ')}
                                                   </Badge>
                                                   <span className="text-xs font-medium opacity-75">
-                                                    {formatTime(item.scheduledDate)}
+                                                    {item.scheduledDate ? formatTime(item.scheduledDate) : ''}
                                                   </span>
                                                   {!item.isPublished && (
                                                     <Badge variant="secondary" className="text-xs">Draft</Badge>
@@ -1425,6 +1509,28 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                     )}
                   </>
                 )}
+              </TabsContent>
+
+              {/* Resources Tab */}
+              <TabsContent value="resources" className="space-y-6 mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Course Resources</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Upload and manage course resources like PDFs, images, videos, and other files that persist across all modules.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ResourceForm 
+                      courseId={courseId} 
+                      onSuccess={() => setResourceRefreshKey(k => k + 1)} 
+                    />
+                    <ResourceList 
+                      courseId={courseId} 
+                      key={resourceRefreshKey} 
+                    />
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* Course Details Tab */}
@@ -1688,253 +1794,88 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
             {selectedType === 'resource' && (
               <>
-                <div>
-                  <Label htmlFor="resourceType">Resource Type *</Label>
-                  <select
-                    id="resourceType"
-                    className="w-full px-3 py-2 border rounded-md"
-                    value={formData.resourceType}
-                    onChange={(e) => setFormData({ ...formData, resourceType: e.target.value as any })}
-                  >
-                    <option value="pdf">PDF Document</option>
-                    <option value="image">Image</option>
-                    <option value="video">Video File</option>
-                    <option value="youtube">YouTube Video</option>
-                    <option value="drive">Google Drive (Embedded)</option>
-                    <option value="recording">Class Recording</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                {/* YouTube URL Input */}
-                {formData.resourceType === 'youtube' && (
-                  <div>
-                    <Label htmlFor="resourceUrl">YouTube URL *</Label>
-                    <Input
-                      id="resourceUrl"
-                      type="url"
-                      placeholder="https://youtube.com/watch?v=... or https://youtu.be/..."
-                      value={formData.resourceUrl}
-                      onChange={(e) => setFormData({ ...formData, resourceUrl: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Paste the YouTube video URL
-                    </p>
-                  </div>
-                )}
-
-                {/* Drive Links & File Upload Section - Available for all resource types */}
+                {/* File Upload Section - Accept any file type */}
                 <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
                   <div className="flex items-center gap-2">
                     <IconPaperclip className="size-5" />
-                    <h3 className="font-semibold">Attach Files & Links</h3>
+                    <h3 className="font-semibold">Attach Files</h3>
                   </div>
-
-                  {/* Add Drive Link Section */}
-                  <div className="p-3 border rounded-lg bg-blue-50/50">
-                    <Label className="text-sm font-medium mb-2 block">Add Google Drive Link</Label>
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Link Title (e.g., Lecture Notes, Exercise PDF)"
-                        value={tempDriveTitle}
-                        onChange={(e) => setTempDriveTitle(e.target.value)}
-                      />
-                      <Textarea
-                        placeholder='Paste Google Drive embed code: <iframe src="https://drive.google.com/file/d/.../preview"></iframe>'
-                        value={tempDriveLink}
-                        onChange={(e) => setTempDriveLink(e.target.value)}
-                        rows={2}
+                  <div className="pt-3 border-t">
+                    <Label>Upload Files (PDF, Image, Video, etc.)</Label>
+                    {formData.attachments && formData.attachments.length > 0 && (
+                      <div className="space-y-2 mt-3 mb-3">
+                        <p className="text-sm font-medium">Uploaded Files ({formData.attachments.length})</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {formData.attachments.map((file, index) => {
+                            const isImage = file.url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+                            const isVideo = file.url.match(/\.(mp4|webm|avi|mov)$/i);
+                            return (
+                              <div key={index} className="relative border rounded-lg p-2 group">
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => {
+                                    setFormData({
+                                      ...formData,
+                                      attachments: formData.attachments.filter((_, i) => i !== index)
+                                    });
+                                  }}
+                                >
+                                  <IconX className="h-3 w-3" />
+                                </Button>
+                                {isImage ? (
+                                  <img 
+                                    src={file.url} 
+                                    alt={file.name}
+                                    className="w-full h-20 object-cover rounded"
+                                  />
+                                ) : isVideo ? (
+                                  <video controls className="w-full h-20 object-cover rounded">
+                                    <source src={file.url} type={file.type} />
+                                    Your browser does not support the video tag.
+                                  </video>
+                                ) : (
+                                  <div className="flex items-center justify-center h-20 bg-muted rounded">
+                                    <IconFileText className="h-8 w-8 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <p className="text-xs mt-1 truncate" title={file.name}>
+                                  {file.name}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        accept="*/*"
+                        multiple
                       />
                       <Button
                         type="button"
-                        size="sm"
-                        onClick={() => {
-                          if (tempDriveLink.trim()) {
-                            setFormData({
-                              ...formData,
-                              driveLinks: [
-                                ...formData.driveLinks,
-                                {
-                                  link: tempDriveLink.trim(),
-                                  title: tempDriveTitle.trim() || 'Drive Link'
-                                }
-                              ]
-                            });
-                            setTempDriveLink('');
-                            setTempDriveTitle('');
-                            toast.success('Drive link added');
-                          } else {
-                            toast.error('Please paste a drive link');
-                          }
-                        }}
-                        className="w-full"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="flex-1"
                       >
-                        <IconPlus className="size-4 mr-2" />
-                        Add Drive Link
+                        <IconUpload className="size-4 mr-2" />
+                        {uploading ? 'Uploading...' : formData.attachments.length > 0 ? 'Add More Files' : 'Upload Files'}
                       </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      You can select multiple files. Accepted: PDF, images, videos, documents, etc.
+                    </p>
                   </div>
-
-                  {/* Display Added Drive Links */}
-                  {formData.driveLinks.length > 0 && (
-                    <div className="space-y-2">
-                      <Label className="text-sm">Drive Links ({formData.driveLinks.length})</Label>
-                      {formData.driveLinks.map((item, index) => (
-                        <div key={index} className="flex items-start gap-2 p-3 border rounded-lg bg-white">
-                          <IconFileText className="size-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">{item.title}</p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {item.link.substring(0, 80)}...
-                            </p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setFormData({
-                                ...formData,
-                                driveLinks: formData.driveLinks.filter((_, i) => i !== index)
-                              });
-                              toast.success('Drive link removed');
-                            }}
-                          >
-                            <IconX className="size-4 text-red-600" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* File Upload Section */}
-                  {!['youtube'].includes(formData.resourceType) && (
-                    <div className="pt-3 border-t">
-                      <Label>Upload Additional Files</Label>
-                      
-                      {/* Display uploaded files */}
-                      {formData.attachments && formData.attachments.length > 0 && (
-                        <div className="space-y-2 mt-3 mb-3">
-                          <p className="text-sm font-medium">Uploaded Files ({formData.attachments.length})</p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {formData.attachments.map((file, index) => {
-                              const isImage = file.url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
-                              
-                              return (
-                                <div key={index} className="relative border rounded-lg p-2 group">
-                                  <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="sm"
-                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => {
-                                      setFormData({
-                                        ...formData,
-                                        attachments: formData.attachments.filter((_, i) => i !== index)
-                                      });
-                                    }}
-                                  >
-                                    <IconX className="h-3 w-3" />
-                                  </Button>
-                                  
-                                  {isImage ? (
-                                    <img 
-                                      src={file.url} 
-                                      alt={file.name}
-                                      className="w-full h-20 object-cover rounded"
-                                    />
-                                  ) : (
-                                    <div className="flex items-center justify-center h-20 bg-muted rounded">
-                                      <IconFileText className="h-8 w-8 text-muted-foreground" />
-                                    </div>
-                                  )}
-                                  
-                                  <p className="text-xs mt-1 truncate" title={file.name}>
-                                    {file.name}
-                                  </p>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 mt-2">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                          accept={
-                            formData.resourceType === 'pdf' ? '.pdf,.doc,.docx' : 
-                            formData.resourceType === 'image' ? 'image/*' :
-                            formData.resourceType === 'video' ? 'video/*' : 
-                            '*'
-                          }
-                          multiple
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={uploading}
-                          className="flex-1"
-                        >
-                          <IconUpload className="size-4 mr-2" />
-                          {uploading ? 'Uploading...' : formData.attachments.length > 0 ? 'Add More Files' : 'Upload Files'}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        You can select multiple files. Accepted: {
-                          formData.resourceType === 'pdf' ? 'PDF, Word documents' : 
-                          formData.resourceType === 'image' ? 'Images (JPG, PNG, GIF, WebP, SVG)' :
-                          formData.resourceType === 'video' ? 'Video files (MP4, WebM, AVI, MOV)' : 
-                          'All file types'
-                        }
-                      </p>
-                    </div>
-                  )}
                 </div>
 
-                {formData.resourceType === 'other' && !formData.resourceFile && (
-                  <div>
-                    <Label htmlFor="resourceUrl">Resource URL</Label>
-                    <Input
-                      id="resourceUrl"
-                      type="url"
-                      placeholder="https://..."
-                      value={formData.resourceUrl}
-                      onChange={(e) => setFormData({ ...formData, resourceUrl: e.target.value })}
-                    />
-                  </div>
-                )}
-              </>
-            )}
-
-            {selectedType === 'announcement' && (
-              <>
-                <div>
-                  <Label htmlFor="announcementType">Type</Label>
-                  <select
-                    id="announcementType"
-                    className="w-full px-3 py-2 border rounded-md"
-                    value={formData.announcementType}
-                    onChange={(e) => setFormData({ ...formData, announcementType: e.target.value as any })}
-                  >
-                    <option value="general">General</option>
-                    <option value="important">Important</option>
-                    <option value="cancellation">Class Cancellation</option>
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="validUntil">Valid Until</Label>
-                  <Input
-                    id="validUntil"
-                    type="date"
-                    value={formData.validUntil}
-                    onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
-                  />
-                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
