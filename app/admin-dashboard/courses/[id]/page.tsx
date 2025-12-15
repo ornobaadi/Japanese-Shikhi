@@ -1874,6 +1874,108 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                   </div>
                 </div>
 
+                {/* Drive Link Section */}
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <IconLink className="size-5" />
+                    <h3 className="font-semibold">Add Drive / External Links</h3>
+                  </div>
+                  <div className="pt-3 border-t space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="driveLinkTitle">Link Title</Label>
+                        <Input
+                          id="driveLinkTitle"
+                          type="text"
+                          placeholder="e.g., Lecture Video - Part 1"
+                          value={tempDriveTitle}
+                          onChange={(e) => setTempDriveTitle(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="driveLinkUrl">Link URL *</Label>
+                        <Input
+                          id="driveLinkUrl"
+                          type="url"
+                          placeholder="https://drive.google.com/..."
+                          value={tempDriveLink}
+                          onChange={(e) => setTempDriveLink(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          if (!tempDriveLink || !tempDriveLink.trim()) {
+                            toast.error('Please enter a link URL');
+                            return;
+                          }
+                          const title = tempDriveTitle && tempDriveTitle.trim() ? tempDriveTitle.trim() : tempDriveLink.trim();
+                          const linkObj = { link: tempDriveLink.trim(), title };
+                          setFormData(prev => ({ ...prev, driveLinks: [...(prev.driveLinks || []), linkObj] }));
+                          formDataRef.current = { ...formDataRef.current, driveLinks: [...(formDataRef.current.driveLinks || []), linkObj] };
+                          setTempDriveLink('');
+                          setTempDriveTitle('');
+                          toast.success('Link added');
+                        }}
+                      >
+                        <IconPlus className="size-4 mr-1" />
+                        Add Link
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => { setTempDriveLink(''); setTempDriveTitle(''); }}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+
+                    {formData.driveLinks && formData.driveLinks.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t">
+                        <p className="text-sm font-medium">Added Links ({formData.driveLinks.length})</p>
+                        <div className="space-y-2">
+                          {formData.driveLinks.map((dl, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-2 p-2 border rounded-lg bg-white">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-sm truncate" title={dl.title}>{dl.title}</p>
+                                <a 
+                                  href={dl.link} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="text-xs text-primary hover:underline truncate block"
+                                >
+                                  {dl.link}
+                                </a>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setFormData(prev => ({ ...prev, driveLinks: prev.driveLinks.filter((_, i) => i !== idx) }));
+                                  formDataRef.current = { ...formDataRef.current, driveLinks: (formDataRef.current.driveLinks || []).filter((_, i) => i !== idx) };
+                                  toast.success('Link removed');
+                                }}
+                              >
+                                <IconX className="size-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-muted-foreground">
+                      Add Google Drive links, YouTube videos, or other external resources.
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
