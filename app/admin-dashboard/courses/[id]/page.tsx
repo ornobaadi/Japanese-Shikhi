@@ -1190,7 +1190,6 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)}>
               <TabsList>
                 <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-                <TabsTrigger value="resources">Resources</TabsTrigger>
                 <TabsTrigger value="details">Course Details</TabsTrigger>
               </TabsList>
 
@@ -1511,25 +1510,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 )}
               </TabsContent>
 
-              {/* Resources Tab */}
-              <TabsContent value="resources" className="space-y-6 mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Course Resources</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Upload and manage course resources like PDFs, images, videos, and other files that persist across all modules.
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
 
-                {/* Drive links and resource components are temporarily simplified to avoid JSX parse issues. */}
-                <div className="py-4">
-                  <ResourceForm courseId={courseId} onSuccess={() => setResourceRefreshKey(k => k + 1)} />
-                  <ResourceList courseId={courseId} key={resourceRefreshKey} />
-                </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
 
               {/* Course Details Tab */}
               <TabsContent value="details" className="space-y-6 mt-6">

@@ -173,16 +173,66 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
       return;
     }
 
-    // Handle different resource types
+    // Handle different content types based on type
+    if (item.type === 'live-class' && item.meetingLink) {
+      // Open meeting link
+      window.open(item.meetingLink, '_blank');
+      toast.success('Opening meeting link');
+      return;
+    }
+
+    // Handle resources with URLs
     if (item.resourceUrl) {
       if (item.resourceType === 'youtube') {
         window.open(item.resourceUrl, '_blank');
+        toast.success('Opening YouTube video');
       } else if (item.resourceType === 'drive') {
         window.open(item.resourceUrl, '_blank');
-      } else {
-        // Handle other video types
+        toast.success('Opening Drive link');
+      } else if (item.resourceType === 'pdf' || item.resourceType === 'video') {
         window.open(item.resourceUrl, '_blank');
+        toast.success('Opening resource');
+      } else {
+        // Handle other resource types
+        window.open(item.resourceUrl, '_blank');
+        toast.success('Opening resource');
       }
+      return;
+    }
+
+    // Handle resources with file paths
+    if (item.resourceFile) {
+      window.open(item.resourceFile, '_blank');
+      toast.success('Opening resource file');
+      return;
+    }
+
+    // Handle attachments if no direct URL/file
+    const itemWithAttachments = item as any;
+    if (itemWithAttachments.attachments && itemWithAttachments.attachments.length > 0) {
+      const firstAttachment = itemWithAttachments.attachments[0];
+      window.open(firstAttachment.url, '_blank');
+      toast.success('Opening attachment');
+      return;
+    }
+
+    // Handle Drive links if present
+    if (itemWithAttachments.driveLinks && itemWithAttachments.driveLinks.length > 0) {
+      const firstLink = itemWithAttachments.driveLinks[0];
+      window.open(firstLink.link, '_blank');
+      toast.success('Opening Drive link');
+      return;
+    }
+
+    // If no URL/file but has access, show description
+    if (item.description) {
+      toast.info(item.title, {
+        description: item.description
+      });
+    } else {
+      toast.info('Content available', {
+        description: 'This content is unlocked but has no attached resources yet.'
+      });
     }
   };
 
@@ -319,10 +369,10 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                       {module.items.map((item, itemIndex) => (
                         <Card 
                           key={item._id || itemIndex}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
+                          className={`transition-all ${
                             item.hasAccess 
-                              ? 'hover:border-blue-300' 
-                              : 'opacity-75 bg-gray-50'
+                              ? 'cursor-pointer hover:shadow-lg hover:border-blue-400 hover:scale-[1.02] border-2 border-blue-200 bg-white' 
+                              : 'opacity-60 bg-gray-50 cursor-not-allowed'
                           }`}
                           onClick={() => handleItemClick(item)}
                         >
