@@ -141,7 +141,7 @@ export async function PUT(
     });
 
     const updateResult = await collection.updateOne(
-      { _id: course._id },
+      { _id: new ObjectId(course._id as any) },
       {
         $set: {
           curriculum: body.curriculum,
