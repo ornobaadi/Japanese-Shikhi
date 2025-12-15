@@ -193,59 +193,7 @@ export default function CourseManagement({ courses, onCourseCreate }: CourseMana
                 <h2 className="text-2xl font-bold">{selectedCourse.title}</h2>
                 <p className="text-gray-600">{t('course.details')}</p>
               </div>
-  // Helper to reload course from backend
-  const reloadCourse = async (id: string) => {
-    const res = await fetch(`/api/admin/courses/${id}`);
-    if (res.ok) {
-      const updated = await res.json();
-      setSelectedCourse(updated);
-    }
-  };
-
-  const handleModuleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCourse) return;
-
-    // Save module to backend
-    await fetch(`/api/admin/courses/${selectedCourse._id}/modules`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(moduleFormData),
-    });
-    await reloadCourse(selectedCourse._id);
-    setModuleFormData({ title: '', content: '', order: 1 });
-    setShowModuleForm(false);
-  };
-
-  const handleLinkSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCourse) return;
-
-    // Save link to backend
-    await fetch(`/api/admin/courses/${selectedCourse._id}/links`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(linkFormData),
-    });
-    await reloadCourse(selectedCourse._id);
-    setLinkFormData({ title: '', meetingUrl: '', schedule: '', description: '' });
-    setShowLinkForm(false);
-  };
-
-  const handleResourceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCourse) return;
-
-    // Save resource to backend
-    await fetch(`/api/admin/courses/${selectedCourse._id}/resources`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(resourceFormData),
-    });
-    await reloadCourse(selectedCourse._id);
-    setResourceFormData({ title: '', url: '', type: 'youtube', description: '' });
-    setShowResourceForm(false);
-  };
+              
               <Button variant="outline" onClick={closeCourseDetails}>
                 ✕
               </Button>
@@ -785,4 +733,4 @@ export default function CourseManagement({ courses, onCourseCreate }: CourseMana
   );
 }
 
-export default CourseManagement;
+// export default CourseManagement; (removed duplicate export)

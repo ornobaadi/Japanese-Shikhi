@@ -38,7 +38,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     
     // Push resource directly to the items array
     const updateResult = await collection.updateOne(
-      { _id: course._id },
+      { _id: course._id as any },
       {
         $push: {
           [`curriculum.modules.${moduleIndex}.items`]: resource

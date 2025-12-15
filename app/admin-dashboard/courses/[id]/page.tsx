@@ -1521,14 +1521,12 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <ResourceForm 
-                      courseId={courseId} 
-                      onSuccess={() => setResourceRefreshKey(k => k + 1)} 
-                    />
-                    <ResourceList 
-                      courseId={courseId} 
-                      key={resourceRefreshKey} 
-                    />
+
+                {/* Drive links and resource components are temporarily simplified to avoid JSX parse issues. */}
+                <div className="py-4">
+                  <ResourceForm courseId={courseId} onSuccess={() => setResourceRefreshKey(k => k + 1)} />
+                  <ResourceList courseId={courseId} key={resourceRefreshKey} />
+                </div>
                   </CardContent>
                 </Card>
               </TabsContent>
