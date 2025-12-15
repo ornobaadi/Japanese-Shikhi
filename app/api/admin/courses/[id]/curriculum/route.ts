@@ -158,7 +158,7 @@ export async function PUT(
     }
 
     // Verify the save by reading back using native driver
-    const verifiedCourse = await collection.findOne({ _id: course._id });
+    const verifiedCourse = await collection.findOne({ _id: new ObjectId(course._id as any) });
     console.log('API DEBUG: Verification - Full curriculum from DB:', 
       JSON.stringify(verifiedCourse?.curriculum, null, 2));
     
