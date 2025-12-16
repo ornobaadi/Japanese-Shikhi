@@ -20,6 +20,16 @@ export default function Home() {
         page_type: 'landing'
       });
     }
+    // --- Hash scroll fix for deep links (Contact, Courses, Features) ---
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash.substring(1);
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 200);
+    }
   }, []);
 
   return (

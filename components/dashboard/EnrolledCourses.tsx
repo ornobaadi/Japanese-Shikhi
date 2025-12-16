@@ -256,12 +256,9 @@ export default function EnrolledCourses() {
                 )}
 
                 <div className="space-y-2">
-                  <Button className="w-full" variant="default">
-                    {t('courses.continueStudying')}
-                  </Button>
-                  <Button className="w-full" variant="outline" asChild>
+                  <Button className="w-full" variant="default" asChild>
                     <Link href={`/dashboard/courses/${course._id}/curriculum`}>
-                      {t('courses.viewCurriculum')}
+                      {t('courses.continueStudying')}
                     </Link>
                   </Button>
                   {course.progress && course.progress.progressPercentage === 100 && (

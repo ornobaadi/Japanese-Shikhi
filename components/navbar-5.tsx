@@ -5,6 +5,9 @@ import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
 import { useIsAdmin } from "@/lib/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageToggle from "@/components/ui/language-toggle";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import {
   Accordion,
@@ -42,11 +45,11 @@ export const Navbar5 = () => {
           <nav className="flex items-center justify-between h-16">
             {/* Left: brand */}
             <div className="flex items-center flex-1">
-              <a href="/" className="flex items-center gap-3">
+              <Link href="/" className="flex items-center gap-3">
                 <span className="text-lg font-hind-siliguri font-medium">
                   {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'এসো জাপানিজ শিখি' : 'Japanese Shikhi'}
                 </span>
-              </a>
+              </Link>
             </div>
 
             {/* Center: nav links */}
@@ -54,60 +57,75 @@ export const Navbar5 = () => {
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   <NavigationMenuItem>
-                    <NavigationMenuLink
-                      href="#features"
+                    <Link
+                      href="/#features"
+                      className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                       onClick={(e) => {
-                        e.preventDefault();
-                        const element = document.getElementById('features');
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth' });
+                        if (window.location.pathname === '/') {
+                          e.preventDefault();
+                          const element = document.getElementById('features');
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        } else {
+                          e.preventDefault();
+                          window.location.href = '/#features';
                         }
                       }}
-                      className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
                       {t('nav.features')}
-                    </NavigationMenuLink>
+                    </Link>
                   </NavigationMenuItem>
 
                   <NavigationMenuItem>
-                    <NavigationMenuLink
+                    <Link
                       href="/blog"
                       className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
                       Blog
-                    </NavigationMenuLink>
+                    </Link>
                   </NavigationMenuItem>
 
                   <NavigationMenuItem>
-                    <NavigationMenuLink
-                      href="#courses"
+                    <Link
+                      href="/#courses"
+                      className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                       onClick={(e) => {
-                        e.preventDefault();
-                        const element = document.getElementById('courses');
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth' });
+                        if (window.location.pathname === '/') {
+                          e.preventDefault();
+                          const element = document.getElementById('courses');
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        } else {
+                          e.preventDefault();
+                          window.location.href = '/#courses';
                         }
                       }}
-                      className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
                       Courses
-                    </NavigationMenuLink>
+                    </Link>
                   </NavigationMenuItem>
 
                   <NavigationMenuItem>
-                    <NavigationMenuLink
-                      href="#contact"
+                    <Link
+                      href="/#contact"
+                      className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                       onClick={(e) => {
-                        e.preventDefault();
-                        const element = document.getElementById('contact');
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth' });
+                        if (window.location.pathname === '/') {
+                          e.preventDefault();
+                          const element = document.getElementById('contact');
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        } else {
+                          e.preventDefault();
+                          window.location.href = '/#contact';
                         }
                       }}
-                      className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
                       Contact
-                    </NavigationMenuLink>
+                    </Link>
                   </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenu>
@@ -121,11 +139,11 @@ export const Navbar5 = () => {
                   <>
                     {isAdmin ? (
                       <Button asChild>
-                        <a href="/admin-dashboard">{t('admin.dashboard')}</a>
+                        <Link href="/admin-dashboard">{t('admin.dashboard')}</Link>
                       </Button>
                     ) : (
                       <Button asChild>
-                        <a href="/dashboard">{t('admin.dashboard')}</a>
+                        <Link href="/dashboard">{t('admin.dashboard')}</Link>
                       </Button>
                     )}
                     <UserButton
@@ -153,11 +171,11 @@ export const Navbar5 = () => {
                   <SheetContent side="top" className="max-h-screen overflow-auto">
                     <SheetHeader>
                       <SheetTitle>
-                        <a href="/" className="flex items-center gap-2">
+                        <Link href="/" className="flex items-center gap-2">
                           <span className="text-lg font-medium font-hind-siliguri">
                             {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'এসো জাপানিজ শিখি' : 'Japanese Shikhi'}
                           </span>
-                        </a>
+                        </Link>
                       </SheetTitle>
                     </SheetHeader>
 
@@ -177,15 +195,9 @@ export const Navbar5 = () => {
                       </Accordion>
 
                       <div className="flex flex-col gap-6 mt-4">
-                        <a href="/blog" className="font-medium">
-                          {t('nav.products')}
-                        </a>
-                        <a href="#" className="font-medium">
-                          {t('nav.resources')}
-                        </a>
-                        <a href="#" className="font-medium">
-                          {t('nav.contact')}
-                        </a>
+                        <Link href="/blog" className="font-medium">{t('nav.products')}</Link>
+                        <Link href="#" className="font-medium">{t('nav.resources')}</Link>
+                        <Link href="#" className="font-medium">{t('nav.contact')}</Link>
                       </div>
 
                       <div className="mt-6 flex flex-col gap-4">
@@ -193,11 +205,11 @@ export const Navbar5 = () => {
                           <>
                             {isAdmin ? (
                               <Button asChild variant="outline">
-                                <a href="/admin-dashboard">{t('admin.dashboard')}</a>
+                                <Link href="/admin-dashboard">{t('admin.dashboard')}</Link>
                               </Button>
                             ) : (
                               <Button asChild variant="outline">
-                                <a href="/dashboard">{t('admin.dashboard')}</a>
+                                <Link href="/dashboard">{t('admin.dashboard')}</Link>
                               </Button>
                             )}
                             <div className="flex justify-center">

@@ -130,6 +130,43 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
         const data = await response.json();
         
         if (data.success) {
+          console.log('✅ Curriculum data received:', data);
+          console.log('📦 Modules:', data.curriculum?.modules);
+          
+          // Log each module and its items with attachments/driveLinks
+          data.curriculum?.modules?.forEach((module: any, idx: number) => {
+            console.log(`📚 Module ${idx + 1} (${module.name}):`, module);
+            module.items?.forEach((item: any, itemIdx: number) => {
+              const itemInfo = {
+                type: item.type,
+                hasAccess: item.hasAccess,
+                isLocked: item.isLocked,
+                attachments: item.attachments,
+                attachmentsCount: item.attachments?.length || 0,
+                driveLinks: item.driveLinks,
+                driveLinksCount: item.driveLinks?.length || 0,
+                resourceUrl: item.resourceUrl,
+                resourceFile: item.resourceFile
+              };
+              console.log(`  📄 Item ${itemIdx + 1} (${item.title}):`, itemInfo);
+              
+              // Specific logs for resources and assignments
+              if (item.type === 'resource' || item.type === 'assignment') {
+                if (item.attachments && item.attachments.length > 0) {
+                  console.log(`    ✅ HAS ${item.attachments.length} ATTACHMENTS:`, item.attachments);
+                } else {
+                  console.log(`    ❌ NO ATTACHMENTS FOUND`);
+                }
+                
+                if (item.driveLinks && item.driveLinks.length > 0) {
+                  console.log(`    ✅ HAS ${item.driveLinks.length} DRIVE LINKS:`, item.driveLinks);
+                } else {
+                  console.log(`    ❌ NO DRIVE LINKS FOUND`);
+                }
+              }
+            });
+          });
+          
           setCourse({
             _id: courseId,
             title: data.title || 'Course',
@@ -352,10 +389,9 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                           key={item._id || itemIndex}
                           className={`transition-all relative ${
                             item.hasAccess 
-                              ? 'cursor-pointer hover:shadow-lg hover:border-blue-400 hover:scale-[1.02] border-2 border-blue-200 bg-white' 
+                              ? 'hover:shadow-lg hover:border-blue-400 hover:scale-[1.02] border-2 border-blue-200 bg-white' 
                               : 'opacity-60 bg-gray-50 cursor-not-allowed'
                           }`}
-                          onClick={() => handleItemClick(item)}
                         >
                           <CardContent className="p-4">
                             {/* Lock/Unlock Indicator */}
@@ -387,7 +423,6 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                                       {item.description}
                                     </p>
                                   )}
-                                  
                                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                                     {item.duration && (
                                       <Badge variant="outline" className="text-xs">
@@ -395,86 +430,155 @@ const CurriculumViewer = ({ courseId }: CurriculumViewerProps) => {
                                         {item.duration} min
                                       </Badge>
                                     )}
-                                    
                                     {item.isFreePreview && (
                                       <Badge variant="outline" className="text-xs text-green-600 border-green-300">
                                         🎁 Free Preview
                                       </Badge>
                                     )}
-                                    
                                     {item.type === 'live-class' && item.meetingLink && item.hasAccess && (
                                       <Badge variant="secondary" className="text-xs">
                                         <LinkIcon className="h-3 w-3 mr-1" />
                                         {item.meetingPlatform === 'zoom' ? 'Zoom' : item.meetingPlatform === 'google-meet' ? 'Google Meet' : 'Meeting'}
                                       </Badge>
                                     )}
-                                    
-                                    {item.type === 'resource' && item.hasAccess && (
-                                      <>
-                                        <Badge variant="outline" className="text-xs">
-                                          {item.resourceType && <span className="capitalize">{item.resourceType}</span>}
-                                          {!item.resourceType && 'Resource'}
-                                        </Badge>
-                                        {((item as any).driveLinks?.length > 0 || (item as any).attachments?.length > 0) && (
-                                          <div className="text-xs text-green-700 flex items-center gap-2">
-                                            {(item as any).driveLinks?.length > 0 && (
-                                              <span>🔗 {(item as any).driveLinks.length} Link(s)</span>
-                                            )}
-                                            {(item as any).attachments?.length > 0 && (
-                                              <span>📁 {(item as any).attachments.length} File(s)</span>
-                                            )}
-                                          </div>
-                                        )}
-                                      </>
-                                    )}
-                                    
-                                    {item.type === 'assignment' && item.hasAccess && (
-                                      <>
-                                        <Badge variant="outline" className="text-xs">
-                                          Assignment
-                                        </Badge>
-                                        {(item.resourceUrl || item.resourceFile || (item as any).attachments?.length > 0) && (
-                                          <div className="text-xs text-purple-700 flex items-center gap-2">
-                                            <span>📎 Attached File(s)</span>
-                                          </div>
-                                        )}
-                                      </>
-                                    )}
                                   </div>
+                                  {/* --- FULL CONTENT FOR UNLOCKED ITEMS --- */}
+                                  {item.hasAccess && (
+                                    <div className="mt-4 space-y-2">
+                                      {/* Resource/Assignment Attachments */}
+                                      {(item.type === 'resource' || item.type === 'assignment') && (item as any).attachments && (item as any).attachments.length > 0 && (
+                                        <div>
+                                          <div className="text-xs font-semibold mb-1">📁 Uploaded Files ({(item as any).attachments.length}):</div>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {(item as any).attachments.map((attachment: any, idx: number) => {
+                                              const fileName = attachment.name || attachment.filename || 'File';
+                                              const isImage = attachment.url?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+                                              const isPdf = attachment.url?.endsWith('.pdf');
+                                              
+                                              return (
+                                                <div key={idx} className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                                  <div className="flex flex-col gap-2">
+                                                    {isImage ? (
+                                                      <div className="w-full h-24 rounded border border-blue-300 overflow-hidden bg-white">
+                                                        <img src={attachment.url} alt={fileName} className="w-full h-full object-cover" />
+                                                      </div>
+                                                    ) : isPdf ? (
+                                                      <div className="w-full h-24 rounded bg-red-100 flex items-center justify-center">
+                                                        <FileText className="h-10 w-10 text-red-600" />
+                                                      </div>
+                                                    ) : (
+                                                      <div className="w-full h-24 rounded bg-blue-100 flex items-center justify-center">
+                                                        <FileText className="h-10 w-10 text-blue-600" />
+                                                      </div>
+                                                    )}
+                                                    <div>
+                                                      <p className="text-xs font-medium text-blue-800 truncate" title={fileName}>{fileName}</p>
+                                                      {attachment.type && (
+                                                        <p className="text-xs text-blue-600">{attachment.type}</p>
+                                                      )}
+                                                      <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="w-full mt-1 text-xs h-7"
+                                                        asChild
+                                                      >
+                                                        <a href={attachment.url} target="_blank" rel="noopener noreferrer" download={fileName}>
+                                                          <Download className="h-3 w-3 mr-1" />
+                                                          Download
+                                                        </a>
+                                                      </Button>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {/* Resource/Assignment Drive Links */}
+                                      {(item.type === 'resource' || item.type === 'assignment') && (item as any).driveLinks && (item as any).driveLinks.length > 0 && (
+                                        <div>
+                                          <div className="text-xs font-semibold mb-1">🔗 Google Drive Links:</div>
+                                          <div className="space-y-2">
+                                            {(item as any).driveLinks.map((driveLink: any, idx: number) => (
+                                              <div key={idx} className="p-2 bg-green-50 border border-green-200 rounded-lg">
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-xs font-medium text-green-800">{driveLink.title}</span>
+                                                  <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    onClick={() => {
+                                                      const match = driveLink.link.match(/src=["']([^"']+)["']/);
+                                                      const url = match ? match[1] : driveLink.link;
+                                                      window.open(url, '_blank');
+                                                    }}
+                                                  >
+                                                    <ExternalLink className="h-3 w-3 mr-1" />
+                                                    Open
+                                                  </Button>
+                                                </div>
+                                                <div 
+                                                  className="w-full aspect-video rounded border border-green-300 overflow-hidden bg-white mt-2"
+                                                  dangerouslySetInnerHTML={{ __html: driveLink.link }}
+                                                />
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {/* Resource/Assignment Legacy File */}
+                                      {(item.type === 'resource' || item.type === 'assignment') && (item.resourceUrl || item.resourceFile) && (!(item as any).attachments || (item as any).attachments.length === 0) && (
+                                        <div>
+                                          <div className="text-xs font-semibold mb-1">📄 File:</div>
+                                          <div className="flex gap-2">
+                                            <Button 
+                                              variant="outline" 
+                                              asChild
+                                              className="flex-1"
+                                            >
+                                              <a
+                                                href={item.resourceUrl || item.resourceFile}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                              >
+                                                <Eye className="h-4 w-4 mr-2" />
+                                                View
+                                              </a>
+                                            </Button>
+                                            <Button 
+                                              variant="default" 
+                                              asChild
+                                              className="flex-1"
+                                            >
+                                              <a
+                                                href={item.resourceUrl || item.resourceFile}
+                                                download={item.resourceFile || item.title}
+                                              >
+                                                <Download className="h-4 w-4 mr-2" />
+                                                Download
+                                              </a>
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                              
-                              {/* Action Buttons */}
-                              {item.hasAccess && (
+                              {/* Action Buttons (for live-class only) */}
+                              {item.hasAccess && item.type === 'live-class' && item.meetingLink && (
                                 <div className="flex items-center gap-2">
-                                  {item.type === 'live-class' && item.meetingLink && (
-                                    <Button 
-                                      variant="default" 
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        window.open(item.meetingLink, '_blank');
-                                        toast.success('Opening meeting link');
-                                      }}
-                                    >
-                                      <LinkIcon className="h-3 w-3 mr-1" />
-                                      Join
-                                    </Button>
-                                  )}
-                                  
-                                  {(item.type === 'resource' || item.type === 'assignment') && (
-                                    <Button 
-                                      variant="default" 
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedResource(item);
-                                      }}
-                                    >
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      View
-                                    </Button>
-                                  )}
+                                  <Button 
+                                    variant="default" 
+                                    size="sm"
+                                    onClick={() => {
+                                      window.open(item.meetingLink, '_blank');
+                                      toast.success('Opening meeting link');
+                                    }}
+                                  >
+                                    <LinkIcon className="h-3 w-3 mr-1" />
+                                    Join
+                                  </Button>
                                 </div>
                               )}
                             </div>

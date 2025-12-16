@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/mongodb';
 import Course from '@/lib/models/Course';
 import User from '@/lib/models/User';
 import { auth, clerkClient } from '@clerk/nextjs/server';
+import { ObjectId } from 'mongodb';
 
 // GET /api/courses/[id]/curriculum - get curriculum with access control
 export async function GET(
@@ -15,8 +16,10 @@ export async function GET(
     await connectToDatabase();
     const { id } = await params;
 
-    // Don't use .select() to ensure all curriculum item fields (driveLinks, attachments, etc.) are included
-    const course = await Course.findById(id);
+    // Use native MongoDB driver to avoid Mongoose schema casting issues with attachments/driveLinks
+    const db = Course.db;
+    const collection = db.collection('courses');
+    const course = await collection.findOne({ _id: new ObjectId(id) });
 
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
@@ -109,12 +112,31 @@ export async function GET(
                 shownItemTypes.add(itemType); // Mark this type as shown
               }
 
-              return {
+              // Debug log for attachments
+              if (item.attachments && item.attachments.length > 0) {
+                console.log(`📎 API: Item "${itemObj.title}" has ${item.attachments.length} attachments:`, item.attachments);
+              } else {
+                console.log(`❌ API: Item "${itemObj.title}" has NO attachments. Raw item:`, {
+                  attachments: item.attachments,
+                  driveLinks: item.driveLinks,
+                  type: item.type
+                });
+              }
+              if (item.driveLinks && item.driveLinks.length > 0) {
+                console.log(`🔗 API: Item "${itemObj.title}" has ${item.driveLinks.length} drive links:`, item.driveLinks);
+              }
+
+              // Explicitly include attachments and driveLinks
+              const result = {
                 ...itemObj,
+                attachments: item.attachments || itemObj.attachments || [],
+                driveLinks: item.driveLinks || itemObj.driveLinks || [],
                 hasAccess,
                 isLocked: !hasAccess,
                 requiresEnrollment: !hasAccess && !isEnrolled
               };
+              
+              return result;
             });
           
           return {
