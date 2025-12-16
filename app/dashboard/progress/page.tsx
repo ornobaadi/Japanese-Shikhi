@@ -59,6 +59,48 @@ export default function DashboardProgressPage() {
   const [quizSubmissions, setQuizSubmissions] = useState<QuizSubmission[]>([]);
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activityFeed, setActivityFeed] = useState<any[]>([]);
+  // Fetch activity feed from backend
+  useEffect(() => {
+    if (!user) return;
+    const fetchActivities = async () => {
+      try {
+        const res = await fetch('/api/users/activity');
+        if (!res.ok) throw new Error('Failed to fetch activities');
+        const data = await res.json();
+        setActivityFeed((data.activities || []).slice(0, 10));
+      } catch (err) {
+        setActivityFeed([]);
+      }
+    };
+    fetchActivities();
+  }, [user]);
+
+  // Per-course activity and rank
+  const [perCourseActivity, setPerCourseActivity] = useState<any[]>([]);
+  const [courseRanks, setCourseRanks] = useState<Record<string, { rank: number, total: number }>>({});
+  useEffect(() => {
+    if (!user) return;
+    const fetchPerCourse = async () => {
+      try {
+        const res = await fetch('/api/users/course-activity');
+        if (!res.ok) throw new Error('Failed to fetch per-course activity');
+        const data = await res.json();
+        setPerCourseActivity(data.perCourse || []);
+        // Fetch rank for each course
+        for (const c of data.perCourse || []) {
+          try {
+            const rankRes = await fetch(`/api/users/course-rank?courseId=${c.courseId}`);
+            if (rankRes.ok) {
+              const rankData = await rankRes.json();
+              setCourseRanks(prev => ({ ...prev, [c.courseId]: { rank: rankData.rank, total: rankData.total } }));
+            }
+          } catch {}
+        }
+      } catch {}
+    };
+    fetchPerCourse();
+  }, [user]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -114,42 +156,26 @@ export default function DashboardProgressPage() {
           try {
             const courseId = enrollment.courseId?._id || enrollment.courseId;
             const curriculumResponse = await fetch(`/api/courses/${courseId}/curriculum`);
-            
             if (curriculumResponse.ok) {
               const curriculumData = await curriculumResponse.json();
               const modules = curriculumData.curriculum?.modules || [];
-              
               let totalItems = 0;
               let totalResources = 0;
               let totalQuizzes = 0;
               let totalAssignments = 0;
               let totalAnnouncements = 0;
-              
-              // Count all items by type
               modules.forEach((module: any) => {
                 module.items?.forEach((item: any) => {
                   totalItems++;
                   switch (item.type) {
-                    case 'resource':
-                      totalResources++;
-                      break;
-                    case 'quiz':
-                      totalQuizzes++;
-                      break;
-                    case 'assignment':
-                      totalAssignments++;
-                      break;
-                    case 'announcement':
-                      totalAnnouncements++;
-                      break;
+                    case 'resource': totalResources++; break;
+                    case 'quiz': totalQuizzes++; break;
+                    case 'assignment': totalAssignments++; break;
+                    case 'announcement': totalAnnouncements++; break;
                   }
                 });
               });
-              
-              // Count completed quizzes for this course
-              const completedQuizzes = allSubmissions.filter((sub: any) => 
-                sub.courseId === courseId
-              ).length;
+              const completedQuizzes = allSubmissions.filter((sub: any) => sub.courseId === courseId).length;
               
               // Calculate progress (for now, based on quiz completion)
               const completedItems = completedQuizzes;
@@ -235,6 +261,115 @@ export default function DashboardProgressPage() {
                     <h1 className="text-2xl font-bold">Learning Progress</h1>
                     <p className="text-muted-foreground">Track your Japanese learning journey and achievements</p>
                   </div>
+                </div>
+              </div>
+
+
+              {/* Activity Feed */}
+              <div className="px-4 lg:px-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Activity Feed</CardTitle>
+                    <CardDescription>Your latest enrollments, quiz completions, and assignments</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {activityFeed.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="text-muted-foreground">
+                          No recent activity to display.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {activityFeed.map((activity, idx) => {
+                          let icon = '📚';
+                          let title = '';
+                          let desc = '';
+                          let date = '';
+                          if (activity.type === 'enrollment') {
+                            icon = '📚';
+                            title = 'Enrolled in Course';
+                            desc = activity.courseName || 'New Course';
+                            date = activity.enrolledAt ? new Date(activity.enrolledAt).toLocaleDateString() : '';
+                          } else if (activity.type === 'quiz') {
+                            icon = '📝';
+                            title = 'Quiz Completed';
+                            desc = `Scored ${activity.score || 0}% on "${activity.quizTitle || 'Quiz'}"`;
+                            date = activity.submittedAt ? new Date(activity.submittedAt).toLocaleDateString() : '';
+                          } else if (activity.type === 'assignment') {
+                            icon = '✍️';
+                            title = 'Assignment Submitted';
+                            desc = activity.assignmentTitle ? `Submitted "${activity.assignmentTitle}"${typeof activity.grade === 'number' ? ` (${activity.grade}% graded)` : ''}` : 'Assignment submitted';
+                            date = activity.submittedAt ? new Date(activity.submittedAt).toLocaleDateString() : '';
+                          }
+                          return (
+                            <div key={idx} className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                              <div className="flex-shrink-0 mt-1 text-xl">{icon}</div>
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium">{title}</p>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{desc}</p>
+                              </div>
+                              <div className="flex-shrink-0 text-xs text-muted-foreground">{date}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Per-course Activity Breakdown & Rank */}
+              <div className="px-4 lg:px-6">
+                <div className="space-y-6">
+                  {perCourseActivity.length > 0 && perCourseActivity.map((course) => (
+                    <Card key={course.courseId}>
+                      <CardHeader>
+                        <CardTitle>{course.courseTitle}</CardTitle>
+                        <CardDescription>
+                          {courseRanks[course.courseId] ? (
+                            <span>
+                              <b>Rank:</b> {courseRanks[course.courseId].rank} / {courseRanks[course.courseId].total}
+                            </span>
+                          ) : (
+                            <span>Calculating rank...</span>
+                          )}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="mb-2">
+                          <b>Quizzes:</b>
+                          {course.quizzes.length === 0 ? (
+                            <span className="ml-2 text-muted-foreground">No quizzes completed yet.</span>
+                          ) : (
+                            <ul className="ml-4 list-disc">
+                              {course.quizzes.map((q: any, idx: number) => (
+                                <li key={idx}>
+                                  {q.quizTitle || 'Quiz'} — <b>{q.score}%</b> {q.passed ? <span className="text-green-600">(Passed)</span> : <span className="text-red-600">(Failed)</span>} <span className="text-xs text-muted-foreground">[{q.submittedAt ? new Date(q.submittedAt).toLocaleDateString() : ''}]</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        <div className="mb-2">
+                          <b>Assignments:</b>
+                          {course.assignments.length === 0 ? (
+                            <span className="ml-2 text-muted-foreground">No assignments submitted yet.</span>
+                          ) : (
+                            <ul className="ml-4 list-disc">
+                              {course.assignments.map((a: any, idx: number) => (
+                                <li key={idx}>
+                                  {a.assignmentTitle || 'Assignment'} — <b>{typeof a.grade === 'number' ? `${a.grade}%` : 'Ungraded'}</b> {a.isLate ? <span className="text-orange-600">(Late)</span> : ''} <span className="text-xs text-muted-foreground">[{a.submittedAt ? new Date(a.submittedAt).toLocaleDateString() : ''}]</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
               

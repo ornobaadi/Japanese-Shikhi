@@ -57,8 +57,10 @@ export default function UsersPage() {
   const [subscriptionFilter, setSubscriptionFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
   const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [updatingRole, setUpdatingRole] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -272,6 +274,48 @@ export default function UsersPage() {
     } finally {
       setUpdatingRole(false);
       setShowAdminDialog(false);
+      setSelectedUser(null);
+    }
+  };
+
+  // Delete user functionality
+  const handleDeleteUser = (user: User) => {
+    if (user.clerkId === currentUser?.id) {
+      toast.error('You cannot delete your own account.');
+      return;
+    }
+    setSelectedUser(user);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!selectedUser) return;
+    setDeletingUser(true);
+    try {
+      const response = await fetch('/api/admin/users/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: selectedUser.clerkId })
+      });
+      if (response.ok) {
+        toast.success(`${selectedUser.name} has been deleted.`);
+        // Refresh users list
+        const refreshResponse = await fetch('/api/admin/users');
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json();
+          setAllUsers(data.users || []);
+          setUsers(data.users || []);
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    } finally {
+      setDeletingUser(false);
+      setShowDeleteDialog(false);
       setSelectedUser(null);
     }
   };
@@ -556,6 +600,15 @@ export default function UsersPage() {
                               </>
                             )}
                           </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={user.clerkId === currentUser?.id}
+                            className="text-xs md:text-sm h-8 md:h-9"
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -602,6 +655,35 @@ export default function UsersPage() {
                 </>
               ) : (
                 selectedUser?.role === 'admin' ? 'Remove Admin' : 'Make Admin'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{selectedUser?.name}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingUser}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteUser}
+              disabled={deletingUser}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deletingUser ? (
+                <>
+                  <IconLoader2 className="size-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

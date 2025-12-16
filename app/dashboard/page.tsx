@@ -72,7 +72,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Track dashboard visit when stats are loaded
@@ -159,120 +159,54 @@ export default function DashboardPage() {
     }
   }, [isSignedIn]);
 
-  // Load recent activities from localStorage
+  // Load recent activities from backend API
   useEffect(() => {
     if (!user) return;
-
-    const loadRecentActivities = () => {
-      const activities: RecentActivity[] = [];
-
-      // Get all localStorage keys
-      const keys = Object.keys(localStorage);
-
-      // Filter keys related to user activities
-      const userActivityKeys = keys.filter(key =>
-        key.startsWith('quiz_') ||
-        key.startsWith('lesson_') ||
-        key.startsWith('enrollment_')
-      );
-
-      console.log('Found activity keys:', userActivityKeys);
-
-      userActivityKeys.forEach(key => {
-        try {
-          const data = localStorage.getItem(key);
-          if (!data) return;
-
-          const parsedData = JSON.parse(data);
-          console.log('Parsing activity:', key, parsedData);
-
-          // Quiz activity - check if key contains user ID or if parsedData has userId
-          if (key.startsWith('quiz_')) {
-            const isUserQuiz = key.includes(user.id) || parsedData.userId === user.id;
-            if (isUserQuiz) {
-              activities.push({
-                id: key,
-                type: 'quiz',
-                title: 'Quiz Completed',
-                description: `Scored ${parsedData.score?.percentage || parsedData.score || 0}% on "${parsedData.quizTitle}"`,
-                timestamp: new Date(parsedData.completedAt),
-                metadata: {
-                  score: parsedData.score?.percentage || parsedData.score || 0,
-                  courseName: parsedData.courseName || 'Course'
-                }
-              });
-            }
+    const fetchActivities = async () => {
+      try {
+        const res = await fetch('/api/users/activity');
+        if (!res.ok) throw new Error('Failed to fetch activities');
+        const data = await res.json();
+        // Map backend activities to dashboard format
+        const mapped = (data.activities || []).map((a: any, idx: number) => {
+          if (a.type === 'enrollment') {
+            return {
+              id: `enrollment_${a.courseId}_${idx}`,
+              type: 'enrollment',
+              title: 'Enrolled in Course',
+              description: a.courseName || 'New Course',
+              timestamp: new Date(a.enrolledAt),
+              metadata: { courseName: a.courseName }
+            };
           }
-
-          // Lesson activity
-          if (key.startsWith('lesson_')) {
-            const isUserLesson = key.includes(user.id) || parsedData.userId === user.id;
-            if (isUserLesson) {
-              activities.push({
-                id: key,
-                type: 'lesson',
-                title: 'Lesson Completed',
-                description: parsedData.lessonName || 'Lesson',
-                timestamp: new Date(parsedData.completedAt),
-                metadata: {
-                  courseName: parsedData.courseName,
-                  lessonName: parsedData.lessonName
-                }
-              });
-            }
+          if (a.type === 'quiz') {
+            return {
+              id: `quiz_${a.courseId}_${idx}`,
+              type: 'quiz',
+              title: 'Quiz Completed',
+              description: `Scored ${a.score || 0}% on "${a.quizTitle || 'Quiz'}"`,
+              timestamp: new Date(a.submittedAt),
+              metadata: { score: a.score, courseName: a.courseName }
+            };
           }
-
-          // Enrollment activity
-          if (key.startsWith('enrollment_')) {
-            const isUserEnrollment = key.includes(user.id) || parsedData.userId === user.id;
-            if (isUserEnrollment) {
-              activities.push({
-                id: key,
-                type: 'enrollment',
-                title: 'Enrolled in Course',
-                description: parsedData.courseName || 'New Course',
-                timestamp: new Date(parsedData.enrolledAt),
-                metadata: {
-                  courseName: parsedData.courseName
-                }
-              });
-            }
+          if (a.type === 'assignment') {
+            return {
+              id: `assignment_${a.courseId}_${idx}`,
+              type: 'assignment',
+              title: 'Assignment Submitted',
+              description: a.assignmentTitle ? `Submitted "${a.assignmentTitle}"${typeof a.grade === 'number' ? ` (${a.grade}% graded)` : ''}` : 'Assignment submitted',
+              timestamp: new Date(a.submittedAt),
+              metadata: { grade: a.grade, courseName: a.courseName, isLate: a.isLate }
+            };
           }
-        } catch (error) {
-          console.error('Error parsing activity:', key, error);
-        }
-      });
-
-      console.log('Loaded activities:', activities);
-
-      // Sort by timestamp (newest first) and take latest 10
-      const sortedActivities = activities
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-        .slice(0, 10);
-
-      console.log('Sorted activities:', sortedActivities);
-      setRecentActivities(sortedActivities);
+          return null;
+        }).filter(Boolean);
+        setRecentActivities(mapped.slice(0, 10));
+      } catch (err) {
+        setRecentActivities([]);
+      }
     };
-
-    loadRecentActivities();
-
-    // Listen for storage changes
-    const handleStorageChange = () => {
-      loadRecentActivities();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    // Also listen for custom events (for same-tab updates)
-    const handleCustomStorage = () => {
-      loadRecentActivities();
-    };
-    window.addEventListener('storage', handleCustomStorage);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('storage', handleCustomStorage);
-    };
+    fetchActivities();
   }, [user]);
 
   // Function to create demo activities for testing

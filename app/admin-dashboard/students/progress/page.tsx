@@ -109,8 +109,28 @@ function StudentProgressPageContent() {
       if (!response.ok) throw new Error('Failed to fetch');
       
       const data = await response.json();
-      setStudents(data.students || []);
-      setFilteredStudents(data.students || []);
+      // Sort students by performance with tiebreakers for strict ranking
+      const sortedStudents = (data.students || []).sort((a: StudentProgress, b: StudentProgress) => {
+        // Primary: Quiz average score (descending)
+        const scoreA = a.quizStats.averageScore || 0;
+        const scoreB = b.quizStats.averageScore || 0;
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        
+        // Tiebreaker 1: Assignment average grade (descending)
+        const gradeA = a.assignmentStats.averageGrade || 0;
+        const gradeB = b.assignmentStats.averageGrade || 0;
+        if (gradeB !== gradeA) return gradeB - gradeA;
+        
+        // Tiebreaker 2: Total quizzes taken (descending - more activity is better)
+        const quizzesA = a.quizStats.total || 0;
+        const quizzesB = b.quizStats.total || 0;
+        if (quizzesB !== quizzesA) return quizzesB - quizzesA;
+        
+        // Final tiebreaker: Name (alphabetical)
+        return a.name.localeCompare(b.name);
+      });
+      setStudents(sortedStudents);
+      setFilteredStudents(sortedStudents);
       setSummary(data.summary || { totalStudents: 0, totalQuizzes: 0, totalAssignments: 0, pendingGrading: 0 });
     } catch (error) {
       console.error('Error fetching student progress:', error);
@@ -294,6 +314,7 @@ function StudentProgressPageContent() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="text-center w-16">Rank</TableHead>
                       <TableHead className="min-w-[200px]">Student</TableHead>
                       <TableHead className="text-center min-w-[80px]">Courses</TableHead>
                       <TableHead className="text-center min-w-[100px]">Quizzes</TableHead>
@@ -306,13 +327,26 @@ function StudentProgressPageContent() {
                 <TableBody>
                   {filteredStudents.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         No students found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredStudents.map((student) => (
+                    filteredStudents.map((student, index) => (
                       <TableRow key={student.studentId}>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center">
+                            {index === 0 ? (
+                              <Badge className="bg-yellow-500 text-white">🏆 1</Badge>
+                            ) : index === 1 ? (
+                              <Badge className="bg-gray-400 text-white">🥈 2</Badge>
+                            ) : index === 2 ? (
+                              <Badge className="bg-orange-600 text-white">🥉 3</Badge>
+                            ) : (
+                              <Badge variant="outline">{index + 1}</Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar>
