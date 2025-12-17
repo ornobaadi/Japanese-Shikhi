@@ -223,27 +223,27 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
       {/* Filters and Search */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t('admin.filterSearch')}</CardTitle>
+          <CardTitle className="text-base md:text-lg">{t('admin.filterSearch')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-3 md:gap-4">
             <div className="flex-1">
-              <Label htmlFor="search">{t('admin.searchCourses')}</Label>
+              <Label htmlFor="search" className="text-sm md:text-base">{t('admin.searchCourses')}</Label>
               <div className="relative">
-                <IconSearch className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                <IconSearch className="absolute left-2 md:left-3 top-2.5 md:top-3 size-3 md:size-4 text-muted-foreground" />
                 <Input
                   id="search"
                   placeholder={t('admin.searchPlaceholder')}
-                  className="pl-10"
+                  className="pl-8 md:pl-10 text-sm md:text-base h-9 md:h-10"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
             </div>
             <div>
-              <Label>{t('admin.status')}</Label>
+              <Label className="text-sm md:text-base">{t('admin.status')}</Label>
               <Select value={statusFilter} onValueChange={(value) => handleFilterChange('status', value)}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full md:w-40 h-9 md:h-10 text-sm md:text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -254,9 +254,9 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
               </Select>
             </div>
             <div>
-              <Label>{t('admin.level')}</Label>
+              <Label className="text-sm md:text-base">{t('admin.level')}</Label>
               <Select value={levelFilter} onValueChange={(value) => handleFilterChange('level', value)}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full md:w-32 h-9 md:h-10 text-sm md:text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,9 +268,9 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
               </Select>
             </div>
             <div>
-              <Label>{t('admin.category')}</Label>
+              <Label className="text-sm md:text-base">{t('admin.category')}</Label>
               <Select value={categoryFilter} onValueChange={(value) => handleFilterChange('category', value)}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full md:w-40 h-9 md:h-10 text-sm md:text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -291,10 +291,10 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
 
       {/* Courses List */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <CardTitle>{t('admin.yourCourses')}</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg md:text-xl">{t('admin.yourCourses')}</CardTitle>
+            <CardDescription className="text-xs md:text-sm">
               {t('admin.showingCourses')} {courses.length} {t('admin.ofCourses')} {pagination.totalCourses} {t('admin.coursesText')}
             </CardDescription>
           </div>
@@ -303,7 +303,7 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
             size="sm" 
             onClick={() => fetchCourses()}
             disabled={isLoading}
-            className="gap-2"
+            className="gap-1.5 md:gap-2 text-sm"
           >
             {isLoading ? (
               <IconLoader2 className="size-4 animate-spin" />
@@ -333,73 +333,73 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {courses.map((course) => (
-                <Card key={course._id} className="p-4">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <Card key={course._id} className="p-3 md:p-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4">
                     <div className="flex-1">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2 md:gap-3">
                         {course.thumbnailUrl && (
                           <img
                             src={course.thumbnailUrl}
                             alt={course.title}
-                            className="w-16 h-16 rounded object-cover"
+                            className="w-12 h-12 md:w-16 md:h-16 rounded object-cover flex-shrink-0"
                           />
                         )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-lg">{course.title}</h3>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mb-2">
+                            <h3 className="font-semibold text-base md:text-lg">{course.title}</h3>
                             {course.isPremium && (
-                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
                                 {t('admin.premium')}
                               </Badge>
                             )}
                             <Badge
                               variant="secondary"
-                              className={course.isPublished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
+                              className={`text-xs ${course.isPublished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
                             >
                               {course.isPublished ? t('admin.published') : t('admin.draft')}
                             </Badge>
                           </div>
-                          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                          <p className="text-muted-foreground text-xs md:text-sm mb-2 md:mb-3 line-clamp-2">
                             {course.description}
                           </p>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge className={getLevelColor(course.level)}>
+                          <div className="flex flex-wrap gap-1.5 md:gap-2">
+                            <Badge className={`${getLevelColor(course.level)} text-xs`}>
                               {translateLevel(course.level)}
                             </Badge>
-                            <Badge className={getCategoryColor(course.category)}>
+                            <Badge className={`${getCategoryColor(course.category)} text-xs`}>
                               {translateCategory(course.category)}
                             </Badge>
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="text-xs">
                               {formatDuration(course.estimatedDuration)}
                             </Badge>
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="text-xs">
                               {t('admin.difficulty')}: {course.difficulty}/10
                             </Badge>
                             {course.totalRatings > 0 && (
-                              <Badge variant="outline">
+                              <Badge variant="outline" className="text-xs">
                                 ⭐ {course.averageRating.toFixed(1)} ({course.totalRatings})
                               </Badge>
                             )}
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="text-xs">
                               {course.enrolledStudents} {t('admin.studentsCount')}
                             </Badge>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button asChild variant="outline" size="sm">
+                    <div className="flex flex-wrap gap-2">
+                      <Button asChild variant="outline" size="sm" className="text-xs md:text-sm">
                         <Link href={`/admin-dashboard/courses/${course._id}`}>
-                          <IconEye className="size-4 mr-1" />
+                          <IconEye className="size-3 md:size-4 mr-1" />
                           {t('admin.view')}
                         </Link>
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:text-red-700 text-xs md:text-sm"
                         onClick={async () => {
                           if (confirm(`${t('admin.deleteConfirm')} "${course.title}"?`)) {
                             try {
@@ -417,8 +417,8 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
                           }
                         }}
                       >
-                        <IconTrash className="size-4 mr-1" />
-                        Delete
+                        <IconTrash className="size-3 md:size-4 mr-1" />
+                        <span className="hidden sm:inline">Delete</span>
                       </Button>
                     </div>
                   </div>
@@ -429,14 +429,15 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 md:mt-6">
+              <div className="text-xs md:text-sm text-muted-foreground">
                 Page {pagination.currentPage} of {pagination.totalPages}
               </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-xs md:text-sm"
                   disabled={pagination.currentPage <= 1}
                   onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }))}
                 >
@@ -445,6 +446,7 @@ export default function CourseList({ refreshTrigger }: CourseListProps) {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-xs md:text-sm"
                   disabled={pagination.currentPage >= pagination.totalPages}
                   onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }))}
                 >

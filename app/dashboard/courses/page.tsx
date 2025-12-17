@@ -58,10 +58,10 @@ export default function DashboardCoursesPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div>
-                    <h1 className="text-2xl font-bold">My Courses</h1>
-                    <p className="text-muted-foreground">Manage your enrolled Japanese language courses</p>
+                    <h1 className="text-xl md:text-2xl font-bold">My Courses</h1>
+                    <p className="text-sm md:text-base text-muted-foreground">Manage your enrolled Japanese language courses</p>
                   </div>
                 </div>
               </div>
