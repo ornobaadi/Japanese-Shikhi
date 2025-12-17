@@ -1160,20 +1160,20 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+          <div className="@container/main flex flex-1 flex-col gap-4 md:gap-6 p-3 md:p-4 lg:p-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button variant="outline" size="sm" asChild>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 flex-1">
+                <Button variant="outline" size="sm" asChild className="w-full md:w-auto">
                   <Link href="/admin-dashboard/courses">
-                    <IconArrowLeft className="size-4 mr-2" />
-                    {t('admin.backToCourses')}
+                    <IconArrowLeft className="size-3 md:size-4 mr-1.5 md:mr-2" />
+                    <span className="text-xs md:text-sm">{t('admin.backToCourses')}</span>
                   </Link>
                 </Button>
-                <div>
-                  <h1 className="text-2xl font-bold">{course.title}</h1>
-                  <div className="flex items-center gap-2">
-                    <p className="text-muted-foreground">{t('admin.courseDetails')}</p>
+                <div className="flex-1">
+                  <h1 className="text-lg md:text-2xl font-bold line-clamp-1">{course.title}</h1>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs md:text-sm text-muted-foreground">{t('admin.courseDetails')}</p>
                     {saving && <Badge variant="secondary" className="text-xs">Saving...</Badge>}
                   </div>
                 </div>
@@ -1205,9 +1205,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                   <CardContent className="space-y-2">
                     {pinnedAnnouncements.map((item, idx) => (
                       <div key={idx} className="flex items-start justify-between p-3 rounded-md bg-background border">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">{item.title}</h4>
-                          <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-xs md:text-sm">{item.title}</h4>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
                           {item.validUntil && (
                             <p className="text-xs text-muted-foreground mt-1">
                               Valid until {formatDate(item.validUntil).full}
@@ -1221,23 +1221,23 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               )}
 
               {/* Curriculum Content */}
-              <TabsContent value="curriculum" className="space-y-6 mt-6">
+              <TabsContent value="curriculum" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
                 {/* Module Tabs */}
                 <Card>
-                  <CardContent className="p-4 py-0">
-                    <div className="flex items-center gap-2 overflow-x-auto">
+                  <CardContent className="p-3 md:p-4 py-0">
+                    <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto pb-2 scrollbar-hide">
                       {modules.map((module, idx) => (
-                        <div key={idx} className="relative group flex items-center gap-1">
+                        <div key={idx} className="relative group flex items-center gap-0.5 md:gap-1">
                           <button
                             onClick={() => setActiveModuleId(idx)}
-                            className={`px-4 py-2 rounded-lg border-2 whitespace-nowrap transition-all ${activeModuleId === idx
+                            className={`px-2 md:px-4 py-1.5 md:py-2 rounded-lg border-2 whitespace-nowrap transition-all text-xs md:text-sm ${activeModuleId === idx
                               ? 'border-primary bg-primary text-primary-foreground'
                               : 'border-border hover:border-primary/50'
                               }`}
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">{module.name}</span>
-                              {module.isPublished && <IconEye className="size-3" />}
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                              <span className="font-medium">{module.name}</span>
+                              {module.isPublished && <IconEye className="size-2 md:size-3" />}
                             </div>
                           </button>
                           {/* Edit module button */}
@@ -1247,19 +1247,19 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                               setActiveModuleId(idx);
                               setShowEditModuleDialog(true);
                             }}
-                            className="p-1 ml-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/10"
+                            className="p-0.5 md:p-1 ml-0.5 md:ml-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/10"
                             title="Edit module"
                           >
-                            <IconPencil className="size-3" />
+                            <IconPencil className="size-2.5 md:size-3" />
                           </button>
                           {/* Delete module button */}
                           {modules.length > 1 && (
                             <button
                               onClick={() => confirmDeleteModule(idx)}
-                              className="p-1 ml-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80"
+                              className="p-0.5 md:p-1 ml-0.5 md:ml-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80"
                               title="Delete module"
                             >
-                              <IconTrash className="size-3" />
+                              <IconTrash className="size-2.5 md:size-3" />
                             </button>
                           )}
                         </div>
@@ -1268,10 +1268,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                         variant="outline"
                         size="sm"
                         onClick={() => setShowModuleDialog(true)}
-                        className="whitespace-nowrap"
+                        className="whitespace-nowrap text-xs md:text-sm"
                       >
-                        <IconPlus className="size-4 mr-1" />
-                        Add Module
+                        <IconPlus className="size-3 md:size-4 mr-1" />
+                        <span className="hidden sm:inline">Add Module</span>
+                        <span className="sm:hidden">Add</span>
                       </Button>
                     </div>
                   </CardContent>
@@ -1280,11 +1281,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 {activeModule && (
                   <>
                     {/* Module Header */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h2 className="text-xl font-bold">{activeModule.name}</h2>
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-lg md:text-xl font-bold">{activeModule.name}</h2>
                         {activeModule.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{activeModule.description}</p>
+                          <p className="text-xs md:text-sm text-muted-foreground mt-1">{activeModule.description}</p>
                         )}
                       </div>
                       <div className="flex gap-2">
@@ -1292,9 +1293,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                           variant={activeModule.isPublished ? "default" : "outline"}
                           size="sm"
                           onClick={() => toggleModulePublish(activeModuleId)}
+                          className="text-xs md:text-sm"
                         >
-                          <IconEye className="size-4 mr-2" />
-                          {activeModule.isPublished ? 'Published' : 'Publish Module'}
+                          <IconEye className="size-3 md:size-4 mr-1.5 md:mr-2" />
+                          <span className="hidden sm:inline">{activeModule.isPublished ? 'Published' : 'Publish Module'}</span>
+                          <span className="sm:hidden">{activeModule.isPublished ? 'Live' : 'Publish'}</span>
                         </Button>
                       </div>
                     </div>

@@ -16,6 +16,7 @@ import {
   IconMail,
   IconArticle,
   IconPhone,
+  IconBell,
 } from "@tabler/icons-react"
 import { useUser } from "@clerk/nextjs"
 import { usePathname } from "next/navigation"
@@ -208,9 +209,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       badge: unreadCount,
     },
     {
-      title: "Schedule",
+      title: "Updates",
       url: "/dashboard/schedule",
-      icon: IconCalendar,
+      icon: IconBell,
     },
     {
       title: "Profile",

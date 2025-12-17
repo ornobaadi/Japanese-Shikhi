@@ -9,8 +9,8 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { Loader2, Calendar } from "lucide-react";
-import ClassSchedule from "@/components/dashboard/ClassSchedule";
+import { Loader2, Bell } from "lucide-react";
+import StudentNotifications from "@/components/dashboard/StudentNotifications";
 
 export default function DashboardSchedulePage() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -32,7 +32,7 @@ export default function DashboardSchedulePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-muted-foreground">Loading schedule...</p>
+          <p className="text-muted-foreground">Loading notifications...</p>
         </div>
       </div>
     );
@@ -60,14 +60,14 @@ export default function DashboardSchedulePage() {
               <div className="px-4 lg:px-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-2xl font-bold">Class Schedule</h1>
-                    <p className="text-muted-foreground">View your upcoming Japanese classes and study sessions</p>
+                    <h1 className="text-xl md:text-2xl font-bold">Updates & Notifications</h1>
+                    <p className="text-sm md:text-base text-muted-foreground">Track assignments, resources, and course announcements</p>
                   </div>
                 </div>
               </div>
               
               <div className="px-4 lg:px-6">
-                <ClassSchedule />
+                <StudentNotifications />
               </div>
             </div>
           </div>

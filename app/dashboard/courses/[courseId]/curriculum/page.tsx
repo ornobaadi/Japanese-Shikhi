@@ -544,37 +544,37 @@ export default function StudentCurriculumPage() {
             <SidebarInset>
                 <SiteHeader />
                 <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                    <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-8">
+                    <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-4 md:p-8">
                         {/* Header */}
-                        <div className="flex items-start justify-between mb-6">
-                            <div className="flex items-center gap-4">
-                                <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
-                                    <ArrowLeft className="size-4 mr-2" />
-                                    Back to Dashboard
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-4 mb-4 md:mb-6">
+                            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+                                <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')} className="w-full md:w-auto">
+                                    <ArrowLeft className="size-3 md:size-4 mr-1.5 md:mr-2" />
+                                    <span className="text-xs md:text-sm">Back to Dashboard</span>
                                 </Button>
                                 <div>
-                                    <div className="flex items-center gap-2">
-                                        <h1 className="text-2xl font-bold">{course.title}</h1>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h1 className="text-lg md:text-2xl font-bold">{course.title}</h1>
                                         {isAdmin && (
-                                            <Badge className="bg-purple-100 text-purple-800 border-purple-300">
+                                            <Badge className="bg-purple-100 text-purple-800 border-purple-300 text-xs">
                                                 👑 Admin Access
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="text-muted-foreground">Course Curriculum</p>
+                                    <p className="text-xs md:text-sm text-muted-foreground">Course Curriculum</p>
                                 </div>
                             </div>
                         </div>
                         {/* Course Description */}
-                        <Card className="mb-8">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <BookOpen className="size-5" />
+                        <Card className="mb-4 md:mb-8">
+                            <CardHeader className="p-4 md:p-6">
+                                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                                    <BookOpen className="size-4 md:size-5" />
                                     About This Course
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <p className="text-gray-700 leading-relaxed">{course.description}</p>
+                            <CardContent className="p-4 md:p-6">
+                                <p className="text-sm md:text-base text-gray-700 leading-relaxed">{course.description}</p>
                             </CardContent>
                         </Card>
 
@@ -589,21 +589,21 @@ export default function StudentCurriculumPage() {
                         ) : (
                             <>
                                 {/* Module Tabs */}
-                                <Card className="mb-8">
-                                    <CardContent className="p-4 py-0">
-                                        <div className="flex items-center gap-2 overflow-x-auto">
+                                <Card className="mb-4 md:mb-8">
+                                    <CardContent className="p-3 md:p-4 py-0">
+                                        <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto pb-2 scrollbar-hide">
                                             {modules.map((module, idx) => (
                                                 <button
                                                     key={idx}
                                                     onClick={() => setActiveModuleId(idx)}
-                                                    className={`px-4 py-2 rounded-lg border-2 whitespace-nowrap transition-all ${activeModuleId === idx
+                                                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg border-2 whitespace-nowrap transition-all text-xs md:text-sm ${activeModuleId === idx
                                                         ? 'border-primary bg-primary text-primary-foreground'
                                                         : 'border-border hover:border-primary/50'
                                                         }`}
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-medium text-sm">{module.name}</span>
-                                                        {module.isPublished && <Eye className="size-3" />}
+                                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                                        <span className="font-medium">{module.name}</span>
+                                                        {module.isPublished && <Eye className="size-2 md:size-3" />}
                                                     </div>
                                                 </button>
                                             ))}
@@ -614,28 +614,28 @@ export default function StudentCurriculumPage() {
                                 {activeModule && (
                                     <>
                                         {/* Module Header */}
-                                        <div className="mb-6">
-                                            <h2 className="text-xl font-bold text-gray-900">{activeModule.name}</h2>
+                                        <div className="mb-4 md:mb-6">
+                                            <h2 className="text-lg md:text-xl font-bold text-gray-900">{activeModule.name}</h2>
                                             {activeModule.description && (
-                                                <p className="text-gray-600 mt-1">{activeModule.description}</p>
+                                                <p className="text-sm md:text-base text-gray-600 mt-1">{activeModule.description}</p>
                                             )}
                                         </div>
 
                                         {/* Pinned Announcements */}
                                         {pinnedAnnouncements.length > 0 && (
-                                            <Card className="border-l-4 border-l-amber-500 bg-amber-50 mb-6">
-                                                <CardHeader className="pb-3">
+                                            <Card className="border-l-4 border-l-amber-500 bg-amber-50 mb-4 md:mb-6">
+                                                <CardHeader className="p-3 md:p-4 pb-2 md:pb-3">
                                                     <div className="flex items-center gap-2">
-                                                        <Bell className="size-5 text-amber-600" />
-                                                        <CardTitle className="text-base text-amber-800">Pinned Announcements</CardTitle>
+                                                        <Bell className="size-4 md:size-5 text-amber-600" />
+                                                        <CardTitle className="text-sm md:text-base text-amber-800">Pinned Announcements</CardTitle>
                                                     </div>
                                                 </CardHeader>
-                                                <CardContent className="space-y-2">
+                                                <CardContent className="space-y-2 p-3 md:p-4">
                                                     {pinnedAnnouncements.map((item, idx) => (
-                                                        <div key={idx} className="flex items-start justify-between p-3 rounded-md bg-white border border-amber-200">
+                                                        <div key={idx} className="flex items-start justify-between p-2 md:p-3 rounded-md bg-white border border-amber-200">
                                                             <div className="flex-1">
-                                                                <h4 className="font-medium text-sm text-amber-800">{item.title}</h4>
-                                                                <p className="text-xs text-amber-700 mt-1">{item.description}</p>
+                                                                <h4 className="font-medium text-xs md:text-sm text-amber-800">{item.title}</h4>
+                                                                <p className="text-xs text-amber-700 mt-1 line-clamp-2">{item.description}</p>
                                                                 {item.validUntil && (
                                                                     <p className="text-xs text-amber-600 mt-1">
                                                                         Valid until {formatDate(item.validUntil).full}
@@ -667,47 +667,47 @@ export default function StudentCurriculumPage() {
                                                     return (
                                                         <div key={dateKey} className="relative">
                                                             {/* Date Badge */}
-                                                            <div className="flex items-center gap-4 mb-4">
-                                                                <div className="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded-xl p-4 min-w-[80px] shadow-md">
-                                                                    <span className="text-3xl font-bold">{dateInfo.day}</span>
-                                                                    <span className="text-xs font-semibold tracking-wider">{dateInfo.month}</span>
+                                                            <div className="flex items-center gap-2 md:gap-4 mb-3 md:mb-4">
+                                                                <div className="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded-lg md:rounded-xl p-2 md:p-4 min-w-[60px] md:min-w-[80px] shadow-md">
+                                                                    <span className="text-xl md:text-3xl font-bold">{dateInfo.day}</span>
+                                                                    <span className="text-[10px] md:text-xs font-semibold tracking-wider">{dateInfo.month}</span>
                                                                 </div>
                                                                 <div className="h-px flex-1 bg-border" />
                                                             </div>
 
                                                             {/* Items for this date */}
-                                                            <div className="space-y-4 ml-4 pl-8 border-l-2 border-muted">
+                                                            <div className="space-y-3 md:space-y-4 ml-2 md:ml-4 pl-3 md:pl-8 border-l-2 border-muted">
                                                                 {items.map((item, itemIdx) => (
                                                                     <Card key={itemIdx} className={`border-2 overflow-hidden relative ${getTypeColorBg(item.type)}`}>
                                                                         <CardContent className="p-0">
                                                                             {/* Lock/Unlock Indicator */}
-                                                                            <div className="absolute top-4 right-4 z-10">
-                                                                                <div className="p-2 rounded-full bg-white shadow-md border-2 border-green-200">
-                                                                                    <Unlock className="size-4 text-green-500" />
+                                                                            <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
+                                                                                <div className="p-1.5 md:p-2 rounded-full bg-white shadow-md border-2 border-green-200">
+                                                                                    <Unlock className="size-3 md:size-4 text-green-500" />
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="flex items-start gap-0">
+                                                                            <div className="flex flex-col md:flex-row md:items-start gap-0">
                                                                                 {/* Icon Section */}
-                                                                                <div className="flex items-center justify-center p-6 border-r-2 border-current/20">
+                                                                                <div className="flex items-center justify-center p-3 md:p-6 border-b-2 md:border-b-0 md:border-r-2 border-current/20 w-full md:w-auto">
                                                                                     {getTypeIcon(item.type, true)}
                                                                                 </div>
 
                                                                                 {/* Content Section */}
-                                                                                <div className="flex-1 p-5">
-                                                                                    <div className="flex items-start justify-between gap-4">
-                                                                                        <div className="flex-1">
-                                                                                            <div className="flex items-center gap-2 mb-2">
-                                                                                                <Badge variant="outline" className="text-xs font-semibold capitalize">
+                                                                                <div className="flex-1 p-3 md:p-5">
+                                                                                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-2 md:gap-4">
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mb-2">
+                                                                                                <Badge variant="outline" className="text-[10px] md:text-xs font-semibold capitalize">
                                                                                                     {item.type.replace('-', ' ')}
                                                                                                 </Badge>
-                                                                                                <span className="text-xs font-medium opacity-75">
+                                                                                                <span className="text-[10px] md:text-xs font-medium opacity-75">
                                                                                                     {formatTime(item.scheduledDate)}
                                                                                                 </span>
                                                                                             </div>
-                                                                                            <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                                                                                            <h3 className="text-base md:text-lg font-bold mb-2">{item.title}</h3>
                                                                                             {item.description && (
-                                                                                                <p className="text-sm mb-3 opacity-90 whitespace-pre-wrap">{item.description}</p>
+                                                                                                <p className="text-xs md:text-sm mb-3 opacity-90 whitespace-pre-wrap line-clamp-3 md:line-clamp-none">{item.description}</p>
                                                                                             )}
 
                                                                                             {/* Assignment Files Preview - Multiple attachments */}
