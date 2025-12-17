@@ -136,35 +136,35 @@ export default function Features() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
-        <div className="text-center space-y-6 mb-20">
-          <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-blue-200/50 shadow-sm">
-            {Icons.Sparkles && <Icons.Sparkles className="h-4 w-4 text-blue-500" />}
-            <span className="text-sm font-medium text-gray-700">{t('features.title')}</span>
+        <div className="text-center space-y-4 md:space-y-6 mb-12 md:mb-20">
+          <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-3 md:px-4 py-1.5 md:py-2 border border-blue-200/50 shadow-sm">
+            {Icons.Sparkles && <Icons.Sparkles className="h-3 md:h-4 w-3 md:w-4 text-blue-500" />}
+            <span className="text-xs md:text-sm font-medium text-gray-700">{t('features.title')}</span>
           </div>
 
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight px-4">
             {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'কেন বেছে নিবেন' : 'Why Choose'}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500 mx-3">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500 mx-2 md:mx-3">
               {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'জাপানিজ শিখি' : 'Japanese Shikhi'}
             </span>
             {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? '?' : '?'}
           </h2>
 
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
             {t('features.subtitle')}
           </p>
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-12 md:mb-20">
           {stats.map((stat, index) => {
             const StatIcon = (Icons as any)[stat.icon] || Icons.Users;
             return (
               <Card key={index} className="text-center bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                <CardContent className="p-6">
-                  {StatIcon && <StatIcon className={`h-8 w-8 mx-auto mb-3 ${stat.color}`} />}
-                  <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
+                <CardContent className="p-3 md:p-6">
+                  {StatIcon && <StatIcon className={`h-6 md:h-8 w-6 md:w-8 mx-auto mb-2 md:mb-3 ${stat.color}`} />}
+                  <div className="text-lg md:text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
+                  <div className="text-xs md:text-sm text-gray-600">{stat.label}</div>
                 </CardContent>
               </Card>
             );
@@ -172,7 +172,7 @@ export default function Features() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
           {(settings?.features || defaultFeatures).map((feature, index) => {
             const IconComponent = (Icons as any)[feature.icon || 'BookOpen'];
             
@@ -210,11 +210,11 @@ export default function Features() {
         </div>
 
         {/* CTA Section */}
-        <div className="text-center mt-20">
+        <div className="text-center mt-12 md:mt-20 px-4">
           <Card className="max-w-2xl mx-auto bg-gradient-to-r from-red-500 to-orange-500 border-0 shadow-2xl text-white">
-            <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-4">Ready to Start Your Journey?</h3>
-              <p className="text-red-100 mb-6 text-lg">
+            <CardContent className="p-6 md:p-8">
+              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Ready to Start Your Journey?</h3>
+              <p className="text-red-100 mb-4 md:mb-6 text-sm md:text-base lg:text-lg">
                 Join thousands of learners already mastering Japanese with our platform
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

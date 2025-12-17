@@ -335,12 +335,12 @@ export default function UsersPage() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold">{t('users.title')}</h1>
-                <p className="text-muted-foreground">{t('users.subtitle')}</p>
+                <h1 className="text-xl md:text-2xl font-bold">{t('users.title')}</h1>
+                <p className="text-sm md:text-base text-muted-foreground">{t('users.subtitle')}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={handleExportData} disabled={exporting}>
                   {exporting ? (
                     <IconLoader2 className="size-4 mr-2 animate-spin" />
@@ -357,7 +357,7 @@ export default function UsersPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">

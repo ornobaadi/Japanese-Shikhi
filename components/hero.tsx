@@ -80,9 +80,9 @@ export default function Hero() {
       <div className="absolute bottom-20 left-20 w-80 h-80 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-emerald-400/10 to-cyan-400/10 rounded-full blur-3xl"></div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-20 pb-8 md:pb-16">
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[70vh] md:min-h-[80vh]">
 
           {/* Left Content */}
           <div className="space-y-8 text-center lg:text-left">
@@ -102,7 +102,7 @@ export default function Hero() {
 
             {/* Main Heading */}
             <div className="space-y-6">
-              <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 leading-[1.1] tracking-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 leading-[1.1] tracking-tight">
                 {settings?.hero.heading || t('hero.title')}
                 <span className="relative mx-3">
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-500 to-red-600 animate-gradient bg-[length:200%_200%]">
@@ -114,7 +114,7 @@ export default function Hero() {
                 {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'ভাষা' : 'Language'}
               </h1>
 
-              <p className="text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-2xl">
                 {t('hero.subtitle')}
               </p>
             </div>
@@ -194,7 +194,7 @@ export default function Hero() {
           </div>
 
           {/* Right Content - Globe Section */}
-          <div className="relative flex justify-center items-center">
+          <div className="relative hidden lg:flex justify-center items-center">
             <div className="relative w-full max-w-[500px] aspect-square">
               {/* Enhanced Globe background glow */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500/10 via-orange-500/10 to-yellow-500/10 blur-3xl animate-pulse"></div>

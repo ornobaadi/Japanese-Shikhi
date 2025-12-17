@@ -52,14 +52,14 @@ export default function ContactSection() {
   return (
     <section id="contact" className="py-20 px-4 md:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Get in Touch</h2>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+        <div className="text-center mb-10 md:mb-16">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">Get in Touch</h2>
+          <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg px-4">
             Have questions? We'd love to hear from you. Contact us anytime.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto">
           {/* Phone */}
           {contact.phoneNumber && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
@@ -96,9 +96,9 @@ export default function ContactSection() {
 
         {/* Social Links */}
         {socialLinks.some(link => link.link) && (
-          <div className="mt-16">
-            <h3 className="text-center text-xl font-semibold mb-8">Follow Us</h3>
-            <div className="flex justify-center gap-6 flex-wrap">
+          <div className="mt-10 md:mt-16">
+            <h3 className="text-center text-lg md:text-xl font-semibold mb-6 md:mb-8">Follow Us</h3>
+            <div className="flex justify-center gap-4 md:gap-6 flex-wrap">
               {socialLinks.map((social) => {
                 if (!social.link) return null;
                 const Icon = social.icon;
@@ -108,10 +108,10 @@ export default function ContactSection() {
                     href={social.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-white dark:bg-gray-800 p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+                    className="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
                     title={social.name}
                   >
-                    <Icon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                    <Icon className="w-5 h-5 md:w-6 md:h-6 text-gray-700 dark:text-gray-300" />
                   </a>
                 );
               })}

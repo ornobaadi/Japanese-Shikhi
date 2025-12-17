@@ -40,9 +40,9 @@ export const Navbar5 = () => {
 
   return (
     <section className="pointer-events-none">
-      <div className="fixed left-1/2 top-6 transform -translate-x-1/2 w-[min(1100px,calc(100%-48px))] rounded-2xl bg-white/60 backdrop-blur-md shadow-2xl border border-white/10 z-50 pointer-events-auto">
-        <div className="px-6">
-          <nav className="flex items-center justify-between h-16">
+      <div className="fixed left-1/2 top-3 md:top-6 transform -translate-x-1/2 w-[calc(100%-16px)] md:w-[min(1100px,calc(100%-48px))] rounded-xl md:rounded-2xl bg-white/60 backdrop-blur-md shadow-2xl border border-white/10 z-50 pointer-events-auto">
+        <div className="px-3 md:px-6">
+          <nav className="flex items-center justify-between h-14 md:h-16">
             {/* Left: brand */}
             <div className="flex items-center flex-1">
               <Link href="/" className="flex items-center gap-3">

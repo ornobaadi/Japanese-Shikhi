@@ -341,10 +341,10 @@ export default function CoursesPage() {
     const daysLeft = getDaysLeft(course.enrollmentDeadline);
 
     return (
-      <Card className="p-6 hover:shadow-md transition-all duration-200 border-0 shadow-sm">
-        <div className="flex gap-6">
+      <Card className="p-4 md:p-6 hover:shadow-md transition-all duration-200 border-0 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           {course.thumbnailUrl && (
-            <div className="w-48 aspect-video overflow-hidden rounded-lg flex-shrink-0">
+            <div className="w-full sm:w-48 aspect-video overflow-hidden rounded-lg flex-shrink-0">
               <img
                 src={course.thumbnailUrl}
                 alt={course.title}
@@ -456,10 +456,10 @@ export default function CoursesPage() {
   };
 
   const LoadingSkeleton = () => (
-    <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-6'}>
+    <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6' : 'space-y-4 md:space-y-6'}>
       {Array.from({ length: 6 }).map((_, index) => (
-        <Card key={index} className="p-6">
-          <Skeleton className="h-48 w-full mb-4" />
+        <Card key={index} className="p-4 md:p-6">
+          <Skeleton className="h-36 md:h-48 w-full mb-4" />
           <Skeleton className="h-4 w-3/4 mb-2" />
           <Skeleton className="h-4 w-1/2 mb-4" />
           <div className="space-y-2">
@@ -490,14 +490,14 @@ export default function CoursesPage() {
               <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
-                    <h1 className="text-3xl font-bold text-foreground">All Courses</h1>
-                    <p className="mt-2 text-lg text-muted-foreground">
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">All Courses</h1>
+                    <p className="mt-2 text-base md:text-lg text-muted-foreground">
                       Discover the perfect course to advance your Japanese learning journey
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground">View:</span>
+                  <div className="flex items-center gap-2 md:gap-4">
+                    <span className="text-xs md:text-sm text-muted-foreground">View:</span>
                     <ToggleGroup
                       type="single"
                       value={viewMode}
