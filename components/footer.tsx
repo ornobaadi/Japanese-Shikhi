@@ -38,12 +38,11 @@ export default function Footer() {
   ];
 
   const supportLinks = [
-    { name: t('footer.helpCenter'), href: "#help" },
     { name: t('footer.contactSupport'), href: "#contact" },
-    { name: t('footer.communityForum'), href: "#community" },
-    { name: t('footer.privacyPolicy'), href: "#privacy" },
-    { name: t('footer.termsOfService'), href: "#terms" },
-    { name: t('footer.refundPolicy'), href: "#refund" }
+    { name: t('pricing.title'), href: "#pricing" },
+    { name: t('courses.title'), href: "#courses" },
+    { name: t('testimonials.title'), href: "#testimonials" },
+    { name: t('footer.blog'), href: "#blog" }
   ];
 
   const socialIcons = [

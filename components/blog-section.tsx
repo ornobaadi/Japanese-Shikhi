@@ -54,11 +54,11 @@ export default function BlogSection() {
 
   if (loading) {
     return (
-      <section className="py-20 px-4 md:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto">
+      <section id="blog" className="py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Latest from Our Blog</h2>
-            <p className="text-gray-600 dark:text-gray-400">Loading latest articles...</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Latest from Our Blog</h2>
+            <p className="text-gray-600">Loading latest articles...</p>
           </div>
         </div>
       </section>
@@ -70,11 +70,11 @@ export default function BlogSection() {
   }
 
   return (
-    <section className="py-20 px-4 md:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto">
+    <section id="blog" className="py-16 md:py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Latest from Our Blog</h2>
-          <p className="text-gray-600 dark:text-gray-400">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Latest from Our Blog</h2>
+          <p className="text-gray-600">
             Insights, tips, and stories about learning Japanese
           </p>
         </div>

@@ -3,11 +3,14 @@
 import { useEffect } from 'react';
 import Navbar from "./blocks/Navbar";
 import Hero from "@/components/hero";
+import About from "@/components/about";
+import HowItWorks from "@/components/how-it-works";
 import Features from "@/components/features";
 import Courses from "@/components/courses";
+import Pricing from "@/components/pricing";
 import BlogSection from "@/components/blog-section";
 import Testimonials from "@/components/testimonials";
-import ContactSection from "@/components/contact-section";
+import ContactCta from "@/components/contact-cta";
 import Footer from "@/components/footer";
 
 export default function Home() {
@@ -35,14 +38,18 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">
+      <main className="min-h-screen bg-slate-50">
         <Hero />
+        <About />
+        <HowItWorks />
         <Features />
         <Courses />
-        <BlogSection />
+        <Pricing />
         <Testimonials />
-        <ContactSection />
+        <BlogSection />
+        <ContactCta />
       </main>
+      <Footer />
     </>
   );
 }

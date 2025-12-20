@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Star, Quote, Award, MapPin, Sparkles } from "lucide-react";
+import { Star } from "lucide-react";
 
 interface Testimonial {
   name: string;
@@ -121,152 +120,60 @@ export default function Testimonials() {
   ];
 
   return (
-    <section id="testimonials" className="py-24 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 left-20 w-64 h-64 bg-gradient-to-r from-emerald-400/10 to-teal-400/10 rounded-full blur-3xl"></div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="text-center space-y-6 mb-20">
-          <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-blue-200/50 shadow-sm">
-            <Sparkles className="h-4 w-4 text-blue-500" />
-            <span className="text-sm font-medium text-gray-700">{t('testimonials.title')}</span>
-          </div>
-
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-            {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'প্রকৃত ফলাফল' : 'Real Results from'}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500 mx-3">
-              {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'প্রকৃত শিক্ষার্থীদের' : 'Real Students'}
-            </span>
+    <section id="testimonials" className="py-16 md:py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-10 md:mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'শিক্ষার্থীদের মতামত' : 'What Our Students Say'}
           </h2>
-
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             {t('testimonials.subtitle')}
           </p>
         </div>
 
         {/* Testimonials Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {(ratings.length > 0
             ? [...ratings, ...(settings?.testimonials || defaultTestimonials).slice(0, 3 - ratings.length)]
             : (settings?.testimonials || defaultTestimonials)
           ).map((testimonial, index) => (
             <Card
               key={index}
-              className="group bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 relative overflow-hidden"
+              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow"
             >
-              {/* Gradient top border */}
-              <div className={`h-1 bg-gradient-to-r ${testimonial.gradient}`}></div>
 
-              {/* Quote icon */}
-              <div className="absolute top-4 right-4">
-                <Quote className="h-6 w-6 text-gray-300 group-hover:text-gray-400 transition-colors" />
-              </div>
-
-              <CardHeader className="pb-4">
-                <div className="flex items-start space-x-4">
-                  {/* Avatar */}
-                  <div className={`w-12 h-12 bg-gradient-to-r ${testimonial.gradient} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg group-hover:scale-110 transition-transform`}>
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-semibold">
                     {testimonial.avatar}
                   </div>
-
-                  <div className="flex-1 space-y-2">
-                    <div>
-                      <CardTitle className="text-lg font-bold text-gray-900 group-hover:text-gray-800 transition-colors">
-                        {testimonial.name}
-                      </CardTitle>
-                      <CardDescription className="text-gray-600">
-                        {testimonial.role}
-                      </CardDescription>
-                    </div>
-
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <MapPin className="h-3 w-3" />
-                      <span>{testimonial.location}</span>
-                    </div>
+                  <div>
+                    <CardTitle className="text-base font-semibold">{testimonial.name}</CardTitle>
+                    <CardDescription className="text-sm">{testimonial.role}</CardDescription>
                   </div>
+                </div>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={
+                        "w-4 h-4 " +
+                        (star <= Math.round((testimonial as any).rating || 5)
+                          ? "text-yellow-400 fill-current"
+                          : "text-gray-200")
+                      }
+                    />
+                  ))}
                 </div>
               </CardHeader>
-
-              <CardContent className="space-y-4">
-                {/* Achievement Badge */}
-                <Badge variant="outline" className={`bg-gradient-to-r ${testimonial.gradient} text-white border-0 font-medium`}>
-                  <Award className="h-3 w-3 mr-1" />
-                  {testimonial.achievement}
-                </Badge>
-
-                {/* Testimonial Content */}
-                <p className="text-gray-700 leading-relaxed text-sm italic">
+              <CardContent>
+                <p className="text-gray-600 text-sm leading-relaxed">
                   "{testimonial.content}"
                 </p>
-
-                {/* Rating */}
-                <div className="flex items-center justify-between">
-                  <div className="flex space-x-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className="w-4 h-4 text-yellow-400 fill-current group-hover:scale-110 transition-transform"
-                        style={{ transitionDelay: `${star * 50}ms` }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs text-gray-500 font-medium">
-                    {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'যাচাইকৃত শিক্ষার্থী' : 'Verified Student'}
-                  </span>
-                </div>
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Stats Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-blue-600 mb-2">10,000+</div>
-              <div className="text-sm text-gray-600">Happy Students</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">95%</div>
-              <div className="text-sm text-gray-600">Success Rate</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-purple-600 mb-2">2.5M+</div>
-              <div className="text-sm text-gray-600">Lessons Completed</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-orange-600 mb-2">4.9/5</div>
-              <div className="text-sm text-gray-600">Average Rating</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* CTA Section */}
-        <div className="text-center">
-          <Card className="max-w-2xl mx-auto bg-gradient-to-r from-blue-500 to-purple-500 border-0 shadow-2xl text-white">
-            <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-4">Ready to Write Your Success Story?</h3>
-              <p className="text-blue-100 mb-6 text-lg">
-                Join our community of successful Japanese learners today
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                  Start Your Journey
-                </button>
-                <button className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors">
-                  Read More Stories
-                </button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </section>

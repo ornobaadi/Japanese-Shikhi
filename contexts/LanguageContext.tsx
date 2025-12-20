@@ -75,8 +75,8 @@ const translations = {
         'footer.newsletter.subscribe': 'সাবস্ক্রাইব',
         'footer.newsletter.noSpam': 'কোন স্প্যাম নেই, যেকোনো সময় আনসাবস্ক্রাইব করুন। ১০,০০০+ সাবস্ক্রাইবার আমাদের বিশ্বাস করেন।',
         'footer.brand.description': 'আমাদের ব্যাপক অনলাইন কোর্স, AI-চালিত অনুশীলন, এবং বিশেষজ্ঞ গাইডেন্স দিয়ে জাপানি ভাষায় দক্ষতা অর্জন করুন। আজই আপনার ভাষা শেখার যাত্রা রূপান্তরিত করুন।',
-        'footer.contact.email': 'support@japaneseshikhi.com',
-        'footer.contact.phone': '+১ (৫৫৫) ১২৩-৪৫৬৭',
+        'footer.contact.email': 'mdemon201287@gmail.com',
+        'footer.contact.phone': '+8801873785288',
         'footer.contact.available': 'বিশ্বব্যাপী উপলব্ধ',
         'footer.rating': '৪.৯/৫ রেটিং',
         'footer.students': '১০,০০০+ শিক্ষার্থী',
@@ -522,8 +522,8 @@ const translations = {
         'footer.newsletter.subscribe': 'Subscribe',
         'footer.newsletter.noSpam': 'No spam, unsubscribe anytime. 10,000+ subscribers trust us.',
         'footer.brand.description': 'Master Japanese language with our comprehensive online courses, AI-powered practice, and expert guidance. Transform your language learning journey today.',
-        'footer.contact.email': 'support@japaneseshikhi.com',
-        'footer.contact.phone': '+1 (555) 123-4567',
+        'footer.contact.email': 'mdemon201287@gmail.com',
+        'footer.contact.phone': '+8801873785288',
         'footer.contact.available': 'Available worldwide',
         'footer.rating': '4.9/5 Rating',
         'footer.students': '10,000+ Students',
@@ -906,6 +906,18 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
             }
         }
     }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        document.documentElement.lang = language;
+
+        if (language === 'bn') {
+            document.body.classList.add('font-hind-siliguri');
+        } else {
+            document.body.classList.remove('font-hind-siliguri');
+        }
+    }, [language]);
 
     const setLanguage = (lang: Language) => {
         setLanguageState(lang);

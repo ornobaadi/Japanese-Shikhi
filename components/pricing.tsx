@@ -93,27 +93,14 @@ export default function Pricing() {
   ];
 
   return (
-    <section id="pricing" className="py-24 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-r from-red-400/10 to-orange-400/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 left-20 w-64 h-64 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-full blur-3xl"></div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="pricing" className="py-16 md:py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
-        <div className="text-center space-y-6 mb-16">
-          <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-orange-200/50 shadow-sm">
-            {Icons.Sparkles && <Icons.Sparkles className="h-4 w-4 text-orange-500" />}
-            <span className="text-sm font-medium text-gray-700">{t('pricing.title')}</span>
-          </div>
-
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-            {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'আপনার বেছে নিন' : 'Choose Your'}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500 mx-3">
-              {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'শেখার পথ' : 'Learning Path'}
-            </span>
+        <div className="text-center mb-10 md:mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            {t('pricing.title')}
           </h2>
-
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             {t('pricing.subtitle')}
           </p>
         </div>
@@ -123,8 +110,9 @@ export default function Pricing() {
           {plans.map((plan, index) => (
             <Card
               key={index}
-              className={`relative bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 overflow-hidden ${index === 1 ? 'ring-2 ring-orange-200 scale-105' : ''
-                }`}
+              className={`relative bg-white border-0 shadow-sm hover:shadow-lg transition-shadow overflow-hidden ${
+                index === 1 ? 'ring-1 ring-border' : ''
+              }`}
             >
               {/* Badge */}
               <div className="absolute top-4 right-4">
@@ -183,7 +171,7 @@ export default function Pricing() {
                 {/* CTA Button */}
                 <Button
                   size="lg"
-                  className={`w-full ${plan.buttonStyle} text-white shadow-lg hover:shadow-xl transition-all duration-300 group`}
+                  className={`w-full ${plan.buttonStyle} text-white shadow-sm transition-all duration-200 group`}
                 >
                   {plan.buttonText}
                     {index === 1 && Icons.Zap && <Icons.Zap className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />}

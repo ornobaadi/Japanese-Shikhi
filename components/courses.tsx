@@ -155,13 +155,13 @@ export default function Courses() {
   };
 
   return (
-    <section id="courses" className="py-20 bg-gray-50">
+    <section id="courses" className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
             Complete Learning Path
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Master Japanese step by step with our carefully crafted curriculum
           </p>
         </div>
@@ -173,9 +173,8 @@ export default function Courses() {
             <div className="text-center py-8 text-gray-500">No courses found.</div>
           ) : (
             courses.map((course, index) => (
-              <Card key={course._id || index} className="overflow-hidden">
-                <div className={`h-2 bg-gradient-to-r from-green-500 to-teal-500`}></div>
-                <div className="grid md:grid-cols-4 gap-6 p-8">
+              <Card key={course._id || index} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+                <div className="grid md:grid-cols-4 gap-6 p-4 sm:p-6 md:p-8">
                   {course.thumbnailUrl && (
                     <div className="md:col-span-1 flex items-center justify-center">
                       <img
@@ -225,7 +224,7 @@ export default function Courses() {
                   </div>
                   <div className="md:col-span-2">
                     <h4 className="font-semibold mb-4">What you'll learn:</h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {course.learningObjectives?.map((topic, topicIndex) => (
                         <div key={topicIndex} className="flex items-center">
                           <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
@@ -238,7 +237,7 @@ export default function Courses() {
                     {isEnrolled(course._id || '') ? (
                       <>
                         <Button 
-                          className="bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90"
+                          className="hover:opacity-90"
                           onClick={() => handleContinueLearning(course._id || '')}
                         >
                           Continue Learning
@@ -255,7 +254,7 @@ export default function Courses() {
                     ) : (
                       <>
                         <Button 
-                          className="bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90"
+                          className="hover:opacity-90"
                           onClick={() => handleStartCourse(course._id || '')}
                         >
                           Start Course
