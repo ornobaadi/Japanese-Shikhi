@@ -57,8 +57,10 @@ interface LandingSettings {
 }
 
 export default function Hero() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [settings, setSettings] = useState<LandingSettings | null>(null);
+
+  const isEnglishText = (value?: string) => !!value && /[A-Za-z]/.test(value);
 
   useEffect(() => {
     fetch('/api/landing-settings')
@@ -95,7 +97,18 @@ export default function Hero() {
             {/* Main Heading - Simplified */}
             <div className="space-y-6">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight tracking-tight">
-                {settings?.hero.heading || t('hero.title')}
+                {(() => {
+                  const heading = settings?.hero.heading || t('hero.title');
+                  // Landing settings often contain English even in BN mode.
+                  if (language === 'bn' && isEnglishText(heading)) {
+                    return (
+                      <span lang="en" className="font-inter-tight">
+                        {heading}
+                      </span>
+                    );
+                  }
+                  return heading;
+                })()}
                 <span className="block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
                   {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'জাপানি ভাষা' : 'Japanese Language'}
                 </span>
@@ -166,7 +179,12 @@ export default function Hero() {
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">こんにちは</span>
                     <div className="text-xs text-gray-600">
-                      <div className="font-semibold text-gray-800">Hello</div>
+                      <div
+                        lang="en"
+                        className={`font-semibold text-gray-800 ${language === 'bn' ? 'font-inter-tight' : ''}`}
+                      >
+                        Hello
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -177,7 +195,12 @@ export default function Hero() {
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">ありがとう</span>
                     <div className="text-xs text-gray-600">
-                      <div className="font-semibold text-gray-800">Thank you</div>
+                      <div
+                        lang="en"
+                        className={`font-semibold text-gray-800 ${language === 'bn' ? 'font-inter-tight' : ''}`}
+                      >
+                        Thank you
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -186,7 +209,12 @@ export default function Hero() {
               <Card className="absolute top-1/3 right-0 bg-gradient-to-br from-red-50 to-orange-50 shadow-lg border-0 z-20 hover:shadow-xl transition-shadow">
                 <CardContent className="p-4 text-center">
                   <div className="text-xl font-bold text-red-600">漢字</div>
-                  <div className="text-xs text-gray-600 mt-1">Kanji</div>
+                  <div
+                    lang="en"
+                    className={`text-xs text-gray-600 mt-1 ${language === 'bn' ? 'font-inter-tight' : ''}`}
+                  >
+                    Kanji
+                  </div>
                 </CardContent>
               </Card>
             </div>

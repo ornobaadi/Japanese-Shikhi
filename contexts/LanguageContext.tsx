@@ -18,6 +18,7 @@ const translations = {
         // Navigation
         'nav.features': 'বৈশিষ্ট্যসমূহ',
         'nav.products': 'ব্লগ',
+        'nav.courses': 'কোর্স',
         'nav.resources': 'সম্পদ',
         'nav.contact': 'যোগাযোগ',
         'nav.startForFree': 'বিনামূল্যে শুরু করুন',
@@ -38,6 +39,12 @@ const translations = {
         'features.interactive.description': 'আকর্ষণীয় ইন্টারঅ্যাক্টিভ লেসনের মাধ্যমে জাপানি ভাষা শিখুন',
         'features.progress.title': 'অগ্রগতি ট্র্যাকিং',
         'features.progress.description': 'আপনার শেখার অগ্রগতি দেখুন এবং লক্ষ্য অর্জন করুন',
+        'features.native.title': 'নেটিভ ইন্সট্রাক্টর',
+        'features.native.description': 'অভিজ্ঞ জাপানি নেটিভ স্পিকারদের কাছ থেকে শিখুন',
+        'features.certified.title': 'সার্টিফাইড কোর্স',
+        'features.certified.description': 'কোর্স সম্পন্ন করলে স্বীকৃত সার্টিফিকেট পান',
+        'features.flexible.title': 'ফ্লেক্সিবল শিডিউল',
+        'features.flexible.description': 'লাইফটাইম অ্যাক্সেস সহ নিজের গতিতে শিখুন',
         'features.community.title': 'কমিউনিটি সাপোর্ট',
         'features.community.description': 'অন্যান্য শিক্ষার্থীদের সাথে যোগ দিন এবং একসাথে শিখুন',
 
@@ -49,6 +56,24 @@ const translations = {
         'courses.advanced': 'উন্নত',
         'courses.enrollNow': 'এখনই ভর্তি হন',
         'courses.viewDetails': 'বিস্তারিত দেখুন',
+        'courses.learningPathTitle': 'সম্পূর্ণ শেখার পথ',
+        'courses.learningPathSubtitle': 'আমাদের সাজানো পাঠ্যক্রমে ধাপে ধাপে জাপানি শিখুন',
+        'courses.loadingCourses': 'কোর্স লোড হচ্ছে...',
+        'courses.noCoursesFound': 'কোনো কোর্স পাওয়া যায়নি।',
+        'courses.whatYouLearn': 'আপনি যা শিখবেন:',
+        'courses.startCourse': 'কোর্স শুরু করুন',
+        'courses.continueLearningCta': 'শেখা চালিয়ে যান',
+        'courses.reviewSingular': 'রিভিউ',
+        'courses.reviewPlural': 'রিভিউ',
+        'courses.lessonsLabel': 'পাঠ',
+
+        // Homepage Blog Section
+        'blogSection.title': 'আমাদের ব্লগ থেকে সর্বশেষ',
+        'blogSection.subtitle': 'জাপানি শেখা নিয়ে টিপস, গাইড ও গল্প',
+        'blogSection.loading': 'সর্বশেষ আর্টিকেল লোড হচ্ছে...',
+        'blogSection.readMore': 'আরও পড়ুন',
+        'blogSection.viewAll': 'সব আর্টিকেল দেখুন',
+        'blogSection.from': 'থেকে:',
 
         // Pricing Section
         'pricing.title': 'মূল্য পরিকল্পনা',
@@ -465,6 +490,7 @@ const translations = {
         // Navigation
         'nav.features': 'Features',
         'nav.products': 'Blog',
+        'nav.courses': 'Courses',
         'nav.resources': 'Resources',
         'nav.contact': 'Contact',
         'nav.startForFree': 'Start for free',
@@ -485,6 +511,12 @@ const translations = {
         'features.interactive.description': 'Learn Japanese through engaging interactive lessons',
         'features.progress.title': 'Progress Tracking',
         'features.progress.description': 'Track your learning progress and achieve your goals',
+        'features.native.title': 'Native Instructors',
+        'features.native.description': 'Learn from experienced Japanese native speakers',
+        'features.certified.title': 'Certified Courses',
+        'features.certified.description': 'Get recognized certificates upon completion',
+        'features.flexible.title': 'Flexible Schedule',
+        'features.flexible.description': 'Learn at your own pace with lifetime access',
         'features.community.title': 'Community Support',
         'features.community.description': 'Join other learners and learn together',
 
@@ -496,6 +528,24 @@ const translations = {
         'courses.advanced': 'Advanced',
         'courses.enrollNow': 'Enroll Now',
         'courses.viewDetails': 'View Details',
+        'courses.learningPathTitle': 'Complete Learning Path',
+        'courses.learningPathSubtitle': 'Master Japanese step by step with our carefully crafted curriculum',
+        'courses.loadingCourses': 'Loading courses...',
+        'courses.noCoursesFound': 'No courses found.',
+        'courses.whatYouLearn': "What you'll learn:",
+        'courses.startCourse': 'Start Course',
+        'courses.continueLearningCta': 'Continue Learning',
+        'courses.reviewSingular': 'review',
+        'courses.reviewPlural': 'reviews',
+        'courses.lessonsLabel': 'lessons',
+
+        // Homepage Blog Section
+        'blogSection.title': 'Latest from Our Blog',
+        'blogSection.subtitle': 'Insights, tips, and stories about learning Japanese',
+        'blogSection.loading': 'Loading latest articles...',
+        'blogSection.readMore': 'Read More',
+        'blogSection.viewAll': 'View All Articles',
+        'blogSection.from': 'From:',
 
         // Pricing Section
         'pricing.title': 'Pricing Plans',

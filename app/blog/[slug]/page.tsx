@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import Navbar from "../../blocks/Navbar";
 import Footer from "@/components/footer";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IconArrowLeft, IconCalendar, IconUser, IconTag, IconLoader2 } from "@tabler/icons-react";
-import { toast } from "sonner";
+import { ArrowLeft, Calendar, User, Tag, Loader2 } from "lucide-react";
 
 interface BlogPost {
   _id: string;
@@ -64,15 +64,13 @@ export default function BlogPostPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-        <div className="container mx-auto px-4 py-6">
-          <Link href="/blog" className="text-blue-600 hover:underline flex items-center gap-2 mb-8">
-            <IconArrowLeft className="size-4" />
-            Back to Blog
-          </Link>
-        </div>
-        <div className="flex items-center justify-center py-32">
-          <IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-28 pb-10 md:pb-14">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading…
+          </div>
         </div>
         <Footer />
       </div>
@@ -81,22 +79,19 @@ export default function BlogPostPage() {
 
   if (error || !post) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-        <div className="container mx-auto px-4 py-6">
-          <Link href="/blog" className="text-blue-600 hover:underline flex items-center gap-2 mb-8">
-            <IconArrowLeft className="size-4" />
-            Back to Blog
-          </Link>
-        </div>
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-2xl mx-auto">
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground mb-4">{error || 'Blog post not found'}</p>
-              <Link href="/blog">
-                <Button>View All Posts</Button>
-              </Link>
-            </Card>
-          </div>
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-28 pb-10 md:pb-14">
+          <Card className="border border-border/60 shadow-sm">
+            <CardContent className="py-10 text-center">
+              <p className="text-muted-foreground">{error || 'Blog post not found'}</p>
+              <div className="mt-4">
+                <Button asChild variant="outline">
+                  <Link href="/blog">View all posts</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         <Footer />
       </div>
@@ -104,112 +99,109 @@ export default function BlogPostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      <div className="container mx-auto px-4 py-8 md:py-12">
+    <div className="min-h-screen bg-slate-50">
+      <Navbar />
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-28 pb-10 md:pb-14">
         <Link href="/blog">
-          <Button variant="ghost" className="mb-8">
-            <IconArrowLeft className="size-4 mr-2" />
-            Back to Blog
+          <Button variant="ghost" className="pl-2 mb-6">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to blog
           </Button>
         </Link>
 
-        <article className="max-w-3xl mx-auto">
-          {/* Featured Image */}
-          {post.featuredImage && (
-            <div className="mb-8 rounded-lg overflow-hidden border">
-              {post.featuredImage.startsWith('data:') ? (
-                <img
-                  src={post.featuredImage}
-                  alt={post.title}
-                  className="w-full h-96 object-cover"
-                />
-              ) : (
-                <img
-                  src={post.featuredImage}
-                  alt={post.title}
-                  className="w-full h-96 object-cover"
-                />
-              )}
-            </div>
-          )}
-
-          {/* Title and Metadata */}
-          <div className="mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">{post.title}</h1>
-            
-            <div className="flex flex-wrap gap-4 text-muted-foreground mb-6">
-              {post.author && (
-                <div className="flex items-center gap-2">
-                  <IconUser className="size-4" />
-                  <span>{post.author}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <IconCalendar className="size-4" />
-                <span>{new Date(post.publishDate).toLocaleDateString()}</span>
-              </div>
-            </div>
-
-            {/* Tags */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    <IconTag className="size-3 mr-1" />
-                    {tag}
-                  </Badge>
-                ))}
+        <article className="space-y-6">
+          <Card className="border border-border/60 shadow-sm overflow-hidden">
+            {post.featuredImage && (
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
+                {post.featuredImage.startsWith('data:') ? (
+                  <img
+                    src={post.featuredImage}
+                    alt={post.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={post.featuredImage}
+                    alt={post.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
             )}
-          </div>
 
-          {/* Video Content */}
-          {(post.videoFile || post.videoLink) && (
-            <div className="mb-8 rounded-lg overflow-hidden border bg-black">
-              {post.videoFile ? (
-                <video
-                  src={post.videoFile}
-                  controls
-                  className="w-full"
-                />
-              ) : post.videoLink ? (
-                <iframe
-                  width="100%"
-                  height="500"
-                  src={post.videoLink}
-                  title="Blog video"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full"
-                />
-              ) : null}
-            </div>
-          )}
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl md:text-3xl leading-tight">{post.title}</CardTitle>
 
-          {/* Content */}
-          <div className="prose prose-invert max-w-none mb-12">
-            <div className="text-lg leading-8 whitespace-pre-wrap text-foreground/90">
-              {post.content}
-            </div>
-          </div>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                {post.author && (
+                  <span className="inline-flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {post.author}
+                  </span>
+                )}
+                {post.publishDate && (
+                  <span className="inline-flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {new Date(post.publishDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
 
-          {/* Footer Section */}
-          <div className="border-t pt-8 mt-12">
-            <div className="bg-secondary/50 rounded-lg p-6 mb-8">
-              <h3 className="font-semibold mb-2">About this post</h3>
-              <p className="text-sm text-muted-foreground">{post.excerpt}</p>
-            </div>
+              {post.tags?.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {post.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="inline-flex items-center gap-2">
+                      <Tag className="h-3 w-3" />
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </CardHeader>
 
-            <Link href="/blog">
-              <Button className="w-full">
-                <IconArrowLeft className="size-4 mr-2" />
-                Back to All Posts
-              </Button>
-            </Link>
-          </div>
+            <CardContent>
+              {(post.videoFile || post.videoLink) && (
+                <div className="mb-6 rounded-md overflow-hidden border bg-black">
+                  {post.videoFile ? (
+                    <video src={post.videoFile} controls className="w-full" />
+                  ) : post.videoLink ? (
+                    <iframe
+                      width="100%"
+                      height="420"
+                      src={post.videoLink}
+                      title="Blog video"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full"
+                    />
+                  ) : null}
+                </div>
+              )}
+
+              <div className="prose prose-slate max-w-none">
+                <div className="whitespace-pre-wrap text-[15px] leading-7 text-foreground">
+                  {post.content}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 shadow-sm">
+            <CardContent className="py-6">
+              <div className="text-sm text-muted-foreground">{post.excerpt}</div>
+              <div className="mt-4">
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/blog">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to all posts
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </article>
-      </div>
+      </main>
 
       <Footer />
     </div>

@@ -44,12 +44,10 @@ export default function Home() {
         <HowItWorks />
         <Features />
         <Courses />
-        <Pricing />
         <Testimonials />
         <BlogSection />
         <ContactCta />
       </main>
-      <Footer />
     </>
   );
 }

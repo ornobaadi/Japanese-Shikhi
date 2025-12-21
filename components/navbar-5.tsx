@@ -36,7 +36,8 @@ import {
 export const Navbar5 = () => {
   const { isSignedIn, user } = useUser();
   const isAdmin = useIsAdmin();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isBn = language === 'bn';
 
   return (
     <section className="pointer-events-none">
@@ -46,9 +47,15 @@ export const Navbar5 = () => {
             {/* Left: brand */}
             <div className="flex items-center flex-1">
               <Link href="/" className="flex items-center gap-3">
-                <span className="text-lg font-hind-siliguri font-medium">
-                  {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'এসো জাপানিজ শিখি' : 'Japanese Shikhi'}
-                </span>
+                {isBn ? (
+                  <span className="text-lg font-hind-siliguri font-medium">
+                    এসো জাপানিজ শিখি
+                  </span>
+                ) : (
+                  <span className="text-lg font-inter-tight font-semibold tracking-tight" lang="en">
+                    Japanese Shikhi
+                  </span>
+                )}
               </Link>
             </div>
 
@@ -82,7 +89,7 @@ export const Navbar5 = () => {
                       href="/blog"
                       className={`${navigationMenuTriggerStyle()} bg-transparent px-3 py-2 rounded-md hover:bg-white/10 transition-colors`}
                     >
-                      Blog
+                      {t('nav.products')}
                     </Link>
                   </NavigationMenuItem>
 
@@ -103,7 +110,7 @@ export const Navbar5 = () => {
                         }
                       }}
                     >
-                      Courses
+                      {t('nav.courses')}
                     </Link>
                   </NavigationMenuItem>
 
@@ -172,9 +179,15 @@ export const Navbar5 = () => {
                     <SheetHeader>
                       <SheetTitle>
                         <Link href="/" className="flex items-center gap-2">
-                          <span className="text-lg font-medium font-hind-siliguri">
-                            {t('nav.features') === 'বৈশিষ্ট্যসমূহ' ? 'এসো জাপানিজ শিখি' : 'Japanese Shikhi'}
-                          </span>
+                          {isBn ? (
+                            <span className="text-lg font-medium font-hind-siliguri">
+                              এসো জাপানিজ শিখি
+                            </span>
+                          ) : (
+                            <span className="text-lg font-semibold font-inter-tight tracking-tight" lang="en">
+                              Japanese Shikhi
+                            </span>
+                          )}
                         </Link>
                       </SheetTitle>
                     </SheetHeader>

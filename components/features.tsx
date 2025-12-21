@@ -20,6 +20,36 @@ export default function Features() {
   const [settings, setSettings] = useState<LandingSettings | null>(null);
   const isBn = language === 'bn';
 
+  const isEnglishText = (value?: string) => !!value && /[A-Za-z]/.test(value);
+  const renderMaybeEnglish = (value: string) =>
+    isBn && isEnglishText(value) ? (
+      <span lang="en" className="font-inter-tight">
+        {value}
+      </span>
+    ) : (
+      value
+    );
+
+  const translateLandingFeature = (feature: Feature): Feature => {
+    if (!isBn) return feature;
+
+    const normalizedTitle = (feature.title || '').trim().toLowerCase();
+    if (normalizedTitle === 'native instructors') {
+      return { ...feature, title: t('features.native.title'), description: t('features.native.description') };
+    }
+    if (normalizedTitle === 'certified courses') {
+      return { ...feature, title: t('features.certified.title'), description: t('features.certified.description') };
+    }
+    if (normalizedTitle === 'flexible schedule') {
+      return { ...feature, title: t('features.flexible.title'), description: t('features.flexible.description') };
+    }
+    if (normalizedTitle === 'community support') {
+      return { ...feature, title: t('features.community.title'), description: t('features.community.description') };
+    }
+
+    return feature;
+  };
+
   useEffect(() => {
     fetch('/api/landing-settings')
       .then(res => res.json())
@@ -135,6 +165,7 @@ export default function Features() {
         <div className={gridCols}>
           {features.map((feature, index) => {
             const IconComponent = resolveIcon(feature.icon);
+            const displayFeature = translateLandingFeature(feature);
             
             return (
               <Card
@@ -147,13 +178,13 @@ export default function Features() {
                     <IconComponent className="h-6 w-6 text-orange-700" />
                   </div>
                   <CardTitle className="text-xl font-bold text-gray-900">
-                    {feature.title}
+                    {renderMaybeEnglish(displayFeature.title)}
                   </CardTitle>
                 </CardHeader>
 
                 <CardContent className="pt-0">
                   <CardDescription className="text-gray-600 text-base leading-relaxed">
-                    {feature.description}
+                    {renderMaybeEnglish(displayFeature.description)}
                   </CardDescription>
                 </CardContent>
               </Card>

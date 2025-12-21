@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Calendar, User, ArrowRight } from "lucide-react";
 
 interface BlogPost {
@@ -26,6 +27,7 @@ interface BlogPost {
 }
 
 export default function BlogSection() {
+  const { t } = useLanguage();
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,8 +59,8 @@ export default function BlogSection() {
       <section id="blog" className="py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Latest from Our Blog</h2>
-            <p className="text-gray-600">Loading latest articles...</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{t("blogSection.title")}</h2>
+            <p className="text-gray-600">{t("blogSection.loading")}</p>
           </div>
         </div>
       </section>
@@ -73,10 +75,8 @@ export default function BlogSection() {
     <section id="blog" className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Latest from Our Blog</h2>
-          <p className="text-gray-600">
-            Insights, tips, and stories about learning Japanese
-          </p>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{t("blogSection.title")}</h2>
+          <p className="text-gray-600">{t("blogSection.subtitle")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -134,7 +134,7 @@ export default function BlogSection() {
                 </div>
                 {blog.courseName && (
                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                    From: {blog.courseName}
+                    {t("blogSection.from")} {blog.courseName}
                   </p>
                 )}
               </CardContent>
@@ -142,7 +142,7 @@ export default function BlogSection() {
               <CardFooter>
                 <Link href={`/blog/${blog.slug || blog._id || blog.id}`} className="w-full">
                   <Button variant="outline" className="w-full group">
-                    Read More
+                    {t("blogSection.readMore")}
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
@@ -155,7 +155,7 @@ export default function BlogSection() {
         <div className="text-center">
           <Link href="/blog">
             <Button size="lg" className="group">
-              View All Articles
+              {t("blogSection.viewAll")}
               <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>

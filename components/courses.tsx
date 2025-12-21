@@ -2,6 +2,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Course {
   _id?: string;
@@ -27,12 +28,29 @@ import {
 } from "lucide-react";
 
 export default function Courses() {
+  const { t, language } = useLanguage();
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [enrolledCourseIds, setEnrolledCourseIds] = React.useState<string[]>([]);
   const [courseRatings, setCourseRatings] = React.useState<Record<string, { avg: number; count: number }>>({});
   const { isSignedIn, user } = useUser();
   const router = useRouter();
+
+  const isEnglishText = (value?: string) => !!value && /[A-Za-z]/.test(value);
+  const englishAttrs = (value?: string) =>
+    language === "bn" && isEnglishText(value)
+      ? ({ lang: "en", className: "font-inter-tight" } as const)
+      : ({} as const);
+
+  const formatDuration = (totalMinutes?: number) => {
+    if (!totalMinutes || totalMinutes <= 0) return "";
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (language === "bn") {
+      return `${hours} ঘ ${minutes} মি`;
+    }
+    return `${hours}h ${minutes}m`;
+  };
   React.useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -159,18 +177,22 @@ export default function Courses() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
-            Complete Learning Path
+            {t('courses.learningPathTitle')}
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Master Japanese step by step with our carefully crafted curriculum
+            {t('courses.learningPathSubtitle')}
           </p>
         </div>
 
         <div className="space-y-8">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading courses...</div>
+            <div className="text-center py-8 text-gray-500">
+              {t('courses.loadingCourses')}
+            </div>
           ) : courses.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No courses found.</div>
+            <div className="text-center py-8 text-gray-500">
+              {t('courses.noCoursesFound')}
+            </div>
           ) : (
             courses.map((course, index) => (
               <Card key={course._id || index} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
@@ -185,8 +207,16 @@ export default function Courses() {
                     </div>
                   )}
                   <div className={`space-y-4 ${course.thumbnailUrl ? 'md:col-span-1' : 'md:col-span-1'}`}>
-                    <Badge variant="outline">{course.level}</Badge>
-                    <h3 className="text-2xl font-bold">{course.title}</h3>
+                    <Badge variant="outline" {...englishAttrs(course.level)}>
+                      {course.level}
+                    </Badge>
+                    <h3 className={`text-2xl font-bold ${language === "bn" && isEnglishText(course.title) ? "font-inter-tight" : ""}`}>
+                      {language === "bn" && isEnglishText(course.title) ? (
+                        <span lang="en">{course.title}</span>
+                      ) : (
+                        course.title
+                      )}
+                    </h3>
                     <div className="space-y-2 text-sm text-gray-600">
                       {courseRatings[course._id || ''] && (
                         <div className="flex items-center gap-2">
@@ -208,27 +238,40 @@ export default function Courses() {
                             {courseRatings[course._id || ''].avg.toFixed(1)}
                           </span>
                           <span className="text-gray-500">
-                            ({courseRatings[course._id || ''].count} {courseRatings[course._id || ''].count === 1 ? 'review' : 'reviews'})
+                            ({courseRatings[course._id || ''].count}{" "}
+                            {courseRatings[course._id || ''].count === 1
+                              ? t('courses.reviewSingular')
+                              : t('courses.reviewPlural')})
                           </span>
                         </div>
                       )}
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2" />
-                        {course.estimatedDuration ? `${Math.floor(course.estimatedDuration / 60)}h ${course.estimatedDuration % 60}m` : ''}
+                        {course.estimatedDuration ? (
+                          <span>{formatDuration(course.estimatedDuration)}</span>
+                        ) : (
+                          ''
+                        )}
                       </div>
                       <div className="flex items-center">
                         <BookOpen className="w-4 h-4 mr-2" />
-                        {course.lessons ? `${course.lessons.length} lessons` : ''}
+                        {course.lessons ? (
+                          <span>{`${course.lessons.length} ${t('courses.lessonsLabel')}`}</span>
+                        ) : (
+                          ''
+                        )}
                       </div>
                     </div>
                   </div>
                   <div className="md:col-span-2">
-                    <h4 className="font-semibold mb-4">What you'll learn:</h4>
+                    <h4 className="font-semibold mb-4">{t('courses.whatYouLearn')}</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {course.learningObjectives?.map((topic, topicIndex) => (
                         <div key={topicIndex} className="flex items-center">
                           <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                          <span className="text-sm">{topic}</span>
+                          <span className={`text-sm ${language === "bn" && isEnglishText(topic) ? "font-inter-tight" : ""}`}>
+                            {language === "bn" && isEnglishText(topic) ? <span lang="en">{topic}</span> : topic}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -240,7 +283,7 @@ export default function Courses() {
                           className="hover:opacity-90"
                           onClick={() => handleContinueLearning(course._id || '')}
                         >
-                          Continue Learning
+                          {t('courses.continueLearningCta')}
                           <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                         <Button 
@@ -248,7 +291,7 @@ export default function Courses() {
                           size="sm"
                           onClick={() => handleViewCurriculum(course._id || '')}
                         >
-                          View Curriculum
+                          {t('courses.viewCurriculum')}
                         </Button>
                       </>
                     ) : (
@@ -257,7 +300,7 @@ export default function Courses() {
                           className="hover:opacity-90"
                           onClick={() => handleStartCourse(course._id || '')}
                         >
-                          Start Course
+                          {t('courses.startCourse')}
                           <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                         <Button 
@@ -265,7 +308,7 @@ export default function Courses() {
                           size="sm"
                           onClick={() => handleViewCurriculum(course._id || '')}
                         >
-                          View Curriculum
+                          {t('courses.viewCurriculum')}
                         </Button>
                       </>
                     )}
